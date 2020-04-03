@@ -1,0 +1,1265 @@
+
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2020 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#  <yydcnjjw@gmail.com>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-01-11 20:33+0800\n"
+"PO-Revision-Date: 2020-01-11 20:44+0800\n"
+"Last-Translator:  <yydcnjjw@gmail.com>\n"
+"Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "TJSInternalError"
+msgstr "发生了内部错误"
+
+msgid "TJSWarning"
+msgstr "警告："
+
+msgid "TJSWarnEvalOperator"
+msgstr "使用运算符时非全局变量放在后面。（请注意：当前运算符在 TJS 2.4.1 有作改动）"
+
+msgid "TJSNarrowToWideConversionError"
+msgstr "不能将现有文字转换为 Unicode 文字。包含的有不能识别的文字在内。请确认 data 是否指定有误。"
+
+msgid "TJSVariantConvertError"
+msgstr "不能转换变量类型 %1 到 %2"
+
+msgid "TJSVariantConvertErrorToObject"
+msgstr "不能将 %1 转换为 Object 类型"
+
+msgid "TJSIDExpected"
+msgstr "请指定 ID"
+
+msgid "TJSSubstitutionInBooleanContext"
+msgstr "请使用 = 运算符来对比。（使用 '(A=B)!=0' 来与 0 作对比）"
+
+msgid "TJSCannotModifyLHS"
+msgstr "进行了错误的表达式"
+
+msgid "TJSInsufficientMem"
+msgstr "内存不足"
+
+msgid "TJSCannotGetResult"
+msgstr "不能从当前表达式中获取到结果"
+
+msgid "TJSNullAccess"
+msgstr "发生了访问 null 对象"
+
+msgid "TJSMemberNotFound"
+msgstr "未找到 Member \"%1\""
+
+msgid "TJSMemberNotFoundNoNameGiven"
+msgstr "未指名 Member 未找到"
+
+msgid "TJSNotImplemented"
+msgstr "调用了未实现的方法"
+
+msgid "TJSInvalidParam"
+msgstr "参数不合法"
+
+msgid "TJSBadParamCount"
+msgstr "参数个数有误"
+
+msgid "TJSInvalidType"
+msgstr "不是一个 function 或者 方法/属性 有误"
+
+msgid "TJSSpecifyDicOrArray"
+msgstr "请声明为 Dictionary 或者 Array 对象类型"
+
+msgid "TJSSpecifyArray"
+msgstr "请声明为 Array 对象"
+
+msgid "TJSStringDeallocError"
+msgstr "不能释放 string 内存区域"
+
+msgid "TJSStringAllocError"
+msgstr "不能创建 string 内存区域"
+
+msgid "TJSMisplacedBreakContinue"
+msgstr "不能写 \"break\" 或者 \"continue\" 到这里"
+
+msgid "TJSMisplacedCase"
+msgstr "不能写 \"case\" 到这里"
+
+msgid "TJSMisplacedReturn"
+msgstr "不能把 \"return\" 写到这里"
+
+msgid "TJSStringParseError"
+msgstr "string/regxp/octet 处理时发生了错误"
+
+msgid "TJSNumberError"
+msgstr "number 处理时发生了错误"
+
+msgid "TJSUnclosedComment"
+msgstr "注释未关闭"
+
+msgid "TJSInvalidChar"
+msgstr "未知字符：'%1'"
+
+msgid "TJSExpected"
+msgstr "异常发生：%1"
+
+msgid "TJSSyntaxError"
+msgstr "语法有误 （%1）"
+
+msgid "TJSPPError"
+msgstr "条件表达式错误"
+
+msgid "TJSCannotGetSuper"
+msgstr "父类不存在或者不能定位到父类"
+
+msgid "TJSInvalidOpecode"
+msgstr "VM 代码有误"
+
+msgid "TJSRangeError"
+msgstr "错误：取值范围以外"
+
+msgid "TJSAccessDenyed"
+msgstr "对 只读/只写 属性进行了错误操作"
+
+msgid "TJSNativeClassCrash"
+msgstr "无效的 object context"
+
+msgid "TJSInvalidObject"
+msgstr "对象已无效"
+
+msgid "TJSCannotOmit"
+msgstr "不能在方法之外使用 \"...\""
+
+msgid "TJSCannotParseDate"
+msgstr "不正确的日期格式"
+
+msgid "TJSInvalidValueForTimestamp"
+msgstr "不正确的 日期/时间 值"
+
+msgid "TJSExceptionNotFound"
+msgstr "不能转换异常 因为 \"Exception\" 不存在"
+
+msgid "TJSInvalidFormatString"
+msgstr "不正确的字符串格式"
+
+msgid "TJSDivideByZero"
+msgstr "被 0 整除了"
+
+msgid "TJSNotReconstructiveRandomizeData"
+msgstr "不能重新构造随机数列"
+
+msgid "TJSSymbol"
+msgstr "ID"
+
+msgid "TJSCallHistoryIsFromOutOfTJS2Script"
+msgstr "[TJS2 脚本之外]"
+
+msgid "TJSNObjectsWasNotFreed"
+msgstr "共计 %1 个对象未释放"
+
+msgid "TJSObjectCreationHistoryDelimiter"
+msgstr "\\n                     "
+
+msgid "TJSObjectWasNotFreed"
+msgstr "对象 %1 [%2] 未释放。对象创建在：%2"
+
+msgid "TJSGroupByObjectTypeAndHistory"
+msgstr "以对象类型和所在位置来分组"
+
+msgid "TJSGroupByObjectType"
+msgstr "以为对象类型来分组"
+
+msgid "TJSObjectCountingMessageGroupByObjectTypeAndHistory"
+msgstr "%1 个：[%2]\n                     %3"
+
+msgid "TJSObjectCountingMessageTJSGroupByObjectType"
+msgstr "%1 个： [%2]"
+
+msgid "TJSWarnRunningCodeOnDeletingObject"
+msgstr "%4：运行代码在正在删除的进城中，对象 %1[%2] / 对象创建在：%3"
+
+msgid "TJSWriteError"
+msgstr "写入错误"
+
+msgid "TJSReadError"
+msgstr "读取错误"
+
+msgid "TJSSeekError"
+msgstr "查询错误"
+
+msgid "TJSByteCodeBroken"
+msgstr "读取 Bytecode 错误。文件已损坏或者该文件不是 bytecode 文件。"
+
+msgid "TJSObjectHashMapLogVersionMismatch"
+msgstr "对象的哈希图与日志版本不一致"
+
+msgid "TJSCurruptedObjectHashMapLog"
+msgstr "对象哈希图已损坏"
+
+msgid "TJSUnknownFailure"
+msgstr "未知错误：%08X"
+
+msgid "TJSUnknownPackUnpackTemplateCharcter"
+msgstr "未知打包/解包模板字符"
+
+msgid "TJSUnknownBitStringCharacter"
+msgstr "未知 bit string 字符"
+
+msgid "TJSUnknownHexStringCharacter"
+msgstr "未知 16 进制字符"
+
+msgid "TJSNotSupportedUuencode"
+msgstr "不支持 uuencode"
+
+msgid "TJSNotSupportedBER"
+msgstr "不支持 BER 压缩"
+
+msgid "TJSNotSupportedUnpackLP"
+msgstr "不支持解包 'p'"
+
+msgid "TJSNotSupportedUnpackP"
+msgstr "不支持解包 'p'"
+
+msgid "TVPVersionInformation"
+msgstr "吉里吉里Z 核心可执行文件 /%1 （编译日期 %DATE% %TIME%）TJS2 %2 Copyright (C) 1997-2013 W.Dee 及其贡献者 All rights reserved."
+
+msgid "TVPVersionInformation2"
+msgstr "详细版本信息可以通过添加 -about 参数来启动查看。"
+
+msgid "TVPDownloadPageURL"
+msgstr "http://krkrz.github.io/"
+
+msgid "TVPInternalError"
+msgstr "在 %1 行 %2 处发生了内部错误。"
+
+msgid "TVPInvalidParam"
+msgstr "参数不合法"
+
+msgid "TVPWarnDebugOptionEnabled"
+msgstr "已启动调试设置。"
+
+msgid "TVPCommandLineParamIgnoredAndDefaultUsed"
+msgstr "命令行参数 %1 = %2 是不合法的。已使用默认值。"
+
+msgid "TVPInvalidCommandLineParam"
+msgstr "命令行参数 %1 = %2 是不合法的。"
+
+msgid "TVPNotImplemented"
+msgstr "未实现。"
+
+msgid "TVPCannotOpenStorage"
+msgstr "不能打开文件 %1"
+
+msgid "TVPCannotFindStorage"
+msgstr "不能找到文件 %1"
+
+msgid "TVPCannotOpenStorageForWrite"
+msgstr "不能写入文件 %1"
+
+msgid "TVPStorageInArchiveNotFound"
+msgstr "不能在归档 %2 中找到文件 %1"
+
+msgid "TVPInvalidPathName"
+msgstr "非法路径名 %1"
+
+msgid "TVPUnsupportedMediaName"
+msgstr "不支持的媒体类型文件 \"%1\""
+
+msgid "TVPCannotUnbindXP3EXE"
+msgstr "不能解绑 XP3 exe %1"
+
+msgid "TVPCannotFindXP3Mark"
+msgstr "%1 不是 XP3 归档文件或者是未支持的文件"
+
+msgid "TVPMissingPathDelimiterAtLast"
+msgstr "请使用路径分隔符 '>' 或者 '/'"
+
+msgid "TVPFilenameContainsSharpWarn"
+msgstr "（Attention）文件名 \"%1\" 含有 '#'"
+
+msgid "TVPCannotGetLocalName"
+msgstr "不能从 %1 中获取到本地名称"
+
+msgid "TVPReadError"
+msgstr "读取发生了错误"
+
+msgid "TVPWriteError"
+msgstr "写入发生了错误"
+
+msgid "TVPSeekError"
+msgstr "查找发生了错误"
+
+msgid "TVPTruncateError"
+msgstr "截取过程中发生了错误"
+
+msgid "TVPInsufficientMemory"
+msgstr "不能分配内存"
+
+msgid "TVPUncompressionFailed"
+msgstr "解压缩失败"
+
+msgid "TVPCompressionFailed"
+msgstr "压缩失败"
+
+msgid "TVPCannotWriteToArchive"
+msgstr "不能写入到归档中"
+
+msgid "TVPUnsupportedCipherMode"
+msgstr "不支持密码模式 %1"
+
+msgid "TVPUnsupportedEncoding"
+msgstr "不支持的编码格式 %1"
+
+msgid "TVPUnsupportedModeString"
+msgstr "不能识别 %1 文字列。"
+
+msgid "TVPUnknownGraphicFormat"
+msgstr "%1 是未知的图片格式"
+
+msgid "TVPCannotSuggestGraphicExtension"
+msgstr "未找到对应扩展名为 %1 的文件"
+
+msgid "TVPMaskSizeMismatch"
+msgstr "mask 图片的大小和主要图片的大小不一致"
+
+msgid "TVPProvinceSizeMismatch"
+msgstr "区域图片 %1 与主要图片的大小不一致"
+
+msgid "TVPImageLoadError"
+msgstr "载入图片中发生了错误 /%1"
+
+msgid "TVPJPEGLoadError"
+msgstr "载入 JPEG 图片发生了错误 /%1"
+
+msgid "TVPPNGLoadError"
+msgstr "载入 PNG 图片过程中发生了错误 /%1"
+
+msgid "TVPERILoadError"
+msgstr "载入 ERI 图片过程中发生了错误 /%1"
+
+msgid "TVPTLGLoadError"
+msgstr "载入 TLG 图片过程中发生了错误 /%1"
+
+msgid "TVPInvalidImageSaveType"
+msgstr "图片保存格式无效（%1）"
+
+msgid "TVPInvalidOperationFor8BPP"
+msgstr "发生了对 8bpp 图片格式无效的操作。"
+
+msgid "TVPInvalidOperationFor32BPP"
+msgstr "发生了对 32bpp 图片格式无效的操作。"
+
+msgid "TVPSpecifyWindow"
+msgstr "请声明为 Window 类的对象。"
+
+msgid "TVPSpecifyLayer"
+msgstr "请声明为 Layer 类的对象。"
+
+msgid "TVPSpecifyLayerOrBitmap"
+msgstr "请声明为 Layer 类或者 Bitmap 类的对象。"
+
+msgid "TVPCannotAcceptModeAuto"
+msgstr "不能指定为 omAuto 模式。"
+
+msgid "TVPCannotCreateEmptyLayerImage"
+msgstr "图层大小不能指定为 0 以下的数值。"
+
+msgid "TVPCannotSetPrimaryInvisible"
+msgstr "不能把主图层设为为隐藏。"
+
+msgid "TVPCannotMovePrimary"
+msgstr "不能移动主图层。"
+
+msgid "TVPCannotSetParentSelf"
+msgstr "不能将父图层设置为自身。"
+
+msgid "TVPCannotMoveNextToSelfOrNotSiblings"
+msgstr "Cannot move next to self or not siblings"
+
+msgid "TVPCannotMovePrimaryOrSiblingless"
+msgstr "Cannot move primary or siblingless"
+
+msgid "TVPCannotMoveToUnderOtherPrimaryLayer"
+msgstr "Cannot move to under Other primary layer"
+
+msgid "TVPInvalidImagePosition"
+msgstr "图片位置设置有误。"
+
+msgid "TVPCannotSetModeToDisabledOrModal"
+msgstr "已经设置为 Modal 层或者不能设置隐藏层/无效层为弹出层。"
+
+msgid "TVPNotDrawableLayerType"
+msgstr "非可描绘层类型。"
+
+msgid "TVPSourceLayerHasNoImage"
+msgstr "来源 layer 未包含图片。"
+
+msgid "TVPUnsupportedLayerType"
+msgstr "未被支持的 layer 类型 %1"
+
+msgid "TVPNotDrawableFaceType"
+msgstr "不可描绘的 face 类型"
+
+msgid "TVPCannotConvertLayerTypeUsingGivenDirection"
+msgstr "不能转换 layer 类型到指定的 direction"
+
+msgid "TVPNegativeOpacityNotSupportedOnThisFace"
+msgstr "当前字型不支持负透明度。"
+
+msgid "TVPSrcRectOutOfBitmap"
+msgstr "转换源包含 bitmap 以外的领域。请指定为正确的转换范围。"
+
+msgid "TVPBoxBlurAreaMustContainCenterPixel"
+msgstr "模糊（blur）矩形的范围一定是包含（0,0）的。不能指定 left 和 right 两个都是正直或者都是负值。（top 和 bottom 一样。）"
+
+msgid "TVPBoxBlurAreaMustBeSmallerThan16Million"
+msgstr "指定的模糊（blur）矩形的范围太大。模糊矩形的像素值应小于 1677 万。"
+
+msgid "TVPCannotChangeFocusInProcessingFocus"
+msgstr "正在处理 focus 的过程中不能进行新的 focus 指定。"
+
+msgid "TVPWindowHasNoLayer"
+msgstr "Window 内未找到 Layer。"
+
+msgid "TVPWindowHasAlreadyPrimaryLayer"
+msgstr "Window 已经设置过 PrimaryLayer 了。"
+
+msgid "TVPSpecifiedEventNeedsParameter"
+msgstr "事件（Event）%1 需要指定参数（Parameter）。"
+
+msgid "TVPSpecifiedEventNeedsParameter2"
+msgstr "事件（Event）%1 需要指定第二个参数（Parameter）%2"
+
+msgid "TVPSpecifiedEventNameIsUnknown"
+msgstr "未知事件(Event) %1"
+
+msgid "TVPOutOfRectangle"
+msgstr "超过允许矩形指定的范围了"
+
+msgid "TVPInvalidMethodInUpdating"
+msgstr "在画面更新时不能执行该方法"
+
+msgid "TVPCannotCreateInstance"
+msgstr "实例化当前类失败"
+
+msgid "TVPUnknownWaveFormat"
+msgstr "未支持的 Wave 文件格式 %1"
+
+msgid "TVPCurrentTransitionMustBeStopping"
+msgstr "在使用新的 Transition 之前需要先停止之前的。在同一 Layer 上执行复数的 Transition 时发生了错误。"
+
+msgid "TVPTransHandlerError"
+msgstr "Transition Handler 发生了错误：%1"
+
+msgid "TVPTransAlreadyRegistered"
+msgstr "Transition %1 已被注册过"
+
+msgid "TVPCannotFindTransHander"
+msgstr "未找到 %1 transition handler."
+
+msgid "TVPSpecifyTransitionSource"
+msgstr "请声明 transition 发生的源"
+
+msgid "TVPLayerCannotHaveImage"
+msgstr "Layer 不能持有图片"
+
+msgid "TVPTransitionSourceAndDestinationMustHaveImage"
+msgstr "执行 transition 的源和目的都需要持有图片"
+
+msgid "TVPCannotLoadRuleGraphic"
+msgstr "载入 rule 图片 %1 失败"
+
+msgid "TVPSpecifyOption"
+msgstr "请指定 %1 设置"
+
+msgid "TVPTransitionLayerSizeMismatch"
+msgstr "发生 transition 的源（%1）和目的（%2） 的 layer 大小不一致"
+
+msgid "TVPTransitionMutualSource"
+msgstr "发生 transition 的源是自身"
+
+msgid "TVPHoldDestinationAlphaParameterIsNowDeprecated"
+msgstr "警告：%1 方法的第二个参数 %2 已在 2.23 beta 2 中开始不推荐使用。请使用 Layer.holdAlpha 属性作替代。"
+
+msgid "TVPCannotConnectMultipleWaveSoundBufferAtOnce"
+msgstr "不能同时连接多个 WaveSoundBuffer"
+
+msgid "TVPInvalidWindowSizeMustBeIn64to32768"
+msgstr "Window 大小必须在 64 到 32768 之间"
+
+msgid "TVPInvalidOverlapCountMustBeIn2to32"
+msgstr "Overlap 数值范围必须在 2 到 32 之间"
+
+msgid "TVPCurrentlyAsyncLoadBitmap"
+msgstr "正在异步载入 Bitmap 中"
+
+msgid "TVPFaildClipboardCopy"
+msgstr "拷贝粘贴板数据失败"
+
+msgid "TVPInvalidUTF16ToUTF8"
+msgstr "UTF-16 载入失败，转换为 UTF-8"
+
+msgid "TVPInfoLoadingStartupScript"
+msgstr "（info）读取启动脚本中："
+
+msgid "TVPInfoStartupScriptEnded"
+msgstr "（info）启动脚本读取完毕！"
+
+msgid "TVPTjsCharMustBeTwoOrFour"
+msgstr "sizeof(tjs_char) 只能为 2 或者 4"
+
+msgid "TVPMediaNameHadAlreadyBeenRegistered"
+msgstr "媒体 \"%1\" 已被注册"
+
+msgid "TVPMediaNameIsNotRegistered"
+msgstr "媒体 \"%1\" 未注册"
+
+msgid "TVPInfoRebuildingAutoPath"
+msgstr "（info）自动路径再构建中..."
+
+msgid "TVPInfoTotalFileFoundAndActivated"
+msgstr "（info）共找到 %1 个文件，已使用 %2 个文件。（耗时 %3 ms）"
+
+msgid "TVPErrorInRetrievingSystemOnActivateOnDeactivate"
+msgstr "获取 System.onActive/onDeactive 发生错误：%1"
+
+msgid "TVPTheHostIsNotA16BitUnicodeSystem"
+msgstr "主机环境为非 16 位 Unicode 系统"
+
+msgid "TVPInfoTryingToReadXp3VirtualFileSystemInformationFrom"
+msgstr "（info）尝试从 %1 中读取 XP3 虚拟文件系统信息中"
+
+msgid "TVPSpecifiedStorageHadBeenProtected"
+msgstr "指定的文件已经被保护！"
+
+msgid "TVPInfoFailed"
+msgstr "（info）失败。"
+
+msgid "TVPInfoDoneWithContains"
+msgstr "（info）完成。（共计：%1 个文件，%2 块。）"
+
+msgid "TVPSeparatorCRLF"
+msgstr "\\r\\n\\r\\n\\r\\n==============================================================================\\r\\n==============================================================================\\r\\n"
+
+msgid "TVPSeparatorCR"
+msgstr "\\n\\n\\n==============================================================================\\n==============================================================================\\n"
+
+msgid "TVPDefaultFontName"
+msgstr "微软雅黑"
+
+msgid "TVPCannotOpenFontFile"
+msgstr "不能打开字体文件 '%1$s'"
+
+msgid "TVPFontCannotBeUsed"
+msgstr "不能使用 '%1$s' 字体"
+
+msgid "TVPFontRasterizeError"
+msgstr "字体光栅化发生错误"
+
+msgid "TVPBitFieldsNotSupported"
+msgstr "不支持 BitFields"
+
+msgid "TVPCompressedBmpNotSupported"
+msgstr "不支持压缩 BMP"
+
+msgid "TVPUnsupportedColorModeForPalettImage"
+msgstr "不支持的调色图像的色彩类型"
+
+msgid "TVPNotWindowsBmp"
+msgstr "该文件不是一个 Windows BMP 文件或者 OS/2 BMP 文件"
+
+msgid "TVPUnsupportedHeaderVersion"
+msgstr "不支持的头文件版本。"
+
+msgid "TVPInfoTouching"
+msgstr "（info）触下…"
+
+msgid "TVPAbortedTimeOut"
+msgstr " ... 已中断 [已超时]"
+
+msgid "TVPAbortedLimitByte"
+msgstr " ... 已中断 [超出字节限制]"
+
+msgid "TVPFaildGlyphForDrawGlyph"
+msgstr "DrawGlyph 失败"
+
+msgid "TVPLayerObjectIsNotProperlyConstructed"
+msgstr "Panic！Layer 对象没有属性构造方法。未进行调用构造方法？"
+
+msgid "TVPUnknownUpdateType"
+msgstr "未知 Update 类型"
+
+msgid "TVPUnknownTransitionType"
+msgstr "未知 transition 类型"
+
+msgid "TVPUnsupportedUpdateTypeTutGiveUpdate"
+msgstr "Update 类型：暂不支持 tutGiveUpdate"
+
+msgid "TVPErrorCode"
+msgstr "错误代码："
+
+msgid "TVPUnsupportedJpegPalette"
+msgstr "JPEG 文件不支持色彩调整"
+
+msgid "TVPLibpngError"
+msgstr "libpng 错误。"
+
+msgid "TVPUnsupportedColorTypePalette"
+msgstr "未知色彩调色类型"
+
+msgid "TVPUnsupportedColorType"
+msgstr "未知色彩类型"
+
+msgid "TVPTooLargeImage"
+msgstr "图片过大"
+
+msgid "TVPPngSaveError"
+msgstr "保存 PNG 时出错"
+
+msgid "TVPTlgUnsupportedUniversalTransitionRule"
+msgstr "TLG 图片不能用作 province(_p) 或者 mask(_m) 图像的 universal transition rule。"
+
+msgid "TVPUnsupportedColorCount"
+msgstr "不支持的色彩数量 : "
+
+msgid "TVPDataFlagMustBeZero"
+msgstr "Data flag 必须为 0 (所有的 flag 当前都未被支持)"
+
+msgid "TVPUnsupportedColorTypeColon"
+msgstr "不支持的色彩类型："
+
+msgid "TVPUnsupportedExternalGolombBitLengthTable"
+msgstr "暂未支持外置 golomb bit length table."
+
+msgid "TVPUnsupportedEntropyCodingMethod"
+msgstr "不支持 entropy 编码方法"
+
+msgid "TVPInvalidTlgHeaderOrVersion"
+msgstr "TLG header 无效或不支持的 TLG 版本。"
+
+msgid "TVPTlgMalformedTagMissionColonAfterNameLength"
+msgstr "TLG SDS tag 结构异常，名字长度后面缺少列。"
+
+msgid "TVPTlgMalformedTagMissionEqualsAfterName"
+msgstr "TLG SDS tag 结构异常，缺少等号后面的值"
+
+msgid "TVPTlgMalformedTagMissionColonAfterVaueLength"
+msgstr "TLG SDS tag 结构异常，值长度后面缺少列。"
+
+msgid "TVPTlgMalformedTagMissionCommaAfterTag"
+msgstr "TLG SDS tag 结构异常，tag 后面缺少逗号"
+
+msgid "TVPFileSizeIsZero"
+msgstr "文件大小为 0。"
+
+msgid "TVPMemoryAllocationError"
+msgstr "分配内存时发生错误。"
+
+msgid "TVPFileReadError"
+msgstr "读取文件时发生错误。"
+
+msgid "TVPInvalidPrerenderedFontFile"
+msgstr "无效的预渲染字体文件或者未找到签名文件"
+
+msgid "TVPNot16BitUnicodeFontFile"
+msgstr "非 16bit Unicode 字体文件。"
+
+msgid "TVPInvalidHeaderVersion"
+msgstr "无效的 header 版本。"
+
+msgid "TVPTlgInsufficientMemory"
+msgstr "SaveTLG6: 内存不足"
+
+msgid "TVPTlgTooLargeBitLength"
+msgstr "SaveTLG6:bit 长度太大 (可能是所给图片尺寸过大的原因。)"
+
+msgid "TVPCannotRetriveInterfaceFromDrawDevice"
+msgstr "不能从绘图设备中获取到 interface 信息。"
+
+msgid "TVPIllegalCharacterConversionUTF16toUTF8"
+msgstr "Illegal character conversion. UTF-16 to UTF-8."
+
+msgid "TVPRequireLayerTreeOwnerInterfaceInterface"
+msgstr "require layerTreeOwnerInterface interface"
+
+msgid "TVPScriptExceptionRaised"
+msgstr "触发脚本异常"
+
+msgid "TVPHardwareExceptionRaised"
+msgstr "触发硬件异常"
+
+msgid "TVPMainCDPName"
+msgstr "脚本编辑器（主要）"
+
+msgid "TVPExceptionCDPName"
+msgstr "脚本编辑器（异常通知）"
+
+msgid "TVPCannnotLocateUIDLLForFolderSelection"
+msgstr "未找到 krdevui.dll，因此无法手动选择文件夹或封包。\n请通过命令行手动指定目标文件夹或封包。"
+
+msgid "TVPInvalidUIDLL"
+msgstr "krdevui.dll加载失败或版本不匹配"
+
+msgid "TVPInvalidBPP"
+msgstr "色彩深度无效"
+
+msgid "TVPCannotLoadPlugin"
+msgstr "插件加载失败：%1"
+
+msgid "TVPNotValidPlugin"
+msgstr "无效插件：%1"
+
+msgid "TVPPluginUninitFailed"
+msgstr "插件卸载失败"
+
+msgid "TVPCannnotLinkPluginWhilePluginLinking"
+msgstr "不能在加载插件时加载其它的插件"
+
+msgid "TVPNotSusiePlugin"
+msgstr "不是 Susie 插件"
+
+msgid "TVPSusiePluginError"
+msgstr "Susie 插件错误：%1"
+
+msgid "TVPCannotReleasePlugin"
+msgstr "插件在使用过程中不能进行释放"
+
+msgid "TVPNotLoadedPlugin"
+msgstr "未加载插件：%1"
+
+msgid "TVPCannotAllocateBitmapBits"
+msgstr "不能为 Bitmap 分配内存：%1（size=%2）"
+
+msgid "TVPScanLineRangeOver"
+msgstr "%1 超过了扫描范围（正常为 0 到 %2）"
+
+msgid "TVPPluginError"
+msgstr "插件出现错误：%1"
+
+msgid "TVPInvalidCDDADrive"
+msgstr "无效的 CD-DA 驱动器"
+
+msgid "TVPCDDADriveNotFound"
+msgstr "未找到 CD-DA 驱动器"
+
+msgid "TVPMCIError"
+msgstr "MCI 发生了错误：%1"
+
+msgid "TVPInvalidSMF"
+msgstr "无效的 SMF 文件：%1"
+
+msgid "TVPMalformedMIDIMessage"
+msgstr "指定了无效的 MIDI 信息"
+
+msgid "TVPCannotInitDirectSound"
+msgstr "DirectSound 初始化失败：%1"
+
+msgid "TVPCannotCreateDSSecondaryBuffer"
+msgstr "创建 DirectSound 辅助缓冲区失败：%1/%2"
+
+msgid "TVPInvalidLoopInformation"
+msgstr "无效的 loop 信息：%1"
+
+msgid "TVPNotChildMenuItem"
+msgstr "指定的菜单项不是子菜单项"
+
+msgid "TVPCannotInitDirect3D"
+msgstr "Direct3D 初始化失败：%1"
+
+msgid "TVPCannotFindDisplayMode"
+msgstr "未找到合适的画面显示模式：%1"
+
+msgid "TVPCannotSwitchToFullScreen"
+msgstr "不能切换到全屏模式：%1"
+
+msgid "TVPInvalidPropertyInFullScreen"
+msgstr "在全屏模式下无效的属性：%1"
+
+msgid "TVPInvalidMethodInFullScreen"
+msgstr "在全屏模式下无效的方法：%2"
+
+msgid "TVPCannotLoadCursor"
+msgstr "不能载入鼠标光标：%1"
+
+msgid "TVPCannotLoadKrMovieDLL"
+msgstr "无法加载 krmovie.dll。播放视频和 flash 需要 krmovie.dll/krflash.dll。"
+
+msgid "TVPInvalidKrMovieDLL"
+msgstr "无效的 krmovie.dll 文件。krmovie.dll/krflash.dll 版本有误。"
+
+msgid "TVPErrorInKrMovieDLL"
+msgstr "krmovie.dll 出现错误：%1"
+
+msgid "TVPWindowAlreadyMissing"
+msgstr "Window 已经不存在"
+
+msgid "TVPPrerenderedFontMappingFailed"
+msgstr "预渲染字体映射失败：%1"
+
+msgid "TVPConfigFailOriginalFileCannotBeRewritten"
+msgstr "不能写入 %1 文件"
+
+msgid "TVPConfigFailTempExeNotErased"
+msgstr "不能删除文件。%1 文件不存在。"
+
+msgid "TVPExecutionFail"
+msgstr "不能执行 %1 文件。"
+
+msgid "TVPPluginUnboundFunctionError"
+msgstr "未在文件中找到插件所需要 %1 函数。"
+
+msgid "TVPExceptionHadBeenOccured"
+msgstr " = (触发异常)"
+
+msgid "TVPConsoleResult"
+msgstr "控制台："
+
+msgid "TVPInfoListingFiles"
+msgstr "（info）正在列出 %1 中的文件..."
+
+msgid "TVPInfoTotalPhysicalMemory"
+msgstr "（info）总物理内存：%1"
+
+msgid "TVPInfoSelectedProjectDirectory"
+msgstr "（info）已选择项目的目录：%1"
+
+msgid "TVPTooSmallExecutableSize"
+msgstr "可执行文件太小"
+
+msgid "TVPInfoLoadingExecutableEmbeddedOptionsFailed"
+msgstr "（info）载入可执行文件内置选项失败（已忽略）：%1"
+
+msgid "TVPInfoLoadingExecutableEmbeddedOptionsSucceeded"
+msgstr "（info）成功载入可执行文件内置选项。"
+
+msgid "TVPFileNotFound"
+msgstr "未找到文件。"
+
+msgid "TVPInfoLoadingConfigurationFileFailed"
+msgstr "（info）载入配置文件 \"%1\" 失败（已忽略）：%2"
+
+msgid "TVPInfoLoadingConfigurationFileSucceeded"
+msgstr "（info）成功载入配置文件 \"%1\""
+
+msgid "TVPInfoDataPathDoesNotExistTryingToMakeIt"
+msgstr "（info）Data 路径不存在，尝试新建... %1"
+
+msgid "TVPOk"
+msgstr "成功。"
+
+msgid "TVPFaild"
+msgstr "失败。"
+
+msgid "TVPInfoDataPath"
+msgstr "（info）Data 路径：%1"
+
+msgid "TVPInfoSpecifiedOptionEarlierItemHasMorePriority"
+msgstr "（info）已声明设置（越早声明的优先级更高）："
+
+msgid "TVPNone"
+msgstr "（无）"
+
+msgid "TVPInfoCpuClockRoughly"
+msgstr "（info）CPU 时钟频率（大致数值）：%dMHz"
+
+msgid "TVPProgramStartedOn"
+msgstr "程序已在 %1（%2）上启动。"
+
+msgid "TVPKirikiri"
+msgstr "吉里吉里"
+
+msgid "TVPUnknownError"
+msgstr "未知错误！"
+
+msgid "TVPExitCode"
+msgstr "退出识别代码：%d\\n"
+
+msgid "TVPFatalError"
+msgstr "发生了致命的错误。"
+
+msgid "TVPEnableDigitizer"
+msgstr "指点数位设备可用。"
+
+msgid "TVPTouchIntegratedTouch"
+msgstr "当前机器有集成数位设备。"
+
+msgid "TVPTouchExternalTouch"
+msgstr "当前机器有外置触控数位设备。"
+
+msgid "TVPTouchIntegratedPen"
+msgstr "当前机器有集成数位笔设备。"
+
+msgid "TVPTouchExternalPen"
+msgstr "当前机器有外置数位笔设备。"
+
+msgid "TVPTouchMultiInput"
+msgstr "当前机器支持多点触控。"
+
+msgid "TVPTouchReady"
+msgstr "触控数位设备已准备就绪。"
+
+msgid "TVPCpuCheckFailure"
+msgstr "CPU 检测失败。"
+
+msgid "TVPCpuCheckFailureCpuFamilyOrLesserIsNotSupported"
+msgstr "CPU 检测失败：不支持低于 P4 系列的 CPU。"
+
+msgid "TVPInfoCpuNumber"
+msgstr "（info）CPU #%1 : "
+
+msgid "TVPCpuCheckFailureNotSupprtedCpu"
+msgstr "CPU 检查失败：不支持的 CPU 型号 \r\n%1"
+
+msgid "TVPInfoFinallyDetectedCpuFeatures"
+msgstr "（info）最终检测出 CPU 所支持的特性：%1"
+
+msgid "TVPCpuCheckFailureNotSupportedCpu"
+msgstr "CPU 检查失败：不支持的 CPU 型号 \r\n%1"
+
+msgid "TVPInfoCpuClock"
+msgstr "（info）CPU 时钟频率：%.1fMHz"
+
+msgid "TVPLayerBitmapBufferUnderrunDetectedCheckYourDrawingCode"
+msgstr "Layer bitmap：出现缓冲区干涸，请检查你的渲染代码！"
+
+msgid "TVPLayerBitmapBufferOverrunDetectedCheckYourDrawingCode"
+msgstr "Layer bitmap：出现缓冲区溢出，请检查你的渲染代码！"
+
+msgid "TVPFaildToCreateDirect3D"
+msgstr "创建 Direct3D9 失败。"
+
+msgid "TVPFaildToDecideBackbufferFormat"
+msgstr "备用缓冲区格式未确定。"
+
+msgid "TVPFaildToCreateDirect3DDevice"
+msgstr "创建 Direct3D9 设备失败。"
+
+msgid "TVPFaildToSetViewport"
+msgstr "设置 viewport 失败。"
+
+msgid "TVPFaildToSetRenderState"
+msgstr "设置渲染状态失败。"
+
+msgid "TVPWarningImageSizeTooLargeMayBeCannotCreateTexture"
+msgstr "warning : 图像尺寸过大。可能创建贴图会失败。"
+
+msgid "TVPUsePowerOfTwoSurface"
+msgstr "请使用能被 2 整除的 surface。"
+
+msgid "TVPCannotAllocateD3DOffScreenSurface"
+msgstr "不能分配 D3D 离屏 surface/HR=%1"
+
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDevices"
+msgstr "BasicDrawDevice: 创建 Direct3D9 设备失败：%1"
+
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDevicesUnknownReason"
+msgstr "BasicDrawDevice: 创建 Direct3D9 设备失败：未知原因"
+
+msgid "TVPBasicDrawDeviceTextureHasAlreadyBeenLocked"
+msgstr "BasicDrawDevice: Texture 已被锁定（在未调用 EndBitmapCompletion() 的情况下 StartBitmapCompletion() 已经被调用了 2 次）,解锁中"
+
+msgid "TVPInternalErrorResult"
+msgstr "内部错误 /HR=%1"
+
+msgid "TVPBasicDrawDeviceInfPolygonDrawingFailed"
+msgstr "BasicDrawDevice: (inf) 多边形渲染失败/HR=%1"
+
+msgid "TVPBasicDrawDeviceInfDirect3DDevicePresentFailed"
+msgstr "BasicDrawDevice: (inf) IDirect3DDevice::Present 失败/HR=%1"
+
+msgid "TVPChangeDisplaySettingsFailedDispChangeRestart"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_RESTART"
+
+msgid "TVPChangeDisplaySettingsFailedDispChangeBadFlags"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_BADFLAGS"
+
+msgid "TVPChangeDisplaySettingsFailedDispChangeBadParam"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_BADPARAM"
+
+msgid "TVPChangeDisplaySettingsFailedDispChangeFailed"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_FAILED"
+
+msgid "TVPChangeDisplaySettingsFailedDispChangeBadMode"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_BADMODE"
+
+msgid "TVPChangeDisplaySettingsFailedDispChangeNotUpdated"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_NOTUPDATED"
+
+msgid "TVPChangeDisplaySettingsFailedUnknownReason"
+msgstr "ChangeDisplaySettings 失败: DISP_CHANGE_RESTART"
+
+msgid "TVPFailedToCreateScreenDC"
+msgstr "创建在屏（screen） DC 失败"
+
+msgid "TVPFailedToCreateOffscreenBitmap"
+msgstr "创建离屏（offscreen）bitmap 失败"
+
+msgid "TVPFailedToCreateOffscreenDC"
+msgstr "创建离屏（offscreen）DC 失败"
+
+msgid "TVPInfoSusiePluginInfo"
+msgstr "（info）Susie 插件信息：%1"
+
+msgid "TVPSusiePluginUnsupportedBitmapHeader"
+msgstr "所给定的位图文件头不被 Susie 插件支持。"
+
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDevice"
+msgstr "BasicDrawDevice: 创建 Direct3D 设备失败: %1"
+
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDeviceUnknownReason"
+msgstr "BasicDrawDevice: 创建 Direct3D 失败: 未知原因"
+
+msgid "TVPCouldNotCreateAnyDrawDevice"
+msgstr "（fatal）不能创建任何绘图对象。"
+
+msgid "TVPBasicDrawDeviceDoesNotSupporteLayerManagerMoreThanOne"
+msgstr "不支持超过 1 个以上的 layer 管理器 \"Basic Draw\""
+
+msgid "TVPInvalidVideoSize"
+msgstr "无效的视频尺寸"
+
+msgid "TVPRoughVsyncIntervalReadFromApi"
+msgstr "从 Rough VSync API 中读取：%1"
+
+msgid "TVPRoughVsyncIntervalStillSeemsWrong"
+msgstr "Rough VSync 内部仍旧有错误，假定为默认值（16）"
+
+msgid "TVPInfoFoundDirect3DInterface"
+msgstr "（info）未找到 IDirect3D9 或更新的接口。获取正在使用的 Direct3D 驱动的信息。"
+
+msgid "TVPInfoFaild"
+msgstr "（info）失败。"
+
+msgid "TVPInfoDirect3D"
+msgstr "（info）载入 Direct3D..."
+
+msgid "TVPCannotLoadD3DDLL"
+msgstr "无法加载 d3d9.dll"
+
+msgid "TVPNotFoundDirect3DCreate"
+msgstr "在 d3d9.dll 中未找到 Direct3DCreate9 函数。"
+
+msgid "TVPInfoEnvironmentUsing"
+msgstr "（info）environment：使用 %1"
+
+msgid "TVPInfoSearchBestFullscreenResolution"
+msgstr "（info）查找全屏最佳分辨率中..."
+
+msgid "TVPInfoConditionPreferredScreenMode"
+msgstr "（info）condition：推荐屏幕模式：%1"
+
+msgid "TVPInfoConditionMode"
+msgstr "（info）condition：模式：%1"
+
+msgid "TVPInfoConditionZoomMode"
+msgstr "（info）condition：缩放模式：%1"
+
+msgid "TVPInfoEnvironmentDefaultScreenMode"
+msgstr "（info）environment：默认屏幕模式：%1"
+
+msgid "TVPInfoEnvironmentDefaultScreenAspectRatio"
+msgstr "（info）environment：默认屏幕比例：%1:%2"
+
+msgid "TVPInfoEnvironmentAvailableDisplayModes"
+msgstr "（info）environment：可用显示模式："
+
+msgid "TVPInfoNotFoundScreenModeFromDriver"
+msgstr "（info）Panic！未从驱动中找到合适的屏幕模式。尝试使用默认画面尺寸和色彩数。"
+
+msgid "TVPInfoResultCandidates"
+msgstr "（info）result： 候选："
+
+msgid "TVPInfoTryScreenMode"
+msgstr "（info）尝试使用 %1 屏幕显示模式。"
+
+msgid "TVPAllScreenModeError"
+msgstr "所有屏幕显示模式都已测试，未找到可用的。"
+
+msgid "TVPInfoChangeScreenModeSuccess"
+msgstr "（info）成功切换屏幕显示模式。"
+
+msgid "TVPSelectXP3FileOrFolder"
+msgstr "请选择 XP3 封包或文件夹。"
+
+msgid "TVPD3dErrDeviceLost"
+msgstr "D3D：设备已失效，但当前无法进行重置。例如：有其他进程进行过独占式全屏或输出屏幕进行过切换。"
+
+msgid "TVPD3dErrDriverIinternalError"
+msgstr "D3D：内部驱动错误。请关闭程序后重新启动。"
+
+msgid "TVPD3dErrInvalidCall"
+msgstr "D3D：调用了无效的方法。例如：函数的参数不是一个有效的指针（pointer）。"
+
+msgid "TVPD3dErrOutOfVideoMemory"
+msgstr "D3D：Direct3D 没有足够的显存来执行该操作。"
+
+msgid "TVPD3dErrOutOfMemory"
+msgstr "D3D：Direct3D 不能分配有效的内存来调用。"
+
+msgid "TVPD3dErrWrongTextureFormat"
+msgstr "D3D：错误的纹理格式。"
+
+msgid "TVPD3dErrUnsuportedColorOperation"
+msgstr "D3D：不支持的色彩操作类型。"
+
+msgid "TVPD3dErrUnsuportedColorArg"
+msgstr "D3D：不支持的色彩参数。"
+
+msgid "TVPD3dErrUnsuportedAalphtOperation"
+msgstr "D3D：不支持的 alpha 通道操作类型。"
+
+msgid "TVPD3dErrUnsuportedAlphaArg"
+msgstr "D3D：不支持的 alpha 通道参数类型。"
+
+msgid "TVPD3dErrTooManyOperations"
+msgstr "D3D：此应用程序正在请求进行多于设备支持数量的纹理过滤操作。"
+
+msgid "TVPD3dErrConflictioningTextureFilter"
+msgstr "D3D：当前纹理过滤不能同时使用。"
+
+msgid "TVPD3dErrUnsuportedFactorValue"
+msgstr "D3D：不支持的纹理因子值：未被使用或仅用于老旧设备。"
+
+msgid "TVPD3dErrConflictioningRenderState"
+msgstr "D3D：不能同时设置渲染状态。"
+
+msgid "TVPD3dErrUnsupportedTextureFilter"
+msgstr "D3D：不支持的纹理过滤类型。"
+
+msgid "TVPD3dErrConflictioningTexturePalette"
+msgstr "D3D：不能同时使用当前纹理。"
+
+msgid "TVPD3dErrNotFound"
+msgstr "D3D：未找到项目未找到。"
+
+msgid "TVPD3dErrMoreData"
+msgstr "D3D：可以声明更多的缓冲数据。"
+
+msgid "TVPD3dErrDeviceNotReset"
+msgstr "D3D：设备已失效，当前可以进行重置。"
+
+msgid "TVPD3dErrNotAvailable"
+msgstr "D3D：当前设备不支持所查询的技术。"
+
+msgid "TVPD3dErrInvalidDevice"
+msgstr "D3D：请求的设备类型无效。"
+
+msgid "TVPD3dErrDriverInvalidCall"
+msgstr "未使用。"
+
+msgid "TVPD3dErrWasStillDrawing"
+msgstr "D3D：正在进行 blit 操作或未完成操作。"
+
+msgid "TVPD3dErrDeviceHung"
+msgstr "D3D：硬件适配器被系统重置。"
+
+msgid "TVPD3dErrUnsupportedOverlay"
+msgstr "D3D：当前设备不支持指定的尺寸或者显示模式。"
+
+msgid "TVPD3dErrUnsupportedOverlayFormat"
+msgstr "D3D：当前设备不支持在指定的 surface 格式上 overlay。"
+
+msgid "TVPD3dErrCannotProtectContent"
+msgstr "D3D：指定的内容无法被保护。"
+
+msgid "TVPD3dErrUnsupportedCrypto"
+msgstr "D3D：不支持指定的加密算法。"
+
+msgid "TVPD3dErrPresentStatisticsDisJoint"
+msgstr "D3D：当前状态下无有序序列。"
+
+msgid "TVPD3dErrDeviceRemoved"
+msgstr "D3D：硬件适配器已被移除。"
+
+msgid "TVPD3dOkNoAutoGen"
+msgstr "D3D：成功。但是，此格式不支持自动 mipmap。"
+
+msgid "TVPD3dErrFail"
+msgstr "D3D：Direct3D 子系统内发生未知错误。"
+
+msgid "TVPD3dErrInvalidArg"
+msgstr "D3D：回调函数接受到无效的参数。"
+
+msgid "TVPD3dUnknownError"
+msgstr "D3D：未知错误。"
+
+msgid "TVPExceptionAccessViolation"
+msgstr "Access Violation：该线程尝试读取或写入一个无权访问的虚拟地址。"
+
+msgid "TVPExceptionBreakpoint"
+msgstr "Break Point：触发断点。"
+
+msgid "TVPExceptionDatatypeMisalignment"
+msgstr "Data Type Misalignment：线程尝试在未提供自动对齐的设备上写入未经对齐的数据。"
+
+msgid "TVPExceptionSingleStep"
+msgstr "Single Step： 标志寄存器的TF位为1时，每执行一条指令就会引发该异常。主要用于单步调试。"
+
+msgid "TVPExceptionArrayBoundsExceeded"
+msgstr "Array Bounds Exceede：线程尝试越界访问数组元素，边界检查由硬件底层实现。"
+
+msgid "TVPExceptionFltDenormalOperand"
+msgstr "Denormal Operand：浮点运算操作数异常，由于异常值太小而无法表达为标准浮点值。"
+
+msgid "TVPExceptionFltDivideByZero"
+msgstr "Divide By Zero：线程尝试用一个浮点数进行零除。"
+
+msgid "TVPExceptionFltInexactResult"
+msgstr "Inexact Result：浮点运算的结果不能精确地表示为小数。"
+
+msgid "TVPExceptionFltInvalidOperation"
+msgstr "Invalid Operation：无效的运算符操作。"
+
+msgid "TVPExceptionFltOverflow"
+msgstr "Overflow：浮点运算的指数大于相应类型允许的量值。"
+
+msgid "TVPExceptionFltStackCheck"
+msgstr "Stack Check：由于浮点操作，堆栈已溢出或正在溢出。"
+
+msgid "TVPExceptionFltUnderflow"
+msgstr "Underflow：浮点运算的指数小于相应类型允许的幅度。"
+
+msgid "TVPExceptionIntDivideByZero"
+msgstr "Divide By Zero：线程尝试用一个整数进行零除。"
+
+msgid "TVPExceptionIntOverflow"
+msgstr "Overflow：整数运算结果溢出。在某些情况下，这将导致某些操作无法设置进位标志。"
+
+msgid "TVPExceptionPrivInstruction"
+msgstr "Priv Instruction：线程尝试执行一条当前CPU模式下不允许的指令。"
+
+msgid "TVPExceptionNoncontinuableException"
+msgstr "Noncontinuable Exception：在不可继续执行的错误发生后，线程依然尝试继续执行。"
+
+msgid "TVPExceptionGuardPage"
+msgstr "Guard Page：线程访问了分配在 PAGE_GUARD 修饰符上的内存。"
+
+msgid "TVPExceptionIllegalInstruction"
+msgstr "Illegal Instruction：线程尝试执行一个无效的指令集。"
+
+msgid "TVPExceptionInPageError"
+msgstr "In Page Error：线程尝试访问不存在的内存页，且系统无法加载内存页。例如：当通过网络通信时网络断开，则可能触发此错误。"
+
+msgid "TVPExceptionInvalidDisposition"
+msgstr "Invalid Disposition：异常处理程序向异常调度程序返回了一个无效值，在高级编程语言中（如C、C++）不应该出现此错误。"
+
+msgid "TVPExceptionInvalidHandle"
+msgstr "Invalid Handle：线程使用了一个无效的内核句柄（可能因为已被关闭）。"
+
+msgid "TVPExceptionStackOverflow"
+msgstr "Stack Overflow：线程栈溢出。"
+
+msgid "TVPExceptionUnwindCconsolidate"
+msgstr "Unwind Consolidate：已进行帧合并。"
+
+msgid "TVPCannotShowModalAreadyShowed"
+msgstr "弹窗已显示或无法显示。"
+
+msgid "TVPCannotShowModalSingleWindow"
+msgstr "不能在单窗口模式下显示弹窗。"
+

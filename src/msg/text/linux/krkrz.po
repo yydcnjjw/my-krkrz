@@ -1,0 +1,786 @@
+# Chinese translations for PACKAGE package
+# PACKAGE 软件包的简体中文翻译.
+# Copyright (C) 2020 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#  <yydcnjjw@gmail.com>, 2020.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-01-11 20:33+0800\n"
+"PO-Revision-Date: 2020-01-11 20:44+0800\n"
+"Last-Translator:  <yydcnjjw@gmail.com>\n"
+"Language-Team: Chinese (simplified) <i18n-zh@googlegroups.com>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: MsgLoad.cpp:11
+msgid "TVPScriptExceptionRaised"
+msgstr ""
+
+#: MsgLoad.cpp:12
+msgid "TVPHardwareExceptionRaised"
+msgstr ""
+
+#: MsgLoad.cpp:13
+msgid "TVPMainCDPName"
+msgstr ""
+
+#: MsgLoad.cpp:14
+msgid "TVPExceptionCDPName"
+msgstr ""
+
+#: MsgLoad.cpp:15
+msgid "TVPCannnotLocateUIDLLForFolderSelection"
+msgstr ""
+
+#: MsgLoad.cpp:16
+msgid "TVPInvalidUIDLL"
+msgstr ""
+
+#: MsgLoad.cpp:17
+msgid "TVPInvalidBPP"
+msgstr ""
+
+#: MsgLoad.cpp:18
+msgid "TVPCannotLoadPlugin"
+msgstr ""
+
+#: MsgLoad.cpp:19
+msgid "TVPNotValidPlugin"
+msgstr ""
+
+#: MsgLoad.cpp:20
+msgid "TVPPluginUninitFailed"
+msgstr ""
+
+#: MsgLoad.cpp:21
+msgid "TVPCannnotLinkPluginWhilePluginLinking"
+msgstr ""
+
+#: MsgLoad.cpp:22
+msgid "TVPNotSusiePlugin"
+msgstr ""
+
+#: MsgLoad.cpp:23
+msgid "TVPSusiePluginError"
+msgstr ""
+
+#: MsgLoad.cpp:24
+msgid "TVPCannotReleasePlugin"
+msgstr ""
+
+#: MsgLoad.cpp:25
+msgid "TVPNotLoadedPlugin"
+msgstr ""
+
+#: MsgLoad.cpp:26
+msgid "TVPCannotAllocateBitmapBits"
+msgstr ""
+
+#: MsgLoad.cpp:27
+msgid "TVPScanLineRangeOver"
+msgstr ""
+
+#: MsgLoad.cpp:28
+msgid "TVPPluginError"
+msgstr ""
+
+#: MsgLoad.cpp:29
+msgid "TVPInvalidCDDADrive"
+msgstr ""
+
+#: MsgLoad.cpp:30
+msgid "TVPCDDADriveNotFound"
+msgstr ""
+
+#: MsgLoad.cpp:31
+msgid "TVPMCIError"
+msgstr ""
+
+#: MsgLoad.cpp:32
+msgid "TVPInvalidSMF"
+msgstr ""
+
+#: MsgLoad.cpp:33
+msgid "TVPMalformedMIDIMessage"
+msgstr ""
+
+#: MsgLoad.cpp:34
+msgid "TVPCannotInitDirectSound"
+msgstr ""
+
+#: MsgLoad.cpp:35
+msgid "TVPCannotCreateDSSecondaryBuffer"
+msgstr ""
+
+#: MsgLoad.cpp:36
+msgid "TVPInvalidLoopInformation"
+msgstr ""
+
+#: MsgLoad.cpp:37
+msgid "TVPNotChildMenuItem"
+msgstr ""
+
+#: MsgLoad.cpp:38
+msgid "TVPCannotInitDirect3D"
+msgstr ""
+
+#: MsgLoad.cpp:39
+msgid "TVPCannotFindDisplayMode"
+msgstr ""
+
+#: MsgLoad.cpp:40
+msgid "TVPCannotSwitchToFullScreen"
+msgstr ""
+
+#: MsgLoad.cpp:41
+msgid "TVPInvalidPropertyInFullScreen"
+msgstr ""
+
+#: MsgLoad.cpp:42
+msgid "TVPInvalidMethodInFullScreen"
+msgstr ""
+
+#: MsgLoad.cpp:43
+msgid "TVPCannotLoadCursor"
+msgstr ""
+
+#: MsgLoad.cpp:44
+msgid "TVPCannotLoadKrMovieDLL"
+msgstr ""
+
+#: MsgLoad.cpp:45
+msgid "TVPInvalidKrMovieDLL"
+msgstr ""
+
+#: MsgLoad.cpp:46
+msgid "TVPErrorInKrMovieDLL"
+msgstr ""
+
+#: MsgLoad.cpp:47
+msgid "TVPWindowAlreadyMissing"
+msgstr ""
+
+#: MsgLoad.cpp:48
+msgid "TVPPrerenderedFontMappingFailed"
+msgstr ""
+
+#: MsgLoad.cpp:49
+msgid "TVPConfigFailOriginalFileCannotBeRewritten"
+msgstr ""
+
+#: MsgLoad.cpp:50
+msgid "TVPConfigFailTempExeNotErased"
+msgstr ""
+
+#: MsgLoad.cpp:51
+msgid "TVPExecutionFail"
+msgstr ""
+
+#: MsgLoad.cpp:52
+msgid "TVPPluginUnboundFunctionError"
+msgstr ""
+
+#: MsgLoad.cpp:53
+msgid "TVPExceptionHadBeenOccured"
+msgstr ""
+
+#: MsgLoad.cpp:54
+msgid "TVPConsoleResult"
+msgstr ""
+
+#: MsgLoad.cpp:55
+msgid "TVPInfoListingFiles"
+msgstr ""
+
+#: MsgLoad.cpp:56
+msgid "TVPInfoTotalPhysicalMemory"
+msgstr ""
+
+#: MsgLoad.cpp:57
+msgid "TVPInfoSelectedProjectDirectory"
+msgstr ""
+
+#: MsgLoad.cpp:58
+msgid "TVPTooSmallExecutableSize"
+msgstr ""
+
+#: MsgLoad.cpp:59
+msgid "TVPInfoLoadingExecutableEmbeddedOptionsFailed"
+msgstr ""
+
+#: MsgLoad.cpp:60
+msgid "TVPInfoLoadingExecutableEmbeddedOptionsSucceeded"
+msgstr ""
+
+#: MsgLoad.cpp:61
+msgid "TVPFileNotFound"
+msgstr ""
+
+#: MsgLoad.cpp:62
+msgid "TVPInfoLoadingConfigurationFileFailed"
+msgstr ""
+
+#: MsgLoad.cpp:63
+msgid "TVPInfoLoadingConfigurationFileSucceeded"
+msgstr ""
+
+#: MsgLoad.cpp:64
+msgid "TVPInfoDataPathDoesNotExistTryingToMakeIt"
+msgstr ""
+
+#: MsgLoad.cpp:65
+msgid "TVPOk"
+msgstr ""
+
+#: MsgLoad.cpp:66
+msgid "TVPFaild"
+msgstr ""
+
+#: MsgLoad.cpp:67
+msgid "TVPInfoDataPath"
+msgstr ""
+
+#: MsgLoad.cpp:68
+msgid "TVPInfoSpecifiedOptionEarlierItemHasMorePriority"
+msgstr ""
+
+#: MsgLoad.cpp:69
+msgid "TVPNone"
+msgstr ""
+
+#: MsgLoad.cpp:70
+msgid "TVPInfoCpuClockRoughly"
+msgstr ""
+
+#: MsgLoad.cpp:71
+msgid "TVPProgramStartedOn"
+msgstr ""
+
+#: MsgLoad.cpp:72
+msgid "TVPKirikiri"
+msgstr ""
+
+#: MsgLoad.cpp:73
+msgid "TVPUnknownError"
+msgstr ""
+
+#: MsgLoad.cpp:74
+msgid "TVPExitCode"
+msgstr ""
+
+#: MsgLoad.cpp:75
+msgid "TVPFatalError"
+msgstr ""
+
+#: MsgLoad.cpp:76
+msgid "TVPEnableDigitizer"
+msgstr ""
+
+#: MsgLoad.cpp:77
+msgid "TVPTouchIntegratedTouch"
+msgstr ""
+
+#: MsgLoad.cpp:78
+msgid "TVPTouchExternalTouch"
+msgstr ""
+
+#: MsgLoad.cpp:79
+msgid "TVPTouchIntegratedPen"
+msgstr ""
+
+#: MsgLoad.cpp:80
+msgid "TVPTouchExternalPen"
+msgstr ""
+
+#: MsgLoad.cpp:81
+msgid "TVPTouchMultiInput"
+msgstr ""
+
+#: MsgLoad.cpp:82
+msgid "TVPTouchReady"
+msgstr ""
+
+#: MsgLoad.cpp:83
+msgid "TVPCpuCheckFailure"
+msgstr ""
+
+#: MsgLoad.cpp:84
+msgid "TVPCpuCheckFailureCpuFamilyOrLesserIsNotSupported"
+msgstr ""
+
+#: MsgLoad.cpp:85
+msgid "TVPInfoCpuNumber"
+msgstr ""
+
+#: MsgLoad.cpp:86
+msgid "TVPCpuCheckFailureNotSupprtedCpu"
+msgstr ""
+
+#: MsgLoad.cpp:87
+msgid "TVPInfoFinallyDetectedCpuFeatures"
+msgstr ""
+
+#: MsgLoad.cpp:88
+msgid "TVPCpuCheckFailureNotSupportedCpu"
+msgstr ""
+
+#: MsgLoad.cpp:89
+msgid "TVPInfoCpuClock"
+msgstr ""
+
+#: MsgLoad.cpp:90
+msgid "TVPLayerBitmapBufferUnderrunDetectedCheckYourDrawingCode"
+msgstr ""
+
+#: MsgLoad.cpp:91
+msgid "TVPLayerBitmapBufferOverrunDetectedCheckYourDrawingCode"
+msgstr ""
+
+#: MsgLoad.cpp:92
+msgid "TVPFaildToCreateDirect3D"
+msgstr ""
+
+#: MsgLoad.cpp:93
+msgid "TVPFaildToDecideBackbufferFormat"
+msgstr ""
+
+#: MsgLoad.cpp:94
+msgid "TVPFaildToCreateDirect3DDevice"
+msgstr ""
+
+#: MsgLoad.cpp:95
+msgid "TVPFaildToSetViewport"
+msgstr ""
+
+#: MsgLoad.cpp:96
+msgid "TVPFaildToSetRenderState"
+msgstr ""
+
+#: MsgLoad.cpp:97
+msgid "TVPWarningImageSizeTooLargeMayBeCannotCreateTexture"
+msgstr ""
+
+#: MsgLoad.cpp:98
+msgid "TVPUsePowerOfTwoSurface"
+msgstr ""
+
+#: MsgLoad.cpp:99
+msgid "TVPCannotAllocateD3DOffScreenSurface"
+msgstr ""
+
+#: MsgLoad.cpp:100
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDevices"
+msgstr ""
+
+#: MsgLoad.cpp:101
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDevicesUnknownReason"
+msgstr ""
+
+#: MsgLoad.cpp:102
+msgid "TVPBasicDrawDeviceTextureHasAlreadyBeenLocked"
+msgstr ""
+
+#: MsgLoad.cpp:103
+msgid "TVPInternalErrorResult"
+msgstr ""
+
+#: MsgLoad.cpp:104
+msgid "TVPBasicDrawDeviceInfPolygonDrawingFailed"
+msgstr ""
+
+#: MsgLoad.cpp:105
+msgid "TVPBasicDrawDeviceInfDirect3DDevicePresentFailed"
+msgstr ""
+
+#: MsgLoad.cpp:106
+msgid "TVPChangeDisplaySettingsFailedDispChangeRestart"
+msgstr ""
+
+#: MsgLoad.cpp:107
+msgid "TVPChangeDisplaySettingsFailedDispChangeBadFlags"
+msgstr ""
+
+#: MsgLoad.cpp:108
+msgid "TVPChangeDisplaySettingsFailedDispChangeBadParam"
+msgstr ""
+
+#: MsgLoad.cpp:109
+msgid "TVPChangeDisplaySettingsFailedDispChangeFailed"
+msgstr ""
+
+#: MsgLoad.cpp:110
+msgid "TVPChangeDisplaySettingsFailedDispChangeBadMode"
+msgstr ""
+
+#: MsgLoad.cpp:111
+msgid "TVPChangeDisplaySettingsFailedDispChangeNotUpdated"
+msgstr ""
+
+#: MsgLoad.cpp:112
+msgid "TVPChangeDisplaySettingsFailedUnknownReason"
+msgstr ""
+
+#: MsgLoad.cpp:113
+msgid "TVPFailedToCreateScreenDC"
+msgstr ""
+
+#: MsgLoad.cpp:114
+msgid "TVPFailedToCreateOffscreenBitmap"
+msgstr ""
+
+#: MsgLoad.cpp:115
+msgid "TVPFailedToCreateOffscreenDC"
+msgstr ""
+
+#: MsgLoad.cpp:116
+msgid "TVPInfoSusiePluginInfo"
+msgstr ""
+
+#: MsgLoad.cpp:117
+msgid "TVPSusiePluginUnsupportedBitmapHeader"
+msgstr ""
+
+#: MsgLoad.cpp:118
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDevice"
+msgstr ""
+
+#: MsgLoad.cpp:119
+msgid "TVPBasicDrawDeviceFailedToCreateDirect3DDeviceUnknownReason"
+msgstr ""
+
+#: MsgLoad.cpp:120
+msgid "TVPCouldNotCreateAnyDrawDevice"
+msgstr ""
+
+#: MsgLoad.cpp:121
+msgid "TVPBasicDrawDeviceDoesNotSupporteLayerManagerMoreThanOne"
+msgstr ""
+
+#: MsgLoad.cpp:122
+msgid "TVPInvalidVideoSize"
+msgstr ""
+
+#: MsgLoad.cpp:123
+msgid "TVPRoughVsyncIntervalReadFromApi"
+msgstr ""
+
+#: MsgLoad.cpp:124
+msgid "TVPRoughVsyncIntervalStillSeemsWrong"
+msgstr ""
+
+#: MsgLoad.cpp:125
+msgid "TVPInfoFoundDirect3DInterface"
+msgstr ""
+
+#: MsgLoad.cpp:126
+msgid "TVPInfoFaild"
+msgstr ""
+
+#: MsgLoad.cpp:127
+msgid "TVPInfoDirect3D"
+msgstr ""
+
+#: MsgLoad.cpp:128
+msgid "TVPCannotLoadD3DDLL"
+msgstr ""
+
+#: MsgLoad.cpp:129
+msgid "TVPNotFoundDirect3DCreate"
+msgstr ""
+
+#: MsgLoad.cpp:130
+msgid "TVPInfoEnvironmentUsing"
+msgstr ""
+
+#: MsgLoad.cpp:131
+msgid "TVPInfoSearchBestFullscreenResolution"
+msgstr ""
+
+#: MsgLoad.cpp:132
+msgid "TVPInfoConditionPreferredScreenMode"
+msgstr ""
+
+#: MsgLoad.cpp:133
+msgid "TVPInfoConditionMode"
+msgstr ""
+
+#: MsgLoad.cpp:134
+msgid "TVPInfoConditionZoomMode"
+msgstr ""
+
+#: MsgLoad.cpp:135
+msgid "TVPInfoEnvironmentDefaultScreenMode"
+msgstr ""
+
+#: MsgLoad.cpp:136
+msgid "TVPInfoEnvironmentDefaultScreenAspectRatio"
+msgstr ""
+
+#: MsgLoad.cpp:137
+msgid "TVPInfoEnvironmentAvailableDisplayModes"
+msgstr ""
+
+#: MsgLoad.cpp:138
+msgid "TVPInfoNotFoundScreenModeFromDriver"
+msgstr ""
+
+#: MsgLoad.cpp:139
+msgid "TVPInfoResultCandidates"
+msgstr ""
+
+#: MsgLoad.cpp:140
+msgid "TVPInfoTryScreenMode"
+msgstr ""
+
+#: MsgLoad.cpp:141
+msgid "TVPAllScreenModeError"
+msgstr ""
+
+#: MsgLoad.cpp:142
+msgid "TVPInfoChangeScreenModeSuccess"
+msgstr ""
+
+#: MsgLoad.cpp:143
+msgid "TVPSelectXP3FileOrFolder"
+msgstr ""
+
+#: MsgLoad.cpp:144
+msgid "TVPD3dErrDeviceLost"
+msgstr ""
+
+#: MsgLoad.cpp:145
+msgid "TVPD3dErrDriverIinternalError"
+msgstr ""
+
+#: MsgLoad.cpp:146
+msgid "TVPD3dErrInvalidCall"
+msgstr ""
+
+#: MsgLoad.cpp:147
+msgid "TVPD3dErrOutOfVideoMemory"
+msgstr ""
+
+#: MsgLoad.cpp:148
+msgid "TVPD3dErrOutOfMemory"
+msgstr ""
+
+#: MsgLoad.cpp:149
+msgid "TVPD3dErrWrongTextureFormat"
+msgstr ""
+
+#: MsgLoad.cpp:150
+msgid "TVPD3dErrUnsuportedColorOperation"
+msgstr ""
+
+#: MsgLoad.cpp:151
+msgid "TVPD3dErrUnsuportedColorArg"
+msgstr ""
+
+#: MsgLoad.cpp:152
+msgid "TVPD3dErrUnsuportedAalphtOperation"
+msgstr ""
+
+#: MsgLoad.cpp:153
+msgid "TVPD3dErrUnsuportedAlphaArg"
+msgstr ""
+
+#: MsgLoad.cpp:154
+msgid "TVPD3dErrTooManyOperations"
+msgstr ""
+
+#: MsgLoad.cpp:155
+msgid "TVPD3dErrConflictioningTextureFilter"
+msgstr ""
+
+#: MsgLoad.cpp:156
+msgid "TVPD3dErrUnsuportedFactorValue"
+msgstr ""
+
+#: MsgLoad.cpp:157
+msgid "TVPD3dErrConflictioningRenderState"
+msgstr ""
+
+#: MsgLoad.cpp:158
+msgid "TVPD3dErrUnsupportedTextureFilter"
+msgstr ""
+
+#: MsgLoad.cpp:159
+msgid "TVPD3dErrConflictioningTexturePalette"
+msgstr ""
+
+#: MsgLoad.cpp:160
+msgid "TVPD3dErrNotFound"
+msgstr ""
+
+#: MsgLoad.cpp:161
+msgid "TVPD3dErrMoreData"
+msgstr ""
+
+#: MsgLoad.cpp:162
+msgid "TVPD3dErrDeviceNotReset"
+msgstr ""
+
+#: MsgLoad.cpp:163
+msgid "TVPD3dErrNotAvailable"
+msgstr ""
+
+#: MsgLoad.cpp:164
+msgid "TVPD3dErrInvalidDevice"
+msgstr ""
+
+#: MsgLoad.cpp:165
+msgid "TVPD3dErrDriverInvalidCall"
+msgstr ""
+
+#: MsgLoad.cpp:166
+msgid "TVPD3dErrWasStillDrawing"
+msgstr ""
+
+#: MsgLoad.cpp:167
+msgid "TVPD3dErrDeviceHung"
+msgstr ""
+
+#: MsgLoad.cpp:168
+msgid "TVPD3dErrUnsupportedOverlay"
+msgstr ""
+
+#: MsgLoad.cpp:169
+msgid "TVPD3dErrUnsupportedOverlayFormat"
+msgstr ""
+
+#: MsgLoad.cpp:170
+msgid "TVPD3dErrCannotProtectContent"
+msgstr ""
+
+#: MsgLoad.cpp:171
+msgid "TVPD3dErrUnsupportedCrypto"
+msgstr ""
+
+#: MsgLoad.cpp:172
+msgid "TVPD3dErrPresentStatisticsDisJoint"
+msgstr ""
+
+#: MsgLoad.cpp:173
+msgid "TVPD3dErrDeviceRemoved"
+msgstr ""
+
+#: MsgLoad.cpp:174
+msgid "TVPD3dOkNoAutoGen"
+msgstr ""
+
+#: MsgLoad.cpp:175
+msgid "TVPD3dErrFail"
+msgstr ""
+
+#: MsgLoad.cpp:176
+msgid "TVPD3dErrInvalidArg"
+msgstr ""
+
+#: MsgLoad.cpp:177
+msgid "TVPD3dUnknownError"
+msgstr ""
+
+#: MsgLoad.cpp:178
+msgid "TVPExceptionAccessViolation"
+msgstr ""
+
+#: MsgLoad.cpp:179
+msgid "TVPExceptionBreakpoint"
+msgstr ""
+
+#: MsgLoad.cpp:180
+msgid "TVPExceptionDatatypeMisalignment"
+msgstr ""
+
+#: MsgLoad.cpp:181
+msgid "TVPExceptionSingleStep"
+msgstr ""
+
+#: MsgLoad.cpp:182
+msgid "TVPExceptionArrayBoundsExceeded"
+msgstr ""
+
+#: MsgLoad.cpp:183
+msgid "TVPExceptionFltDenormalOperand"
+msgstr ""
+
+#: MsgLoad.cpp:184
+msgid "TVPExceptionFltDivideByZero"
+msgstr ""
+
+#: MsgLoad.cpp:185
+msgid "TVPExceptionFltInexactResult"
+msgstr ""
+
+#: MsgLoad.cpp:186
+msgid "TVPExceptionFltInvalidOperation"
+msgstr ""
+
+#: MsgLoad.cpp:187
+msgid "TVPExceptionFltOverflow"
+msgstr ""
+
+#: MsgLoad.cpp:188
+msgid "TVPExceptionFltStackCheck"
+msgstr ""
+
+#: MsgLoad.cpp:189
+msgid "TVPExceptionFltUnderflow"
+msgstr ""
+
+#: MsgLoad.cpp:190
+msgid "TVPExceptionIntDivideByZero"
+msgstr ""
+
+#: MsgLoad.cpp:191
+msgid "TVPExceptionIntOverflow"
+msgstr ""
+
+#: MsgLoad.cpp:192
+msgid "TVPExceptionPrivInstruction"
+msgstr ""
+
+#: MsgLoad.cpp:193
+msgid "TVPExceptionNoncontinuableException"
+msgstr ""
+
+#: MsgLoad.cpp:194
+msgid "TVPExceptionGuardPage"
+msgstr ""
+
+#: MsgLoad.cpp:195
+msgid "TVPExceptionIllegalInstruction"
+msgstr ""
+
+#: MsgLoad.cpp:196
+msgid "TVPExceptionInPageError"
+msgstr ""
+
+#: MsgLoad.cpp:197
+msgid "TVPExceptionInvalidDisposition"
+msgstr ""
+
+#: MsgLoad.cpp:198
+msgid "TVPExceptionInvalidHandle"
+msgstr ""
+
+#: MsgLoad.cpp:199
+msgid "TVPExceptionStackOverflow"
+msgstr ""
+
+#: MsgLoad.cpp:200
+msgid "TVPExceptionUnwindCconsolidate"
+msgstr ""
+
+#: MsgLoad.cpp:201
+msgid "TVPCannotShowModalAreadyShowed"
+msgstr ""
+
+#: MsgLoad.cpp:202
+msgid "TVPCannotShowModalSingleWindow"
+msgstr ""
