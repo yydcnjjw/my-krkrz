@@ -122,6 +122,7 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(Window, create_tjs2_window());
     REGISTER_OBJECT(Layer, create_tjs2_layer());
     REGISTER_OBJECT(Timer, create_tjs2_timer());
+    REGISTER_OBJECT(AsyncTrigger, create_tjs2_async_trigger());
     REGISTER_OBJECT(Font, TJS2Font::get());
     REGISTER_OBJECT(KAGParser, TVPCreateNativeClass_KAGParser());
 }

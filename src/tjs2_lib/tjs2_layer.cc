@@ -187,8 +187,65 @@ class TJS2Layer : public tTJSNativeClass {
         }
         TJS_END_NATIVE_PROP_DECL(font)
 
+        TJS_BEGIN_NATIVE_PROP_DECL(type) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+            TJS_GET_NATIVE_INSTANCE(
+                /*var. name*/ _this, /*var. type*/ TJS2NativeLayer);
+            *result = (tjs_int)_this->type;
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            _this->type = ((tjs_int)*param);
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(type)
+        TJS_BEGIN_NATIVE_PROP_DECL(hitType) {
+            // TODO: hit type
+            TJS_BEGIN_NATIVE_PROP_GETTER
+            TJS_GET_NATIVE_INSTANCE(
+                /*var. name*/ _this, /*var. type*/ TJS2NativeLayer);
+            *result = (tjs_int)_this->hit_type;
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            _this->hit_type = (tjs_int)*param;
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(hitType)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(hitThreshold) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            *result = _this->hit_threshold;
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            _this->hit_threshold = (tjs_int)*param;
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(hitThreshold)
+
         TJS_END_NATIVE_MEMBERS
-    }
+    } // namespace
     static tjs_uint32 ClassID;
 
   protected:

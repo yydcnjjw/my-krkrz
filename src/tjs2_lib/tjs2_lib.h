@@ -16,6 +16,7 @@ tTJSNativeClass *create_tjs2_scripts();
 tTJSNativeClass *create_tjs2_window();
 tTJSNativeClass *create_tjs2_layer();
 tTJSNativeClass *create_tjs2_timer();
+tTJSNativeClass *create_tjs2_async_trigger();
 
 namespace TJS {
 

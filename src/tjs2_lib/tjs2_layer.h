@@ -11,7 +11,7 @@
 #include <MsgIntf.h>
 
 namespace krkrz {
-
+    
 class TJS2NativeLayer : public tTJSNativeInstance {
   public:
     tjs_error TJS_INTF_METHOD
@@ -28,13 +28,18 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         return this->_font;
     }
 
+    // TODO:
+    int type;
+    int hit_type;
+    int hit_threshold;
+
   private:
     TJS2NativeLayer *_parent = nullptr;
     std::list<TJS2NativeLayer *> _children;
     iTJSDispatch2 *_font;
     
     std::shared_ptr<my::DrawList> _draw_list;
-
+    
     void add_children(TJS2NativeLayer *layer) {
         this->_children.push_back(layer);
     }
