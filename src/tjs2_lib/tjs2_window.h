@@ -1,6 +1,7 @@
 #pragma once
 
 #include <codecvt.h>
+#include <draw_list.h>
 #include <window_mgr.h>
 
 #include "krkrz_application.h"
@@ -73,6 +74,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     TJS2NativeWindow() : _base_app(Application::get()->base_app()) {}
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) {
+        this->_this_obj = tjs_obj;
         this->_window =
             this->_base_app->win_mgr()->create_window("test", 800, 600);
         this->_subscribe_event(tjs_obj);
@@ -111,9 +113,14 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     my::Window *base_window() { return this->_window; }
 
+    iTJSDispatch2 *this_obj() { return this->_this_obj; }
+
     std::u16string caption;
 
+    std::shared_ptr<my::DrawList> draw_list;
+
   private:
+    iTJSDispatch2 *_this_obj;
     my::Application *_base_app;
     my::Window *_window;
     std::vector<tTJSVariantClosure> _objects;

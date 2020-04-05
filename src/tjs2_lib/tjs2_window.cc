@@ -24,11 +24,11 @@ TJSMouseButton from_sdl(uint32_t button) {
 
 void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
     auto bus = this->_base_app->ev_bus();
-
+    auto win_id = this->_window->get_window_id();
     bus->on_event<my::MouseButtonEvent>()
         .filter(
-            [this](const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
-                return e->data->win_id == this->_window->get_window_id();
+            [win_id](const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
+                return e->data->win_id == win_id;
             })
         .observe_on(bus->ev_bus_worker())
         .subscribe(
@@ -76,8 +76,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
 
     bus->on_event<my::MouseMotionEvent>()
         .filter(
-            [this](const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
-                return e->data->win_id == this->_window->get_window_id();
+            [win_id](const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
+                return e->data->win_id == win_id;
             })
         .observe_on(bus->ev_bus_worker())
         .subscribe(
@@ -108,8 +108,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
 
     bus->on_event<my::MoushWheelEvent>()
         .filter(
-            [this](const std::shared_ptr<my::Event<my::MoushWheelEvent>> &e) {
-                return e->data->win_id == this->_window->get_window_id();
+            [win_id](const std::shared_ptr<my::Event<my::MoushWheelEvent>> &e) {
+                return e->data->win_id == win_id;
             })
         .observe_on(bus->ev_bus_worker())
         .subscribe(
@@ -140,8 +140,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
             });
 
     bus->on_event<my::WindowEvent>()
-        .filter([this](const std::shared_ptr<my::Event<my::WindowEvent>> &e) {
-            return e->data->win_id == this->_window->get_window_id();
+        .filter([win_id](const std::shared_ptr<my::Event<my::WindowEvent>> &e) {
+            return e->data->win_id == win_id;
         })
         .observe_on(bus->ev_bus_worker())
         .subscribe(
@@ -166,8 +166,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
             });
 
     bus->on_event<my::KeyboardEvent>()
-        .filter([this](const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
-            return e->data->win_id == this->_window->get_window_id();
+        .filter([win_id](const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
+            return e->data->win_id == win_id;
         })
         .observe_on(bus->ev_bus_worker())
         .subscribe([this, obj](

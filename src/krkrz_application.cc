@@ -9,9 +9,14 @@ namespace {} // namespace
 
 namespace krkrz {
 Application *Application::_instance = nullptr;
-Application::Application(int argc, char *argv[])
-    : _base_app(my::new_application(argc, argv, {})) {
+Application::Application(int argc, char *argv[]) {
     Application::_instance = this;
+
+    my::program_options::options_description desc("my krkrz");
+
+    desc.add_options()("debug", my::program_options::value<bool>(), "");
+
+    this->_base_app = my::new_application(argc, argv, desc);
     this->_init_basic_path(argv[0]);
 }
 
@@ -27,6 +32,7 @@ void Application::_init_basic_path(const char *exec_path) {
 void Application::run() {
     TJS2NativeScripts::get()->boot_start();
     this->_base_app->run();
+    TJS2NativeScripts::get()->stop();
 }
 
 Application *Application::get() {

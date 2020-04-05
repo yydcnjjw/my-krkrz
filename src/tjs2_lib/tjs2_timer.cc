@@ -35,7 +35,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                            ->base_app()
                            ->async_task()
                            ->create_timer_interval(
-                               std::function<void(void)>([this, tjs_obj]() {
+                               std::function<void(void)>([tjs_obj]() -> void {
                                    krkrz::TJS::func_call(tjs_obj, "onTimer");
                                }),
                                std::chrono::milliseconds(this->_interval));
@@ -43,27 +43,24 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     }
 
     void TJS_INTF_METHOD Invalidate() {
-
-        this->_timer->cancel();
-
+        this->disable();
         this->action.Release();
     }
 
     bool is_enable() { return this->_enabled; }
 
-    void disable() { this->_enabled = false; }
+    void disable() {
+        this->_enabled = false;
+        this->_timer->cancel();
+    }
 
     void enable() {
         this->_enabled = true;
-
-        if (this->_enabled) {
-            this->_timer->start();
-        } else {
-            this->_timer->cancel();
-        }
+        this->_timer->start();
     }
 
     void set_interval(int64_t mil) {
+        this->_interval = mil;
         this->_timer->set_interval(std::chrono::milliseconds(mil));
     }
 
@@ -116,8 +113,7 @@ class TJS2Timer : public tTJSNativeClass {
                interval = _this->GetInterval(); *result = (tjs_int64)interval;
                     NG : *result = (tjs_int64)interval;
             */
-            double interval = _this->get_interval() * (1.0 / (1 << 16));
-            *result = interval;
+            *result = (double)_this->get_interval();
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -126,8 +122,7 @@ class TJS2Timer : public tTJSNativeClass {
 
             TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                     /*var. type*/ TJS2NativeTimer);
-            double interval = (double)*param * (1 << 16);
-            _this->set_interval(((tjs_int64)(interval + 0.5)));
+            _this->set_interval(*param);
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_SETTER

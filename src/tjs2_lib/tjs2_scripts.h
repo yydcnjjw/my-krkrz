@@ -31,6 +31,7 @@ class TJS2NativeScripts {
     ~TJS2NativeScripts();
 
     void boot_start();
+    void stop();
 
     void exec_storage(const std::u16string &path,
                       iTJSDispatch2 *context = nullptr,

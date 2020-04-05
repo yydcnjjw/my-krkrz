@@ -82,9 +82,20 @@ void TJS2NativeScripts::boot_start() {
         this->_load_tjs_lib();
 
         try {
-            this->exec_storage(u"SysInitScript.tjs");
-            this->exec_storage(u"startup.tjs");
-            this->_tjs_engine->Shutdown();
+            bool is_debug = false;
+            my::program_options::variable_value value;
+            if (Application::get()->base_app()->get_program_option("debug",
+                                                                   value)) {
+                is_debug = value.as<bool>();
+            }
+
+            if (is_debug) {
+                this->exec_storage(u"debug.tjs");
+            } else {
+                this->exec_storage(u"SysInitScript.tjs");
+                this->exec_storage(u"startup.tjs");
+            }
+            // this->_tjs_engine->Shutdown();
         } catch (eTJSError &e) {
             GLOG_D(
                 utf16_codecvt().to_bytes(e.GetMessage().AsStdString()).c_str());
@@ -93,11 +104,17 @@ void TJS2NativeScripts::boot_start() {
     });
 }
 
+void TJS2NativeScripts::stop() {
+    this->_tjs_engine->Shutdown();
+}
+
 TJS2NativeScripts::TJS2NativeScripts()
     : _tjs_engine(new tTJS()),
       _tjs_console_output(std::make_shared<TJSConsoleOutput>()) {}
 
-TJS2NativeScripts::~TJS2NativeScripts() { this->_tjs_engine->Release(); }
+TJS2NativeScripts::~TJS2NativeScripts() {
+    this->_tjs_engine->Release();
+}
 void TJS2NativeScripts::_set_default_ppvalue() {
     this->_tjs_engine->SetPPValue(TJS_W("kirkiriz"), 1);
     this->_tjs_engine->SetPPValue(TJS_W("linux"), 1);

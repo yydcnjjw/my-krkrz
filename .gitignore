@@ -1,5 +1,6 @@
 debug
 .ccls-cache
+thirdparty/my-gui
 
 .directory
 compile_commands.json
