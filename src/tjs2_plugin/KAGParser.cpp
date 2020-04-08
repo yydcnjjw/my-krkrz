@@ -46,36 +46,37 @@ void TVPExecuteExpression(const ttstr &content, iTJSDispatch2 *context,
 //#define TJS_strncpy			wcsncpy_s
 
 const tjs_char *TVPKAGNoLine =
-    TJS_W("読み込もうとしたシナリオファイル %1 は空です");
+        TJS_W("読み込もうとしたシナリオファイル %1 は空です");
 const tjs_char *TVPKAGCannotOmmitFirstLabelName =
-    TJS_W("シナリオファイルの最初のラベル名は省略できません");
+        TJS_W("シナリオファイルの最初のラベル名は省略できません");
 // const tjs_char* TVPInternalError = TJS_W("内部エラーが発生しました: at %1
 // line %2");
 const tjs_char *TVPKAGMalformedSaveData =
-    TJS_W("栞データが異常です。データが破損している可能性があります");
+        TJS_W("栞データが異常です。データが破損している可能性があります");
 const tjs_char *TVPKAGLabelNotFound =
-    TJS_W("シナリオファイル %1 内にラベル %2 が見つかりません");
+        TJS_W("シナリオファイル %1 内にラベル %2 が見つかりません");
 const tjs_char *TVPLabelOrScriptInMacro =
-    TJS_W("ラベルや iscript はマクロ中に記述できません");
+        TJS_W("ラベルや iscript はマクロ中に記述できません");
 const tjs_char *TVPKAGInlineScriptNotEnd =
-    TJS_W("[endscript] または @endscript が見つかりません");
+        TJS_W("[endscript] または @endscript が見つかりません");
 const tjs_char *TVPKAGSyntaxError =
-    TJS_W("タグの文法エラーです。'[' や ']' の対応、\" と \" "
-          "の対応、スペースの入れ忘れ、余分な改行、macro ～ endmacro "
-          "の対応、必要な属性の不足などを確認してください");
+        TJS_W("タグの文法エラーです。'[' や ']' の対応、\" と \" "
+              "の対応、スペースの入れ忘れ、余分な改行、macro ～ endmacro "
+              "の対応、必要な属性の不足などを確認してください");
 const tjs_char *TVPKAGCallStackUnderflow =
-    TJS_W("return タグが call タグと対応していません ( return タグが多い )");
+        TJS_W("return タグが call タグと対応していません ( return タグが多い )");
 const tjs_char *TVPKAGReturnLostSync = TJS_W(
-    "シナリオファイルに変更があったため return の戻り先位置を特定できません");
+        "シナリオファイルに変更があったため return の戻り先位置を特定できません");
 const tjs_char *TVPKAGSpecifyKAGParser =
-    TJS_W("KAGParser クラスのオブジェクトを指定してください");
+        TJS_W("KAGParser クラスのオブジェクトを指定してください");
 const tjs_char *TVPUnknownMacroName =
-    TJS_W("マクロ \"%1\" は登録されていません");
+        TJS_W("マクロ \"%1\" は登録されていません");
 
 #define TVPThrowInternalError                                                  \
     TVPThrowExceptionMessage(TVPInternalError, __FILE__, __LINE__)
 
 static tjs_int32 TJS_NATIVE_CLASSID_NAME = -1;
+
 //---------------------------------------------------------------------------
 // tTVPScenarioCacheItem : Scenario Cache Item
 //---------------------------------------------------------------------------
@@ -92,13 +93,16 @@ tTVPScenarioCacheItem::tTVPScenarioCacheItem(const ttstr &name, bool isstring) {
         throw;
     }
 }
+
 //---------------------------------------------------------------------------
 tTVPScenarioCacheItem::~tTVPScenarioCacheItem() {
     if (Lines)
         delete[] Lines;
 }
+
 //---------------------------------------------------------------------------
 void tTVPScenarioCacheItem::AddRef() { RefCount++; }
+
 //---------------------------------------------------------------------------
 void tTVPScenarioCacheItem::Release() {
     if (RefCount == 1)
@@ -106,6 +110,7 @@ void tTVPScenarioCacheItem::Release() {
     else
         RefCount--;
 }
+
 //---------------------------------------------------------------------------
 void tTVPScenarioCacheItem::LoadScenario(const ttstr &name, bool isstring) {
     // load scenario from file or string to buffer
@@ -120,10 +125,10 @@ void tTVPScenarioCacheItem::LoadScenario(const ttstr &name, bool isstring) {
         iTJSTextReadStream *stream = NULL;
 
         try {
-            Buffer = krkrz::TJS2NativeStorages::get()
-                         ->storage_read_all(
-                             codecvt::utf_to_utf<char>(name.AsStdString()))
-                         .c_str();
+            Buffer = codecvt::utf_to_utf<char16_t>(krkrz::TJS2NativeStorages::get()
+                                                           ->get_storage<my::TJS2Script>(
+                                                                   codecvt::utf_to_utf<char>(name.AsStdString()))
+                                                           ->script).c_str();
         } catch (...) {
             if (stream)
                 stream->Destruct();
@@ -196,6 +201,7 @@ void tTVPScenarioCacheItem::LoadScenario(const ttstr &name, bool isstring) {
     // tab-only last line will not be counted in pass2, thus makes
     // pass2 counted lines are lesser than pass1 lines.
 }
+
 //---------------------------------------------------------------------------
 void tTVPScenarioCacheItem::EnsureLabelCache() {
     // construct label cache
@@ -221,7 +227,7 @@ void tTVPScenarioCacheItem::EnsureLabelCache() {
                 if (!label.c_str()[1]) {
                     if (prevlabel.IsEmpty())
                         TVPThrowExceptionMessage(
-                            TVPKAGCannotOmmitFirstLabelName);
+                                TVPKAGCannotOmmitFirstLabelName);
                     label = prevlabel;
                 }
 
@@ -250,9 +256,10 @@ void tTVPScenarioCacheItem::EnsureLabelCache() {
 #define TVP_SCENARIO_MAX_CACHE_SIZE 8
 typedef tTJSRefHolder<tTVPScenarioCacheItem> tTVPScenarioCacheItemHolder;
 typedef tTJSHashCache<ttstr, tTVPScenarioCacheItemHolder, tTJSHashFunc<ttstr>,
-                      (TVP_SCENARIO_MAX_CACHE_SIZE * 2)>
-    tTVPScenarioCache;
+        (TVP_SCENARIO_MAX_CACHE_SIZE * 2)>
+        tTVPScenarioCache;
 tTVPScenarioCache TVPScenarioCache(TVP_SCENARIO_MAX_CACHE_SIZE);
+
 //---------------------------------------------------------------------------
 void TVPClearScnearioCache() { TVPScenarioCache.Clear(); }
 //---------------------------------------------------------------------------
@@ -271,6 +278,7 @@ void TVPClearScnearioCache() { TVPScenarioCache.Clear(); }
 // } static TVPClearScenarioCacheCallback;
 
 static bool TVPClearScenarioCacheCallbackInit = false;
+
 //---------------------------------------------------------------------------
 static tTVPScenarioCacheItem *TVPGetScenario(const ttstr &storagename,
                                              bool isstring) {
@@ -289,7 +297,7 @@ static tTVPScenarioCacheItem *TVPGetScenario(const ttstr &storagename,
     tjs_uint32 hash = tTVPScenarioCache::MakeHash(storagename);
 
     tTVPScenarioCacheItemHolder *ptr =
-        TVPScenarioCache.FindAndTouchWithHash(storagename, hash);
+            TVPScenarioCache.FindAndTouchWithHash(storagename, hash);
     if (ptr) {
         // found in the cache
         return ptr->GetObject();
@@ -363,6 +371,7 @@ tTJSNI_KAGParser::tTJSNI_KAGParser() {
 
     dictclass->Release();
 }
+
 //---------------------------------------------------------------------------
 tjs_error TJS_INTF_METHOD tTJSNI_KAGParser::Construct(tjs_int numparams,
                                                       tTJSVariant **param,
@@ -375,6 +384,7 @@ tjs_error TJS_INTF_METHOD tTJSNI_KAGParser::Construct(tjs_int numparams,
 
     return TJS_S_OK;
 }
+
 //---------------------------------------------------------------------------
 void TJS_INTF_METHOD tTJSNI_KAGParser::Invalidate() {
     // invalidate this object
@@ -396,6 +406,7 @@ void TJS_INTF_METHOD tTJSNI_KAGParser::Invalidate() {
 
     inherited::Invalidate();
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::operator=(const tTJSNI_KAGParser &ref) {
     // copy Macros
@@ -432,7 +443,7 @@ void tTJSNI_KAGParser::operator=(const tTJSNI_KAGParser &ref) {
     if (Scenario != ref.Scenario) {
         if (Scenario)
             Scenario->Release(), Scenario = NULL, Lines = NULL,
-                                 CurLineStr = NULL;
+                    CurLineStr = NULL;
         Scenario = ref.Scenario;
         Lines = ref.Lines;
         LineCount = ref.LineCount;
@@ -469,6 +480,7 @@ void tTJSNI_KAGParser::operator=(const tTJSNI_KAGParser &ref) {
     ExcludeLevelStack = ref.ExcludeLevelStack;
     IfLevelExecutedStack = ref.IfLevelExecutedStack;
 }
+
 //---------------------------------------------------------------------------
 iTJSDispatch2 *tTJSNI_KAGParser::Store() {
     // store current status into newly created dictionary object
@@ -547,19 +559,19 @@ iTJSDispatch2 *tTJSNI_KAGParser::Store() {
                              dic);
                 val = i->Pos;
                 dic->PropSet(TJS_MEMBERENSURE, TJS_W("pos"), NULL, &val, dic);
-                val = (tjs_int)i->LineBufferUsing;
+                val = (tjs_int) i->LineBufferUsing;
                 dic->PropSet(TJS_MEMBERENSURE, TJS_W("lineBufferUsing"), NULL,
                              &val, dic);
-                val = (tjs_int)i->MacroArgStackBase;
+                val = (tjs_int) i->MacroArgStackBase;
                 dic->PropSet(TJS_MEMBERENSURE, TJS_W("macroArgStackBase"), NULL,
                              &val, dic);
-                val = (tjs_int)i->MacroArgStackDepth;
+                val = (tjs_int) i->MacroArgStackDepth;
                 dic->PropSet(TJS_MEMBERENSURE, TJS_W("macroArgStackDepth"),
                              NULL, &val, dic);
                 val = i->ExcludeLevel;
                 dic->PropSet(TJS_MEMBERENSURE, TJS_W("ExcludeLevel"), NULL,
                              &val, dic);
-                val = (tjs_int)i->IfLevel;
+                val = (tjs_int) i->IfLevel;
                 dic->PropSet(TJS_MEMBERENSURE, TJS_W("IfLevel"), NULL, &val,
                              dic);
 
@@ -590,7 +602,7 @@ iTJSDispatch2 *tTJSNI_KAGParser::Store() {
         // LineBuffer, LineBufferUsing
         val = LineBuffer;
         dic->PropSet(TJS_MEMBERENSURE, TJS_W("lineBuffer"), NULL, &val, dic);
-        val = (tjs_int)LineBufferUsing;
+        val = (tjs_int) LineBufferUsing;
         dic->PropSet(TJS_MEMBERENSURE, TJS_W("lineBufferUsing"), NULL, &val,
                      dic);
 
@@ -613,11 +625,11 @@ iTJSDispatch2 *tTJSNI_KAGParser::Store() {
                             TJS_W("IfLevelExecutedStack"));
 
         // store MacroArgStackBase, MacroArgStackDepth
-        val = (tjs_int)MacroArgStackBase;
+        val = (tjs_int) MacroArgStackBase;
         dic->PropSet(TJS_MEMBERENSURE, TJS_W("macroArgStackBase"), NULL, &val,
                      dic);
 
-        val = (tjs_int)MacroArgStackDepth;
+        val = (tjs_int) MacroArgStackDepth;
         dic->PropSet(TJS_MEMBERENSURE, TJS_W("macroArgStackDepth"), NULL, &val,
                      dic);
 
@@ -627,6 +639,7 @@ iTJSDispatch2 *tTJSNI_KAGParser::Store() {
     }
     return dic;
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::StoreIntStackToDic(iTJSDispatch2 *dic,
                                           std::vector<tjs_int> &stack,
@@ -661,30 +674,31 @@ void tTJSNI_KAGParser::RestoreIntStackFromStr(std::vector<tjs_int> &stack,
     for (tjs_int i = 0; i < len; ++i) {
         stack.push_back((((str[i + 0] <= '9') ? (str[i + 0] - '0')
                                               : (str[i + 0] - 'a' + 10))
-                         << 28) |
+                << 28) |
                         (((str[i + 1] <= '9') ? (str[i + 1] - '0')
                                               : (str[i + 1] - 'a' + 10))
-                         << 24) |
+                                << 24) |
                         (((str[i + 2] <= '9') ? (str[i + 2] - '0')
                                               : (str[i + 2] - 'a' + 10))
-                         << 20) |
+                                << 20) |
                         (((str[i + 3] <= '9') ? (str[i + 3] - '0')
                                               : (str[i + 3] - 'a' + 10))
-                         << 16) |
+                                << 16) |
                         (((str[i + 4] <= '9') ? (str[i + 4] - '0')
                                               : (str[i + 4] - 'a' + 10))
-                         << 12) |
+                                << 12) |
                         (((str[i + 5] <= '9') ? (str[i + 5] - '0')
                                               : (str[i + 5] - 'a' + 10))
-                         << 8) |
+                                << 8) |
                         (((str[i + 6] <= '9') ? (str[i + 6] - '0')
                                               : (str[i + 6] - 'a' + 10))
-                         << 4) |
+                                << 4) |
                         (((str[i + 7] <= '9') ? (str[i + 7] - '0')
                                               : (str[i + 7] - 'a' + 10))
-                         << 0));
+                                << 0));
     }
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::RestoreBoolStackFromStr(std::vector<bool> &stack,
                                                const ttstr &str) {
@@ -694,6 +708,7 @@ void tTJSNI_KAGParser::RestoreBoolStackFromStr(std::vector<bool> &stack,
         stack.push_back(str[i] == '1');
     }
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::StoreBoolStackToDic(iTJSDispatch2 *dic,
                                            std::vector<bool> &stack,
@@ -703,7 +718,7 @@ void tTJSNI_KAGParser::StoreBoolStackToDic(iTJSDispatch2 *dic,
     tjs_char *p = stack_str.AllocBuffer(stack.size());
     for (std::vector<bool>::iterator it = stack.begin(); it != stack.end();
          ++it) {
-        *p = bit[(tjs_int)(*it)];
+        *p = bit[(tjs_int) (*it)];
         ++p;
     }
     *p = '\0';
@@ -712,6 +727,7 @@ void tTJSNI_KAGParser::StoreBoolStackToDic(iTJSDispatch2 *dic,
     val = stack_str;
     dic->PropSet(TJS_MEMBERENSURE, membername, NULL, &val, dic);
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
     // restore status from "dic"
@@ -746,7 +762,7 @@ void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
             val.Clear();
             dic->PropGet(0, TJS_W("macroArgStackDepth"), NULL, &val, dic);
             if (val.Type() != tvtVoid)
-                MacroArgStackDepth = (tjs_uint)(tjs_int)val;
+                MacroArgStackDepth = (tjs_uint) (tjs_int) val;
 
             for (tjs_int i = 0; i < count; i++) {
                 iTJSDispatch2 *dsp = TJSCreateDictionaryObject();
@@ -766,7 +782,7 @@ void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
             TVPThrowExceptionMessage(TVPKAGMalformedSaveData);
 
         MacroArgStackBase =
-            MacroArgs.size(); // later reset to MacroArgStackBase
+                MacroArgs.size(); // later reset to MacroArgStackBase
 
         // restore call stack
         val.Clear();
@@ -812,11 +828,11 @@ void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
                 dic.PropGet(0, TJS_W("pos"), NULL, &val, NULL);
                 Pos = val;
                 dic.PropGet(0, TJS_W("lineBufferUsing"), NULL, &val, NULL);
-                LineBufferUsing = 0 != (tjs_int)val;
+                LineBufferUsing = 0 != (tjs_int) val;
                 dic.PropGet(0, TJS_W("macroArgStackBase"), NULL, &val, NULL);
-                MacroArgStackBase = (tjs_int)val;
+                MacroArgStackBase = (tjs_int) val;
                 dic.PropGet(0, TJS_W("macroArgStackDepth"), NULL, &val, NULL);
-                MacroArgStackDepth = (tjs_int)val;
+                MacroArgStackDepth = (tjs_int) val;
                 dic.PropGet(0, TJS_W("ExcludeLevel"), NULL, &val, NULL);
                 ExcludeLevel = val;
                 dic.PropGet(0, TJS_W("IfLevel"), NULL, &val, NULL);
@@ -832,10 +848,10 @@ void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
                 RestoreBoolStackFromStr(IfLevelExecutedStack, stack_str);
 
                 CallStack.push_back(tCallStackData(
-                    Storage, Label, Offset, OrgLineStr, LineBuffer, Pos,
-                    LineBufferUsing, MacroArgStackBase, MacroArgStackDepth,
-                    ExcludeLevelStack, ExcludeLevel, IfLevelExecutedStack,
-                    IfLevel));
+                        Storage, Label, Offset, OrgLineStr, LineBuffer, Pos,
+                        LineBufferUsing, MacroArgStackBase, MacroArgStackDepth,
+                        ExcludeLevelStack, ExcludeLevel, IfLevelExecutedStack,
+                        IfLevel));
             }
         }
 
@@ -863,11 +879,11 @@ void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
         val.Clear();
         dic->PropGet(0, TJS_W("ExcludeLevel"), NULL, &val, dic);
         if (val.Type() != tvtVoid)
-            ExcludeLevel = (tjs_int)val;
+            ExcludeLevel = (tjs_int) val;
         val.Clear();
         dic->PropGet(0, TJS_W("IfLevel"), NULL, &val, dic);
         if (val.Type() != tvtVoid)
-            IfLevel = (tjs_int)val;
+            IfLevel = (tjs_int) val;
 
         // ExcludeLevelStack, IfLevelExecutedStack
         val.Clear();
@@ -890,9 +906,10 @@ void tTJSNI_KAGParser::Restore(iTJSDispatch2 *dic) {
         val.Clear();
         dic->PropGet(0, TJS_W("macroArgStackBase"), NULL, &val, dic);
         if (val.Type() != tvtVoid)
-            MacroArgStackBase = (tjs_uint)(tjs_int)val;
+            MacroArgStackBase = (tjs_uint) (tjs_int) val;
     }
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::LoadScenario(const ttstr &name) {
     // load scenario to buffer
@@ -911,8 +928,8 @@ void tTJSNI_KAGParser::LoadScenario(const ttstr &name) {
         tTJSVariant result;
         static ttstr funcname(TJSMapGlobalStringMap(TJS_W("onScenarioLoad")));
         tjs_error status =
-            Owner->FuncCall(0, funcname.c_str(), funcname.GetHint(), &result, 1,
-                            &pparam, Owner);
+                Owner->FuncCall(0, funcname.c_str(), funcname.GetHint(), &result, 1,
+                                &pparam, Owner);
 
         if (status == TJS_S_OK && result.Type() == tvtString) {
             // when onScenarioLoad returns string;
@@ -933,7 +950,7 @@ void tTJSNI_KAGParser::LoadScenario(const ttstr &name) {
 
         if (DebugLevel >= tkdlSimple) {
             static ttstr hr(
-                TJS_W("========================================")
+                    TJS_W("========================================")
                     TJS_W("========================================"));
             TVPAddLog(hr);
             TVPAddLog(TJS_W("Scenario loaded : ") + name);
@@ -948,6 +965,7 @@ void tTJSNI_KAGParser::LoadScenario(const ttstr &name) {
                         &pparam, Owner);
     }
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::Clear() {
     // clear all states
@@ -956,6 +974,7 @@ void tTJSNI_KAGParser::Clear() {
     ClearMacroArgs();
     ClearCallStack();
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::ClearBuffer() {
     // clear internal buffer
@@ -965,6 +984,7 @@ void tTJSNI_KAGParser::ClearBuffer() {
     StorageShortName.Clear();
     BreakConditionAndMacro();
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::Rewind() {
     // set current position to first
@@ -974,6 +994,7 @@ void tTJSNI_KAGParser::Rewind() {
     LineBufferUsing = false;
     BreakConditionAndMacro();
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::BreakConditionAndMacro() {
     // break condition state and macro recording
@@ -985,11 +1006,13 @@ void tTJSNI_KAGParser::BreakConditionAndMacro() {
     PopMacroArgsTo(MacroArgStackBase);
     // clear macro argument down to current base stack position
 }
+
 //---------------------------------------------------------------------------
 static bool inline TVPIsWS(tjs_char ch) {
     // is white space ?
     return (ch == TJS_W(' ') || ch == TJS_W('\t'));
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::GoToLabel(const ttstr &name) {
     // search label and set current position
@@ -1023,13 +1046,14 @@ void tTJSNI_KAGParser::GoToLabel(const ttstr &name) {
 
     if (DebugLevel >= tkdlSimple) {
         static ttstr hr(TJS_W("- - - - - - - - - - - - - - - - - - - - ")
-                            TJS_W("- - - - - - - - - - - - - - - - - - - - "));
+                        TJS_W("- - - - - - - - - - - - - - - - - - - - "));
         TVPAddLog(hr);
         TVPAddLog(StorageShortName + TJS_W(" : jumped to : ") + name);
     }
 
     BreakConditionAndMacro();
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::GoToStorageAndLabel(const ttstr &storage,
                                            const ttstr &label) {
@@ -1038,11 +1062,13 @@ void tTJSNI_KAGParser::GoToStorageAndLabel(const ttstr &storage,
     if (!label.IsEmpty())
         GoToLabel(label);
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::CallLabel(const ttstr &name) {
     PushCallStack();
     GoToLabel(name);
 }
+
 //---------------------------------------------------------------------------
 bool tTJSNI_KAGParser::SkipCommentOrLabel() {
     // skip comment or label, and go to next line.
@@ -1056,7 +1082,7 @@ bool tTJSNI_KAGParser::SkipCommentOrLabel() {
     for (; CurLine < LineCount; CurLine++) {
         if (!Lines)
             return false; // in this loop, Lines can be NULL when onScript does
-                          // so.
+        // so.
 
         const tjs_char *p = Lines[CurLine].Start;
 
@@ -1088,7 +1114,7 @@ bool tTJSNI_KAGParser::SkipCommentOrLabel() {
                     param[1] = CurPage;
                 tTJSVariant *pparam[2] = {param, param + 1};
                 static ttstr onLabel_name(
-                    TJSMapGlobalStringMap(TJS_W("onLabel")));
+                        TJSMapGlobalStringMap(TJS_W("onLabel")));
                 Owner->FuncCall(0, onLabel_name.c_str(), onLabel_name.GetHint(),
                                 NULL, 2, pparam, Owner);
             }
@@ -1134,7 +1160,7 @@ bool tTJSNI_KAGParser::SkipCommentOrLabel() {
                                             script_start};
                     tTJSVariant *pparam[3] = {param, param + 1, param + 2};
                     static ttstr onScript_name(
-                        TJSMapGlobalStringMap(TJS_W("onScript")));
+                            TJSMapGlobalStringMap(TJS_W("onScript")));
                     Owner->FuncCall(0, onScript_name.c_str(),
                                     onScript_name.GetHint(), NULL, 3, pparam,
                                     Owner);
@@ -1159,6 +1185,7 @@ bool tTJSNI_KAGParser::SkipCommentOrLabel() {
 
     return true;
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::PushMacroArgs(iTJSDispatch2 *args) {
     iTJSDispatch2 *dsp;
@@ -1177,12 +1204,14 @@ void tTJSNI_KAGParser::PushMacroArgs(iTJSDispatch2 *args) {
     tTJSVariant *psrc = &src;
     DicAssign->FuncCall(0, NULL, NULL, NULL, 1, &psrc, dsp);
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::PopMacroArgs() {
     if (MacroArgStackDepth == 0)
         TVPThrowExceptionMessage(TVPKAGSyntaxError);
     MacroArgStackDepth--;
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::ClearMacroArgs() {
     for (std::vector<iTJSDispatch2 *>::iterator i = MacroArgs.begin();
@@ -1192,10 +1221,12 @@ void tTJSNI_KAGParser::ClearMacroArgs() {
     MacroArgs.clear();
     MacroArgStackDepth = 0;
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::PopMacroArgsTo(tjs_uint base) {
     MacroArgStackDepth = base;
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::FindNearestLabel(tjs_int start, tjs_int &labelline,
                                         ttstr &labelname) {
@@ -1219,13 +1250,14 @@ void tTJSNI_KAGParser::FindNearestLabel(tjs_int start, tjs_int &labelline,
     if (labelline == -1)
         labelname.Clear();
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::PushCallStack() {
     // push current position information
     if (DebugLevel >= tkdlVerbose) {
         TVPAddLog(StorageShortName +
                   TJS_W(" : call stack depth before calling : ") +
-                  ttstr((int)CallStack.size()));
+                  ttstr((int) CallStack.size()));
     }
 
     tjs_int labelline;
@@ -1241,12 +1273,13 @@ void tTJSNI_KAGParser::PushCallStack() {
         curline_content = TJS_W("");
 
     CallStack.push_back(
-        tCallStackData(StorageName, labelname, CurLine - labelline,
-                       curline_content, LineBuffer, CurPos, LineBufferUsing,
-                       MacroArgStackBase, MacroArgStackDepth, ExcludeLevelStack,
-                       ExcludeLevel, IfLevelExecutedStack, IfLevel));
+            tCallStackData(StorageName, labelname, CurLine - labelline,
+                           curline_content, LineBuffer, CurPos, LineBufferUsing,
+                           MacroArgStackBase, MacroArgStackDepth, ExcludeLevelStack,
+                           ExcludeLevel, IfLevelExecutedStack, IfLevel));
     MacroArgStackBase = MacroArgStackDepth;
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::PopCallStack(const ttstr &storage, const ttstr &label) {
     // pop call stack information
@@ -1256,7 +1289,7 @@ void tTJSNI_KAGParser::PopCallStack(const ttstr &storage, const ttstr &label) {
     // pop macro argument information
     tCallStackData &data = CallStack.back();
     MacroArgStackBase =
-        data.MacroArgStackDepth; // later reset to MacroArgStackBase
+            data.MacroArgStackDepth; // later reset to MacroArgStackBase
     PopMacroArgsTo(data.MacroArgStackDepth);
 
     // goto label or previous position
@@ -1320,14 +1353,16 @@ void tTJSNI_KAGParser::PopCallStack(const ttstr &storage, const ttstr &label) {
     if (DebugLevel >= tkdlVerbose) {
         TVPAddLog(StorageShortName +
                   TJS_W(" : call stack depth after returning : ") +
-                  ttstr((int)CallStack.size()));
+                  ttstr((int) CallStack.size()));
     }
 }
+
 //---------------------------------------------------------------------------
 void tTJSNI_KAGParser::ClearCallStack() {
     CallStack.clear();
     PopMacroArgsTo(MacroArgStackBase = 0); // macro arguments are also cleared
 }
+
 //---------------------------------------------------------------------------
 iTJSDispatch2 *tTJSNI_KAGParser::_GetNextTag() {
     // get next tag and return information dictionary object.
@@ -1339,7 +1374,7 @@ iTJSDispatch2 *tTJSNI_KAGParser::_GetNextTag() {
     // tag name is also stored into return value, naemd "__tag".
 
     // pretty a nasty code.
-parse_start:
+    parse_start:
 
     if (CurLine >= LineCount)
         return NULL;
@@ -1384,7 +1419,7 @@ parse_start:
                 (CurLineStr[CurPos] == 0 && CurPos >= 3 &&
                  CurLineStr[CurPos - 3] == TJS_W('[') &&
                  CurLineStr[CurPos - 2] ==
-                     TJS_W('p') && // for line ending with [p]
+                 TJS_W('p') && // for line ending with [p]
                  CurLineStr[CurPos - 1] == TJS_W(']'))) {
                 // line ended with '\\'
                 CurLine++;
@@ -1445,7 +1480,7 @@ parse_start:
                                         &tag_val, DicObj);
                     tTJSVariant ch_val(ttstr(CurLineStr + CurPos, 1));
                     static ttstr text_name(
-                        TJSMapGlobalStringMap(TJS_W("text")));
+                            TJSMapGlobalStringMap(TJS_W("text")));
                     DicObj->PropSetByVS(TJS_MEMBERENSURE,
                                         text_name.AsVariantStringNoAddRef(),
                                         &ch_val, DicObj);
@@ -1534,29 +1569,29 @@ parse_start:
         static tTJSHashTable<ttstr, tjs_int> special_tags_hash;
         if (!tag_checker_init) {
             tag_checker_init = true;
-            special_tags_hash.Add(ttstr(TJS_W("if")), (tjs_int)tag_if);
-            special_tags_hash.Add(ttstr(TJS_W("ignore")), (tjs_int)tag_ignore);
-            special_tags_hash.Add(ttstr(TJS_W("endif")), (tjs_int)tag_endif);
+            special_tags_hash.Add(ttstr(TJS_W("if")), (tjs_int) tag_if);
+            special_tags_hash.Add(ttstr(TJS_W("ignore")), (tjs_int) tag_ignore);
+            special_tags_hash.Add(ttstr(TJS_W("endif")), (tjs_int) tag_endif);
             special_tags_hash.Add(ttstr(TJS_W("endignore")),
-                                  (tjs_int)tag_endignore);
-            special_tags_hash.Add(ttstr(TJS_W("else")), (tjs_int)tag_else);
-            special_tags_hash.Add(ttstr(TJS_W("elsif")), (tjs_int)tag_elsif);
-            special_tags_hash.Add(ttstr(TJS_W("emb")), (tjs_int)tag_emb);
-            special_tags_hash.Add(ttstr(TJS_W("macro")), (tjs_int)tag_macro);
+                                  (tjs_int) tag_endignore);
+            special_tags_hash.Add(ttstr(TJS_W("else")), (tjs_int) tag_else);
+            special_tags_hash.Add(ttstr(TJS_W("elsif")), (tjs_int) tag_elsif);
+            special_tags_hash.Add(ttstr(TJS_W("emb")), (tjs_int) tag_emb);
+            special_tags_hash.Add(ttstr(TJS_W("macro")), (tjs_int) tag_macro);
             special_tags_hash.Add(ttstr(TJS_W("endmacro")),
-                                  (tjs_int)tag_endmacro);
+                                  (tjs_int) tag_endmacro);
             special_tags_hash.Add(ttstr(TJS_W("macropop")),
-                                  (tjs_int)tag_macropop);
+                                  (tjs_int) tag_macropop);
             special_tags_hash.Add(ttstr(TJS_W("erasemacro")),
-                                  (tjs_int)tag_erasemacro);
-            special_tags_hash.Add(ttstr(TJS_W("jump")), (tjs_int)tag_jump);
-            special_tags_hash.Add(ttstr(TJS_W("call")), (tjs_int)tag_call);
-            special_tags_hash.Add(ttstr(TJS_W("return")), (tjs_int)tag_return);
+                                  (tjs_int) tag_erasemacro);
+            special_tags_hash.Add(ttstr(TJS_W("jump")), (tjs_int) tag_jump);
+            special_tags_hash.Add(ttstr(TJS_W("call")), (tjs_int) tag_call);
+            special_tags_hash.Add(ttstr(TJS_W("return")), (tjs_int) tag_return);
         }
 
         tjs_int *tag = special_tags_hash.Find(tagname);
         if (ProcessSpecialTags)
-            tagkind = tag ? (tSpecialTags)*tag : tag_other;
+            tagkind = tag ? (tSpecialTags) *tag : tag_other;
         else
             tagkind = tag_other;
 
@@ -1615,10 +1650,10 @@ parse_start:
                             // line command
                             if (CurPos - tagstart >= 1) {
                                 RecordingMacroStr +=
-                                    TJS_W("[") +
-                                    ttstr(CurLineStr + tagstart + 1,
-                                          CurPos - tagstart - 1) +
-                                    TJS_W("]");
+                                        TJS_W("[") +
+                                        ttstr(CurLineStr + tagstart + 1,
+                                              CurPos - tagstart - 1) +
+                                        TJS_W("]");
                             }
                         }
 
@@ -1630,7 +1665,7 @@ parse_start:
                     // is macro ?
                     tTJSVariant macroval;
                     ismacro = TJS_SUCCEEDED(Macros->PropGet(
-                        0, tagname.c_str(), NULL, &macroval, Macros));
+                            0, tagname.c_str(), NULL, &macroval, Macros));
                     if (ismacro)
                         ismacro = macroval.Type() != tvtVoid;
                     if (ismacro)
@@ -1768,7 +1803,7 @@ parse_start:
 
                             tjs_int curposlen = TJS_strlen(CurLineStr + CurPos);
                             tjs_int finallen =
-                                r_count + tagstartpos + curposlen;
+                                    r_count + tagstartpos + curposlen;
 
                             if (ldelim == 0 && !IgnoreCR)
                                 finallen++;
@@ -1862,11 +1897,11 @@ parse_start:
                             tTJSVariant param(DicObj, DicObj);
                             tTJSVariant *pparam = &param;
                             static ttstr event_name(
-                                TJSMapGlobalStringMap(TJS_W("onJump")));
+                                    TJSMapGlobalStringMap(TJS_W("onJump")));
                             tTJSVariant res;
                             tjs_error er = Owner->FuncCall(
-                                0, event_name.c_str(), event_name.GetHint(),
-                                &res, 1, &pparam, Owner);
+                                    0, event_name.c_str(), event_name.GetHint(),
+                                    &res, 1, &pparam, Owner);
                             if (er == TJS_S_OK)
                                 process = res.operator bool();
                         }
@@ -1893,11 +1928,11 @@ parse_start:
                             tTJSVariant param(DicObj, DicObj);
                             tTJSVariant *pparam = &param;
                             static ttstr event_name(
-                                TJSMapGlobalStringMap(TJS_W("onCall")));
+                                    TJSMapGlobalStringMap(TJS_W("onCall")));
                             tTJSVariant res;
                             tjs_error er = Owner->FuncCall(
-                                0, event_name.c_str(), event_name.GetHint(),
-                                &res, 1, &pparam, Owner);
+                                    0, event_name.c_str(), event_name.GetHint(),
+                                    &res, 1, &pparam, Owner);
                             if (er == TJS_S_OK)
                                 process = res.operator bool();
                         }
@@ -1927,11 +1962,11 @@ parse_start:
                             tTJSVariant param(DicObj, DicObj);
                             tTJSVariant *pparam = &param;
                             static ttstr event_name(
-                                TJSMapGlobalStringMap(TJS_W("onReturn")));
+                                    TJSMapGlobalStringMap(TJS_W("onReturn")));
                             tTJSVariant res;
                             tjs_error er = Owner->FuncCall(
-                                0, event_name.c_str(), event_name.GetHint(),
-                                &res, 1, &pparam, Owner);
+                                    0, event_name.c_str(), event_name.GetHint(),
+                                    &res, 1, &pparam, Owner);
                             if (er == TJS_S_OK)
                                 process = res.operator bool();
                         }
@@ -2107,7 +2142,7 @@ parse_start:
                     iTJSDispatch2 *args = GetMacroTopNoAddRef();
                     if (args) {
                         tjs_char *vp = TJS_strchr(
-                            const_cast<tjs_char *>(value.c_str()), TJS_W('|'));
+                                const_cast<tjs_char *>(value.c_str()), TJS_W('|'));
 
                         if (vp) {
                             ttstr name(value.c_str(), vp - value.c_str());
@@ -2147,8 +2182,10 @@ parse_start:
 
     return NULL;
 }
+
 //---------------------------------------------------------------------------
 iTJSDispatch2 *tTJSNI_KAGParser::GetNextTag() { return _GetNextTag(); }
+
 //---------------------------------------------------------------------------
 iTJSDispatch2 *tTJSNI_KAGParser::GetMacroTopNoAddRef() const {
     if (MacroArgStackDepth == 0)
@@ -2165,362 +2202,351 @@ static iTJSNativeInstance *TJS_INTF_METHOD Create_NI_KAGParser() {
 //---------------------------------------------------------------------------
 // tTJSNC_KAGParser : KAGParser TJS native class
 //---------------------------------------------------------------------------
-tjs_uint32 tTJSNC_KAGParser::ClassID = (tjs_uint32)-1;
+tjs_uint32 tTJSNC_KAGParser::ClassID = (tjs_uint32) -1;
+
 tTJSNC_KAGParser::tTJSNC_KAGParser() : inherited(TJS_W("KAGParser")) {
     TJS_BEGIN_NATIVE_MEMBERS(KAGParser)
-    TJS_DECL_EMPTY_FINALIZE_METHOD
-    //----------------------------------------------------------------------
-    // constructor/methods
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_CONSTRUCTOR_DECL(
+        TJS_DECL_EMPTY_FINALIZE_METHOD
+        //----------------------------------------------------------------------
+        // constructor/methods
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_CONSTRUCTOR_DECL(
         /*var.name*/ _this,
         /*var.type*/ tTJSNI_KAGParser,
         /*TJS class name*/ KAGParser)
-    return TJS_S_OK;
+                return TJS_S_OK;
 
-    TJS_END_NATIVE_CONSTRUCTOR_DECL(/*TJS class name*/ KAGParser)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ loadScenario) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        if (numparams < 1)
-            return TJS_E_BADPARAMCOUNT;
-        _this->LoadScenario(*param[0]);
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ loadScenario)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ goToLabel) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        if (numparams < 1)
-            return TJS_E_BADPARAMCOUNT;
-        _this->GoToLabel(*param[0]);
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ goToLabel)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ callLabel) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        if (numparams < 1)
-            return TJS_E_BADPARAMCOUNT;
-        _this->CallLabel(*param[0]);
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ callLabel)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getNextTag) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        //	if(numparams < 0) return TJS_E_BADPARAMCOUNT;
-        iTJSDispatch2 *dsp = _this->GetNextTag();
-        if (dsp == NULL) {
-            if (result)
-                result->Clear(); // return void ( not null )
-        } else {
-            if (result)
-                *result = tTJSVariant(dsp, dsp);
-            dsp->Release();
-        }
+        TJS_END_NATIVE_CONSTRUCTOR_DECL(/*TJS class name*/ KAGParser)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ loadScenario){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
+                    if (numparams < 1)
+                        return TJS_E_BADPARAMCOUNT;
+                    _this->LoadScenario(*param[0]);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ loadScenario)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ goToLabel){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
+                    if (numparams < 1)
+                        return TJS_E_BADPARAMCOUNT;
+                    _this->GoToLabel(*param[0]);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ goToLabel)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ callLabel){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
+                    if (numparams < 1)
+                        return TJS_E_BADPARAMCOUNT;
+                    _this->CallLabel(*param[0]);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ callLabel)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getNextTag){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
+                    //	if(numparams < 0) return TJS_E_BADPARAMCOUNT;
+                    iTJSDispatch2 *dsp = _this->GetNextTag();
+                    if (dsp == NULL) {
+                        if (result)
+                            result->Clear(); // return void ( not null )
+                    } else {
+                        if (result)
+                            *result = tTJSVariant(dsp, dsp);
+                        dsp->Release();
+                    }
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getNextTag)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ assign) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getNextTag)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ assign){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        if (numparams < 1)
-            return TJS_E_BADPARAMCOUNT;
+                    if (numparams < 1)
+                        return TJS_E_BADPARAMCOUNT;
 
-        tTJSNI_KAGParser *src = NULL;
-        tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
-        if (clo.Object) {
-            if (TJS_FAILED(clo.Object->NativeInstanceSupport(
-                    TJS_NIS_GETINSTANCE, tTJSNC_KAGParser::ClassID,
-                    (iTJSNativeInstance **)&src)))
-                TVPThrowExceptionMessage(TVPKAGSpecifyKAGParser);
-        } else {
-            TVPThrowExceptionMessage(TVPKAGSpecifyKAGParser);
-        }
+                    tTJSNI_KAGParser *src = NULL;
+                    tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
+                    if (clo.Object) {
+                        if (TJS_FAILED(clo.Object->NativeInstanceSupport(
+                                TJS_NIS_GETINSTANCE, tTJSNC_KAGParser::ClassID,
+                                (iTJSNativeInstance **) &src)))
+                            TVPThrowExceptionMessage(TVPKAGSpecifyKAGParser);
+                    } else {
+                        TVPThrowExceptionMessage(TVPKAGSpecifyKAGParser);
+                    }
 
-        _this->Assign(*src);
+                    _this->Assign(*src);
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ assign)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ clear) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ assign)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ clear){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        _this->Clear();
+                    _this->Clear();
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ clear)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ store) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ clear)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ store){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        iTJSDispatch2 *dsp = _this->Store();
-        if (result)
-            *result = tTJSVariant(dsp, dsp);
-        dsp->Release();
+                    iTJSDispatch2 *dsp = _this->Store();
+                    if (result)
+                        *result = tTJSVariant(dsp, dsp);
+                    dsp->Release();
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ store)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ restore) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ store)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ restore){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        if (numparams < 1)
-            return TJS_E_BADPARAMCOUNT;
-        iTJSDispatch2 *dsp = param[0]->AsObjectNoAddRef();
+                    if (numparams < 1)
+                        return TJS_E_BADPARAMCOUNT;
+                    iTJSDispatch2 *dsp = param[0]->AsObjectNoAddRef();
 
-        _this->Restore(dsp);
+                    _this->Restore(dsp);
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ restore)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ clearCallStack) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ restore)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ clearCallStack){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        _this->ClearCallStack();
+                    _this->ClearCallStack();
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ clearCallStack)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ popMacroArgs) // undoc
-    {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ clearCallStack)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ popMacroArgs) // undoc
+                {
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        _this->PopMacroArgs();
+                    _this->PopMacroArgs();
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ popMacroArgs)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ interrupt) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ popMacroArgs)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ interrupt){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        _this->Interrupt();
+                    _this->Interrupt();
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ interrupt)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ resetInterrupt) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ interrupt)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ resetInterrupt){
+                    TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                    /*var. type*/ tTJSNI_KAGParser);
 
-        _this->ResetInterrupt();
+                    _this->ResetInterrupt();
 
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ resetInterrupt)
-    //----------------------------------------------------------------------
+                    return TJS_S_OK;
+                }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ resetInterrupt)
+        //----------------------------------------------------------------------
 
-    //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------------
 
-    //----------------------------------------------------------------------
-    // properties
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(curLine) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(
-            /*var. name*/ _this, /*var. type*/ tTJSNI_KAGParser);
-        *result = _this->GetCurLine();
-        return TJS_S_OK;
+        //----------------------------------------------------------------------
+        // properties
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(curLine) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(
+                /*var. name*/ _this, /*var. type*/ tTJSNI_KAGParser);
+                *result = _this->GetCurLine();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(curLine)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(curPos) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = _this->GetCurPos();
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(curLine)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(curPos) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = _this->GetCurPos();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(curPos)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(curLineStr) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = ttstr(_this->GetCurLineStr());
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(curPos)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(curLineStr) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = ttstr(_this->GetCurLineStr());
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(curLineStr)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(processSpecialTags) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = (tjs_int)_this->GetProcessSpecialTags();
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(curLineStr)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(processSpecialTags) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = (tjs_int) _this->GetProcessSpecialTags();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_BEGIN_NATIVE_PROP_SETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        _this->SetProcessSpecialTags(param->operator bool());
-        return TJS_S_OK;
+            TJS_BEGIN_NATIVE_PROP_SETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                _this->SetProcessSpecialTags(param->operator bool());
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(processSpecialTags)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(ignoreCR) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = (tjs_int)_this->GetIgnoreCR();
-        return TJS_S_OK;
+            TJS_END_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(processSpecialTags)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(ignoreCR) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = (tjs_int) _this->GetIgnoreCR();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_BEGIN_NATIVE_PROP_SETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        _this->SetIgnoreCR(param->operator bool());
-        return TJS_S_OK;
+            TJS_BEGIN_NATIVE_PROP_SETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                _this->SetIgnoreCR(param->operator bool());
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(ignoreCR)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(debugLevel) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = (tjs_int)_this->GetDebugLevel();
-        return TJS_S_OK;
+            TJS_END_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(ignoreCR)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(debugLevel) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = (tjs_int) _this->GetDebugLevel();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_BEGIN_NATIVE_PROP_SETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        _this->SetDebugLevel((tTVPKAGDebugLevel)(tjs_int)(*param));
-        return TJS_S_OK;
+            TJS_BEGIN_NATIVE_PROP_SETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                _this->SetDebugLevel((tTVPKAGDebugLevel) (tjs_int) (*param));
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(debugLevel)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(macros) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        iTJSDispatch2 *macros = _this->GetMacrosNoAddRef();
-        *result = tTJSVariant(macros, macros);
-        return TJS_S_OK;
+            TJS_END_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(debugLevel)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(macros) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                iTJSDispatch2 *macros = _this->GetMacrosNoAddRef();
+                *result = tTJSVariant(macros, macros);
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(macros)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(macroParams) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        iTJSDispatch2 *params = _this->GetMacroTopNoAddRef();
-        *result = tTJSVariant(params, params);
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(macros)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(macroParams) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                iTJSDispatch2 *params = _this->GetMacroTopNoAddRef();
+                *result = tTJSVariant(params, params);
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(macroParams)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(mp) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        iTJSDispatch2 *params = _this->GetMacroTopNoAddRef();
-        *result = tTJSVariant(params, params);
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(macroParams)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(mp) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                iTJSDispatch2 *params = _this->GetMacroTopNoAddRef();
+                *result = tTJSVariant(params, params);
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(mp)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(callStackDepth) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = _this->GetCallStackDepth();
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(mp)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(callStackDepth) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = _this->GetCallStackDepth();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(callStackDepth)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(curStorage) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = _this->GetStorageName();
-        return TJS_S_OK;
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(callStackDepth)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(curStorage) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = _this->GetStorageName();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_BEGIN_NATIVE_PROP_SETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        _this->LoadScenario(*param);
-        return TJS_S_OK;
+            TJS_BEGIN_NATIVE_PROP_SETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                _this->LoadScenario(*param);
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(curStorage)
-    //----------------------------------------------------------------------
-    TJS_BEGIN_NATIVE_PROP_DECL(curLabel) {
-        TJS_BEGIN_NATIVE_PROP_GETTER
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ tTJSNI_KAGParser);
-        *result = _this->GetCurLabel();
-        return TJS_S_OK;
+            TJS_END_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(curStorage)
+        //----------------------------------------------------------------------
+        TJS_BEGIN_NATIVE_PROP_DECL(curLabel) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+                TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                /*var. type*/ tTJSNI_KAGParser);
+                *result = _this->GetCurLabel();
+                return TJS_S_OK;
 
-        TJS_END_NATIVE_PROP_GETTER
+            TJS_END_NATIVE_PROP_GETTER
 
-        TJS_DENY_NATIVE_PROP_SETTER
-    }
-    TJS_END_NATIVE_PROP_DECL(curLabel)
-    //---------------------------------------------------------------------------
+            TJS_DENY_NATIVE_PROP_SETTER
+        }TJS_END_NATIVE_PROP_DECL(curLabel)
+        //---------------------------------------------------------------------------
 
-    //----------------------------------------------------------------------
+        //----------------------------------------------------------------------
     TJS_END_NATIVE_MEMBERS
 }
 

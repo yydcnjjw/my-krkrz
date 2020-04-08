@@ -80,7 +80,7 @@ void TJS2NativeScripts::boot_start() {
         this->_set_default_ppvalue();
         this->_tjs_engine->SetConsoleOutput(this->_tjs_console_output.get());
         this->_load_tjs_lib();
-
+        GLOG_D("tjs script exec start");
         try {
             bool is_debug = false;
             my::program_options::variable_value value;
@@ -101,20 +101,17 @@ void TJS2NativeScripts::boot_start() {
                 utf16_codecvt().to_bytes(e.GetMessage().AsStdString()).c_str());
             app->quit();
         }
+        GLOG_D("tjs script exec finished");
     });
 }
 
-void TJS2NativeScripts::stop() {
-    this->_tjs_engine->Shutdown();
-}
+void TJS2NativeScripts::stop() { this->_tjs_engine->Shutdown(); }
 
 TJS2NativeScripts::TJS2NativeScripts()
     : _tjs_engine(new tTJS()),
       _tjs_console_output(std::make_shared<TJSConsoleOutput>()) {}
 
-TJS2NativeScripts::~TJS2NativeScripts() {
-    this->_tjs_engine->Release();
-}
+TJS2NativeScripts::~TJS2NativeScripts() { this->_tjs_engine->Release(); }
 void TJS2NativeScripts::_set_default_ppvalue() {
     this->_tjs_engine->SetPPValue(TJS_W("kirkiriz"), 1);
     this->_tjs_engine->SetPPValue(TJS_W("linux"), 1);
@@ -148,16 +145,17 @@ void TJS2NativeScripts::exec_storage(const std::u16string &path,
                                      iTJSDispatch2 *context,
                                      tTJSVariant *result,
                                      const tjs_char *modestr) {
-    auto code = TJS2NativeStorages::get()->storage_read_all(
+    auto tjs2_script = TJS2NativeStorages::get()->get_storage<my::TJS2Script>(
         codecvt::utf_to_utf<char>(path));
-    this->exec(code, context, result, path);
+    this->exec(codecvt::utf_to_utf<char16_t>(tjs2_script->script), context,
+               result, path);
 }
 
 void TJS2NativeScripts::exec(const std::u16string &content,
                              iTJSDispatch2 *context, tTJSVariant *result,
                              const std::u16string &name) {
-    ttstr shortname = name;
-    this->_tjs_engine->ExecScript(content, result, context, &shortname);
+    ttstr short_name = name;
+    this->_tjs_engine->ExecScript(content, result, context, &short_name);
 }
 
 } // namespace krkrz

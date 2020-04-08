@@ -1,6 +1,8 @@
-debug
-.ccls-cache
-thirdparty/my-gui
+cmake-build-debug/
+.idea/
+debug/
 
+thirdparty/my-gui
+.ccls-cache
 .directory
 compile_commands.json

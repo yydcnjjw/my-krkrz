@@ -3,8 +3,10 @@
 #include <memory>
 #include <string>
 
-#include "codecvt.h"
-#include <storage/archive.h>
+#include <boost/format.hpp>
+
+#include <codecvt.h>
+#include <resource_mgr.hpp>
 
 namespace krkrz {
 class TJS2NativeStorages {
@@ -23,13 +25,14 @@ class TJS2NativeStorages {
     };
 
     struct SearchPathCache {
-        my::fs::path full_path;
+        std::shared_ptr<my::uri> search_uri;
         std::shared_ptr<AutoPath> archive_auto_path;
         std::shared_ptr<AutoPath> dir_auto_path;
-        SearchPathCache(const std::string &path,
-                        std::shared_ptr<AutoPath> archive_auto_path = nullptr,
-                        std::shared_ptr<AutoPath> dir_auto_path = nullptr)
-            : full_path(path), archive_auto_path(archive_auto_path),
+        explicit SearchPathCache(
+            std::shared_ptr<my::uri> search_uri,
+            std::shared_ptr<AutoPath> archive_auto_path = nullptr,
+            std::shared_ptr<AutoPath> dir_auto_path = nullptr)
+            : search_uri(search_uri), archive_auto_path(archive_auto_path),
               dir_auto_path(dir_auto_path) {}
     };
 
@@ -38,8 +41,21 @@ class TJS2NativeStorages {
         return &instance;
     }
 
-    std::shared_ptr<SearchPathCache> search_storage(const my::fs::path &path);
-    std::u16string storage_read_all(const my::fs::path &path);
+    std::optional<std::shared_ptr<SearchPathCache>>
+    search_storage(const my::fs::path &path);
+
+    template <typename T>
+    std::shared_ptr<T> get_storage(const my::fs::path &path) {
+        auto search_path = this->search_storage(path);
+        if (search_path.has_value()) {
+            return this->_resource_mgr
+                ->load_from_uri<T>(*search_path.value()->search_uri)
+                .get();
+        } else {
+            throw std::runtime_error(
+                (boost::format("%1% is not exist") % path).str());
+        }
+    }
 
     bool is_exist_storage(const std::u16string &utf16_path) {
         return !this->get_placed_path(utf16_path).empty();
@@ -55,6 +71,7 @@ class TJS2NativeStorages {
     }
 
   private:
+    my::ResourceMgr *_resource_mgr;
     my::fs::path _app_path;
     my::fs::path _default_storage_data_path;
     std::set<std::shared_ptr<AutoPath>> _auto_paths;
@@ -63,21 +80,13 @@ class TJS2NativeStorages {
         search_path_cache_map;
     search_path_cache_map _search_path_cache;
 
-    std::map<std::string, std::shared_ptr<my::Archive>> _archives;
-
     TJS2NativeStorages();
 
-    void _load_default_storage();
-
-    void _load_storage(my::fs::path path);
-
-    AutoPathType _check_auto_path_type(const std::string &path);
+    static AutoPathType _check_auto_path_type(const std::string &path);
 
     void _add_auto_path(const std::string &_path);
 
     void _remove_auto_path(const std::string &_path);
-    
-    std::string _storage_read_all(const my::fs::path &path);
 };
 
 } // namespace krkrz
