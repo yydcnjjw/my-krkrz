@@ -1,11 +1,10 @@
 #include "tjs2_lib.h"
 
-#include "codecvt.h"
-
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-#include <logger.h>
+#include <util/codecvt.h>
+#include <util/logger.h>
 
 #include "krkrz_application.h"
 #include <MsgIntf.h>

@@ -1,9 +1,12 @@
 #include "tjs2_scripts.h"
 
-#include <logger.h>
+#include <boost/timer/timer.hpp>
+
+#include <util/logger.h>
 
 #include "krkrz_application.h"
 #include "tjs2_storages.h"
+#include "tjs2_font.h"
 #include <MsgIntf.h>
 #include <MsgLoad.h>
 #include <tjs2_plugin/KAGParser.h>
@@ -82,6 +85,7 @@ void TJS2NativeScripts::boot_start() {
         this->_load_tjs_lib();
         GLOG_D("tjs script exec start");
         try {
+            boost::timer::auto_cpu_timer t;            
             bool is_debug = false;
             my::program_options::variable_value value;
             if (Application::get()->base_app()->get_program_option("debug",
@@ -137,6 +141,7 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(Layer, create_tjs2_layer());
     REGISTER_OBJECT(Timer, create_tjs2_timer());
     REGISTER_OBJECT(AsyncTrigger, create_tjs2_async_trigger());
+    REGISTER_OBJECT(WaveSoundBuffer, create_tjs2_wave_sound_buffer());    
     REGISTER_OBJECT(Font, TJS2Font::get());
     REGISTER_OBJECT(KAGParser, TVPCreateNativeClass_KAGParser());
 }

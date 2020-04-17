@@ -5,8 +5,8 @@
 
 #include <boost/format.hpp>
 
-#include <codecvt.h>
-#include <resource_mgr.hpp>
+#include <util/codecvt.h>
+#include <storage/resource_mgr.hpp>
 
 namespace krkrz {
 class TJS2NativeStorages {

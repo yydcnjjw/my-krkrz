@@ -1,5 +1,9 @@
 #include "tjs2_window.h"
 
+#include <boost/timer/timer.hpp>
+
+#include "tjs2_layer.h"
+
 namespace krkrz {
 
 tTJSNativeClass *create_tjs2_window() { return new TJS2Window(); }
@@ -26,10 +30,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
     auto bus = this->_base_app->ev_bus();
     auto win_id = this->_window->get_window_id();
     bus->on_event<my::MouseButtonEvent>()
-        .filter(
-            [win_id](const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
-                return e->data->win_id == win_id;
-            })
+        .filter([win_id](
+                    const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
+            return e->data->win_id == win_id;
+        })
         .observe_on(bus->ev_bus_worker())
         .subscribe(
             [this,
@@ -75,10 +79,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
             });
 
     bus->on_event<my::MouseMotionEvent>()
-        .filter(
-            [win_id](const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
-                return e->data->win_id == win_id;
-            })
+        .filter([win_id](
+                    const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
+            return e->data->win_id == win_id;
+        })
         .observe_on(bus->ev_bus_worker())
         .subscribe(
             [this,
@@ -166,9 +170,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
             });
 
     bus->on_event<my::KeyboardEvent>()
-        .filter([win_id](const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
-            return e->data->win_id == win_id;
-        })
+        .filter(
+            [win_id](const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
+                return e->data->win_id == win_id;
+            })
         .observe_on(bus->ev_bus_worker())
         .subscribe([this, obj](
                        const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
@@ -187,8 +192,27 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
         });
 }
 
+void TJS2NativeWindow::_render() {
+    Application::get()->base_app()->async_task()->create_timer_interval(
+        [this]() {
+            boost::timer::auto_cpu_timer t;
+            auto func =
+                my::y_combinator([](const auto &self, TJS2NativeLayer *layer) {
+                    if (!layer) {
+                        return;
+                    }
+                    for (auto child : layer->get_children()) {
+                        TJS::func_call(child->this_obj(), "onPaint");
+                        self(child);
+                    }
+                });
+            func(this->_primary_layer.get());
+        },
+        std::chrono::milliseconds(1000 / 60));
+}
+
 tjs_uint32 TJS2Window::ClassID = (tjs_uint32)-1;
-    
+
 TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_MEMBERS(Window)

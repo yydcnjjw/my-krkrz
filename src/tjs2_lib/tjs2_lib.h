@@ -2,11 +2,9 @@
 
 #include <memory>
 
-#include <codecvt.h>
+#include <util/codecvt.h>
 
 #include <tjsNative.h>
-
-#include "tjs2_font.h"
 
 namespace krkrz {
 tTJSNativeClass *create_tjs2_system();
@@ -17,6 +15,7 @@ tTJSNativeClass *create_tjs2_window();
 tTJSNativeClass *create_tjs2_layer();
 tTJSNativeClass *create_tjs2_timer();
 tTJSNativeClass *create_tjs2_async_trigger();
+tTJSNativeClass *create_tjs2_wave_sound_buffer();
 
 namespace TJS {
 

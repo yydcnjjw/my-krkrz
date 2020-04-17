@@ -1,8 +1,6 @@
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
-
-#include <logger.h>
+#include <util/logger.h>
 
 #include "tjs2_font.h"
 #include "tjs2_lib.h"
@@ -10,20 +8,27 @@
 #include <MsgIntf.h>
 
 namespace krkrz {
-
 class TJS2NativeLayer : public tTJSNativeInstance {
   public:
+    TJS2NativeLayer();
+
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) override;
 
-    void fill_rect(int x, int y, int w, int h, uint32_t color, int opa = 255) {}
+    void fill_rect(int x, int y, int w, int h, uint32_t color, int opa = 255) {
+
+    }
 
     iTJSDispatch2 *this_obj() {
         assert(this->_this_obj);
         return this->_this_obj;
     }
     iTJSDispatch2 *get_font() { return this->_font; }
-    TJS2NativeWindow *get_window() { return this->_win; }
+    TJS2NativeWindow *get_window() {
+        assert(this->_win);
+        return this->_win;
+    }
+    
     my::WindowMgr *get_window_mgr() { return this->_win_mgr; }
 
     void set_parent(TJS2NativeLayer *parent) {
@@ -40,7 +45,11 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     iTJSDispatch2 *get_parent() { return this->_parent->this_obj(); }
 
-    iTJSDispatch2 *get_children() const;
+    iTJSDispatch2 *get_children_obj() const;
+
+    const std::list<TJS2NativeLayer *> &get_children() const {
+        return this->_children;
+    }
 
     my::Size2D size;
     my::PixelPos pos;
@@ -74,6 +83,10 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void remove_children(TJS2NativeLayer *layer) {
         this->_children.remove(layer);
+    }
+
+    my::Canvas &_canvas() {
+        return *this->_win->canvas();
     }
 };
 } // namespace krkrz

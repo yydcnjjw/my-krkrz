@@ -1,10 +1,8 @@
 #include "tjs2_storages.h"
 
-#include <fstream>
-
 #include <boost/format.hpp>
 
-#include <logger.h>
+#include <util/logger.h>
 
 #include "krkrz_application.h"
 #include "tjs2_lib.h"

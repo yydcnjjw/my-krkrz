@@ -1,11 +1,11 @@
 #pragma once
 
-#include <codecvt.h>
-#include <draw_list.h>
-#include <window_mgr.h>
+#include <render/canvas.h>
+#include <render/window/window_mgr.h>
+#include <util/async_task.hpp>
+#include <util/codecvt.h>
 
 #include "krkrz_application.h"
-
 #include "tjs2_lib.h"
 
 namespace krkrz {
@@ -68,16 +68,20 @@ struct TJSEvent {
     TJSEventType type;
     std::vector<tTJSVariant> args;
 };
-
+class TJS2NativeLayer;
 class TJS2NativeWindow : public tTJSNativeInstance {
   public:
-    TJS2NativeWindow() : _base_app(Application::get()->base_app()) {}
+    TJS2NativeWindow()
+        : _base_app(Application::get()->base_app()),
+          _primary_layer(std::make_shared<TJS2NativeLayer>()) {}
+
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) {
         this->_this_obj = tjs_obj;
         this->_window =
             this->_base_app->win_mgr()->create_window("test", 800, 600);
         this->_subscribe_event(tjs_obj);
+        this->_render();
         return TJS_S_OK;
     }
     void TJS_INTF_METHOD Invalidate() {
@@ -117,16 +121,22 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     std::u16string caption;
 
-    std::shared_ptr<my::DrawList> draw_list;
+    my::Canvas *canvas() {
+        return this->_canvas.get();
+    }
 
   private:
     iTJSDispatch2 *_this_obj;
     my::Application *_base_app;
     my::Window *_window;
     std::vector<tTJSVariantClosure> _objects;
+    std::shared_ptr<TJS2NativeLayer> _primary_layer;
+    std::shared_ptr<my::Canvas> _canvas;
+
     bool _is_full_screen;
 
     void _subscribe_event(iTJSDispatch2 *obj);
+    void _render();
 };
 
 class TJS2Window : public tTJSNativeClass {

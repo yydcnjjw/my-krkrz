@@ -1,7 +1,7 @@
 #include "krkrz_application.h"
 
 #include <application.h>
-#include <logger.h>
+#include <util/logger.h>
 
 #include <tjs2_lib/tjs2_scripts.h>
 

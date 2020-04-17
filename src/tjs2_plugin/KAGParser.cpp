@@ -11,8 +11,8 @@
 
 #include "KAGParser.h"
 
-#include <codecvt.h>
-#include <logger.h>
+#include <util/codecvt.h>
+#include <util/logger.h>
 #include <tjs2_lib/tjs2_scripts.h>
 #include <tjs2_lib/tjs2_storages.h>
 

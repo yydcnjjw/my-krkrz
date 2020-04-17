@@ -1,7 +1,7 @@
 #pragma once
 
-#include <codecvt.h>
-#include <logger.h>
+#include <util/codecvt.h>
+#include <util/logger.h>
 
 #include "tjs2_lib.h"
 

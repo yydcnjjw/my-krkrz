@@ -540,7 +540,7 @@ class TJS2Layer : public tTJSNativeClass {
 
             TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                     /*var. type*/ TJS2NativeLayer);
-            iTJSDispatch2 *dsp = _this->get_children();
+            iTJSDispatch2 *dsp = _this->get_children_obj();
             *result = tTJSVariant(dsp, dsp);
             return TJS_S_OK;
 
@@ -611,6 +611,28 @@ class TJS2Layer : public tTJSNativeClass {
         }
         TJS_END_NATIVE_PROP_DECL(imageModified)
 
+        TJS_BEGIN_NATIVE_PROP_DECL(showParentHint) {
+            // TODO: Layer.showParentHint
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            *result = true;
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            // _this->SetShowParentHint(*param);
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(showParentHint)
+
         TJS_END_NATIVE_MEMBERS
     } // namespace
     static tjs_uint32 ClassID;
@@ -626,6 +648,10 @@ tjs_uint32 TJS2Layer::ClassID = (tjs_uint32)-1;
 namespace krkrz {
 tTJSNativeClass *create_tjs2_layer() { return new TJS2Layer(); }
 
+TJS2NativeLayer::TJS2NativeLayer()
+    : _font(TJS2Font::create()),
+      _win_mgr(krkrz::Application::get()->base_app()->win_mgr()) {}
+
 tjs_error TJS_INTF_METHOD TJS2NativeLayer::Construct(tjs_int numparams,
                                                      tTJSVariant **param,
                                                      iTJSDispatch2 *tjs_obj) {
@@ -637,19 +663,16 @@ tjs_error TJS_INTF_METHOD TJS2NativeLayer::Construct(tjs_int numparams,
 
     TJS_NATIVE_INSTANCE(param[0], win, TJS2NativeWindow, TJS2Window);
     this->_win = win;
-    this->_win_mgr = krkrz::Application::get()->base_app()->win_mgr();
 
     if (*param[1]) {
         TJS_NATIVE_INSTANCE(param[1], parent_layer, TJS2NativeLayer, TJS2Layer);
         this->set_parent(parent_layer);
     }
 
-    this->_font = TJS2Font::create();
-
     return TJS_S_OK;
 }
 
-iTJSDispatch2 *TJS2NativeLayer::get_children() const {
+iTJSDispatch2 *TJS2NativeLayer::get_children_obj() const {
     iTJSDispatch2 *classobj;
     auto childrens = TJSCreateArrayObject(&classobj);
 
