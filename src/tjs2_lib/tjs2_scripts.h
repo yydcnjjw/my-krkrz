@@ -1,5 +1,7 @@
 #pragma once
 
+#include <shared_mutex>
+
 #include <util/codecvt.h>
 #include <util/logger.h>
 
@@ -31,6 +33,10 @@ class TJS2NativeScripts {
     ~TJS2NativeScripts();
 
     void boot_start();
+    bool is_stopping() {
+        std::shared_lock<std::shared_mutex> l_lock(this->_lock);
+        return this->_is_stopping;
+    }
     void stop();
 
     void exec_storage(const std::u16string &path,
@@ -46,6 +52,8 @@ class TJS2NativeScripts {
     std::thread _tjs_thread;
     tTJS *_tjs_engine;
     std::shared_ptr<TJSConsoleOutput> _tjs_console_output;
+    bool _is_stopping {false};
+    std::shared_mutex _lock;
 
     TJS2NativeScripts();
 

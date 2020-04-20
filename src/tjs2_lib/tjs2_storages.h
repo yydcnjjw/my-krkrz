@@ -5,8 +5,8 @@
 
 #include <boost/format.hpp>
 
-#include <util/codecvt.h>
 #include <storage/resource_mgr.hpp>
+#include <util/codecvt.h>
 
 namespace krkrz {
 class TJS2NativeStorages {
@@ -64,11 +64,23 @@ class TJS2NativeStorages {
     std::u16string get_placed_path(const std::u16string &utf16_path);
 
     void add_auto_path(const std::u16string &utf16_path) {
-        this->_add_auto_path(utf16_codecvt().to_bytes(utf16_path));
+        this->_add_auto_path(codecvt::utf_to_utf<char>(utf16_path));
     }
     void remove_auto_path(const std::u16string &utf16_path) {
-        this->_remove_auto_path(utf16_codecvt().to_bytes(utf16_path));
+        this->_remove_auto_path(codecvt::utf_to_utf<char>(utf16_path));
     }
+
+    std::u16string extract_storage_name(const std::u16string &utf16_path) {
+        return my::fs::path(codecvt::utf_to_utf<char>(utf16_path))
+            .filename()
+            .u16string();
+    }
+
+    std::u16string chop_storage_ext(const std::u16string &utf16_path) {
+        auto path = my::fs::path(codecvt::utf_to_utf<char>(utf16_path));
+        return (path.parent_path() / path.stem()).u16string();
+        
+    }    
 
   private:
     my::ResourceMgr *_resource_mgr;

@@ -16,19 +16,33 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                                         iTJSDispatch2 *tjs_obj) override;
 
     void fill_rect(int x, int y, int w, int h, uint32_t color, int opa = 255) {
+        GLOG_D("file rect %d,%d = %d,%d color %#x, %d", x, y, x + w, y + h,
+               color, opa);
+        this->_canvas().fill_rect(
+            {x, y}, {x + w, y + h},
+            {color & 0xff000000, color & 0x00ff0000, color & 0x0000ff00, opa});
+    }
 
+    void draw_text(int x, int y, const std::u16string &text, uint32_t color,
+                   int opa, bool aa, int shadowlevel, uint32_t shadowcolor,
+                   int shadowwidth, int shadowofsx, int shadowofsy) {
+        GLOG_D("draw text %d,%d %s", x, y,
+               codecvt::utf_to_utf<char>(text).c_str());
+        this->_canvas().fill_text(codecvt::utf_to_utf<char>(text), {x, y});
     }
 
     iTJSDispatch2 *this_obj() {
         assert(this->_this_obj);
         return this->_this_obj;
     }
+
     iTJSDispatch2 *get_font() { return this->_font; }
+
     TJS2NativeWindow *get_window() {
         assert(this->_win);
         return this->_win;
     }
-    
+
     my::WindowMgr *get_window_mgr() { return this->_win_mgr; }
 
     void set_parent(TJS2NativeLayer *parent) {
@@ -85,8 +99,6 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         this->_children.remove(layer);
     }
 
-    my::Canvas &_canvas() {
-        return *this->_win->canvas();
-    }
+    my::Canvas &_canvas() { return *this->_win->canvas(); }
 };
 } // namespace krkrz

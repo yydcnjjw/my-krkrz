@@ -1,3 +1,4 @@
+#pragma once
 #include <application.h>
 
 #include <aio.h>

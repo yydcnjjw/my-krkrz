@@ -29,6 +29,15 @@ TJSMouseButton from_sdl(uint32_t button) {
 void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
     auto bus = this->_base_app->ev_bus();
     auto win_id = this->_window->get_window_id();
+    auto error_handle = [this](std::exception_ptr &e) {
+        try {
+            std::rethrow_exception(e);
+        } catch (eTJSError &e) {
+            GLOG_D(
+                utf16_codecvt().to_bytes(e.GetMessage().AsStdString()).c_str());
+        }
+        this->_base_app->quit();
+    };
     bus->on_event<my::MouseButtonEvent>()
         .filter([win_id](
                     const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
@@ -76,7 +85,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     TJS::func_call(obj, "onMouseUp", args);
                     break;
                 }
-            });
+            },
+            error_handle);
 
     bus->on_event<my::MouseMotionEvent>()
         .filter([win_id](
@@ -108,7 +118,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                 std::vector<tTJSVariant> args{e->data->pos.x, e->data->pos.y,
                                               (int)shift};
                 TJS::func_call(obj, "onMouseMove", args);
-            });
+            },
+            error_handle);
 
     bus->on_event<my::MoushWheelEvent>()
         .filter(
@@ -141,7 +152,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                 std::vector<tTJSVariant> args{(int)shift, 120, e->data->pos.x,
                                               e->data->pos.y};
                 TJS::func_call(obj, "onMouseMove", args);
-            });
+            },
+            error_handle);
 
     bus->on_event<my::WindowEvent>()
         .filter([win_id](const std::shared_ptr<my::Event<my::WindowEvent>> &e) {
@@ -167,7 +179,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     TJS::func_call(obj, "onResize");
                     break;
                 }
-            });
+            },
+            error_handle);
 
     bus->on_event<my::KeyboardEvent>()
         .filter(
@@ -175,40 +188,47 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                 return e->data->win_id == win_id;
             })
         .observe_on(bus->ev_bus_worker())
-        .subscribe([this, obj](
-                       const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
-            auto key = e->data;
-            // TODO: impl Window.onkeyDown Window.onkeyUp
-            // Window.onkeyPress
-            std::vector<tTJSVariant> args{0};
-            switch (key->state) {
-            case SDL_PRESSED:
-                TJS::func_call(obj, "onKeyDown", args);
-                break;
-            case SDL_RELEASED:
-                TJS::func_call(obj, "onKeyUp", args);
-                break;
-            }
-        });
+        .subscribe(
+            [this,
+             obj](const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
+                auto key = e->data;
+                // TODO: impl Window.onkeyDown Window.onkeyUp
+                // Window.onkeyPress
+                std::vector<tTJSVariant> args{0};
+                switch (key->state) {
+                case SDL_PRESSED:
+                    TJS::func_call(obj, "onKeyDown", args);
+                    break;
+                case SDL_RELEASED:
+                    TJS::func_call(obj, "onKeyUp", args);
+                    break;
+                }
+            },
+            error_handle);
 }
 
 void TJS2NativeWindow::_render() {
-    Application::get()->base_app()->async_task()->create_timer_interval(
-        [this]() {
-            boost::timer::auto_cpu_timer t;
-            auto func =
-                my::y_combinator([](const auto &self, TJS2NativeLayer *layer) {
-                    if (!layer) {
-                        return;
-                    }
-                    for (auto child : layer->get_children()) {
-                        TJS::func_call(child->this_obj(), "onPaint");
-                        self(child);
-                    }
-                });
-            func(this->_primary_layer.get());
-        },
-        std::chrono::milliseconds(1000 / 60));
+    this->_render_task =
+        Application::get()->base_app()->async_task()->create_timer_interval(
+            std::function<void(void)>([this]() {
+                // boost::timer::auto_cpu_timer t;
+                // auto func =
+                //     my::y_combinator([](const auto &self, TJS2NativeLayer
+                //     *layer)
+                //     {
+                //         if (!layer) {
+                //             return;
+                //         }
+                //         for (auto child : layer->get_children()) {
+                //             TJS::func_call(child->this_obj(), "onPaint");
+                //             self(child);
+                //         }
+                //     });
+                // func(this->_primary_layer.get());
+                this->_canvas->render();
+            }),
+            std::chrono::milliseconds(1000 / 60));
+    this->_render_task->start();
 }
 
 tjs_uint32 TJS2Window::ClassID = (tjs_uint32)-1;
@@ -677,6 +697,26 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_END_NATIVE_PROP_SETTER
     }
     TJS_END_NATIVE_PROP_DECL(showScrollBars)
+    TJS_BEGIN_NATIVE_PROP_DECL(visible) {
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+        *result = _this->base_window()->is_visible();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+        _this->base_window()->set_visible(*param);
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(visible)
     TJS_END_NATIVE_MEMBERS
 }
 

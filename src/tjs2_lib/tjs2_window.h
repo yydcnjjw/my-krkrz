@@ -79,7 +79,12 @@ class TJS2NativeWindow : public tTJSNativeInstance {
                                         iTJSDispatch2 *tjs_obj) {
         this->_this_obj = tjs_obj;
         this->_window =
-            this->_base_app->win_mgr()->create_window("test", 800, 600);
+            this->_base_app->win_mgr()->create_window("test", 640, 480);
+
+        this->_canvas = std::make_shared<my::Canvas>(
+            this->_base_app->renderer(), this->_window,
+            this->_base_app->resource_mgr(), this->_base_app->font_mgr());
+
         this->_subscribe_event(tjs_obj);
         this->_render();
         return TJS_S_OK;
@@ -89,6 +94,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
             obj.Invalidate(0, nullptr, nullptr, nullptr);
             obj.Release();
         }
+        this->_render_task->cancel();
         this->_base_app->win_mgr()->remove_window(this->_window);
     }
 
@@ -121,9 +127,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     std::u16string caption;
 
-    my::Canvas *canvas() {
-        return this->_canvas.get();
-    }
+    my::Canvas *canvas() { return this->_canvas.get(); }
 
   private:
     iTJSDispatch2 *_this_obj;
@@ -133,6 +137,9 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     std::shared_ptr<TJS2NativeLayer> _primary_layer;
     std::shared_ptr<my::Canvas> _canvas;
 
+    typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
+        RenderTask;
+    RenderTask _render_task;
     bool _is_full_screen;
 
     void _subscribe_event(iTJSDispatch2 *obj);

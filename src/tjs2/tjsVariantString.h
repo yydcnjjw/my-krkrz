@@ -109,6 +109,7 @@ public:
 
 	TJS_METHOD_DEF(void, SetString, (const tjs_nchar *ref))
 	{
+        printf("%s\n", ref);
 		if(LongString) TJSVS_free(LongString), LongString = NULL;
 		tjs_int len = (tjs_int)TJS_narrowtowidelen(ref);
 		if(len == -1) TJSThrowNarrowToWideConversionError();

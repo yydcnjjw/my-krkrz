@@ -1,6 +1,9 @@
 #include "tjs2_lib.h"
+#include <mutex>
+
 namespace krkrz {
 namespace TJS {
+
 void func_call(iTJSDispatch2 *obj, const std::string &func_name,
                const std::vector<tTJSVariant> &args) {
     std::shared_ptr<tTJSVariant *[]> args_ptr(new tTJSVariant *[args.size()]);

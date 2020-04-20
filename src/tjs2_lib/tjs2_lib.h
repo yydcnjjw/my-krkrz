@@ -16,7 +16,7 @@ tTJSNativeClass *create_tjs2_layer();
 tTJSNativeClass *create_tjs2_timer();
 tTJSNativeClass *create_tjs2_async_trigger();
 tTJSNativeClass *create_tjs2_wave_sound_buffer();
-
+tTJSNativeClass *create_tjs2_video_overlay();
 namespace TJS {
 
 #define TJS_NATIVE_INSTANCE(obj, var, native_cls, tjs_cls)                     \

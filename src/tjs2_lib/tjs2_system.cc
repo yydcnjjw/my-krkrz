@@ -142,10 +142,15 @@ class TJS2NativeSystem {
     }
 
     void exit(int code) {
-        std::exit(code);
+        GLOG_D("====exit====");
+        krkrz::Application::get()->base_app()->quit();
+        // std::exit(code);
     }
 
-    void terminal(int code) { krkrz::Application::get()->base_app()->quit(); }
+    void terminal(int code) {
+        GLOG_D("====terminal====");
+        krkrz::Application::get()->base_app()->quit();
+    }
 
     bool get_program_option_value(const tjs_char *name, tTJSVariant *value) {
         my::program_options::variable_value option_value;

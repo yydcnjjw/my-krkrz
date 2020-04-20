@@ -39,13 +39,42 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
     }
 
     void stop_fade() {
-        this->_audio_mgr->pause_fade(this->_audio.get(), this->_fade_time);
+        this->_audio_mgr->stop_fade(this->_audio.get(), this->_fade_time);
     }
+
+    bool is_paused() {
+        if (!this->_audio) {
+            return true;
+        }
+        return this->_audio_mgr->is_paused(this->_audio.get());
+    }
+
+    void set_paused(bool paused) {
+        if (paused == this->is_paused()) {
+            return;
+        }
+        if (paused) {
+            pause();
+        } else {
+            this->_audio_mgr->resume(this->_audio.get());
+        }
+    }
+
+    void set_panning(int pan) {
+        if (this->_pan == pan) {
+            return;
+        }
+        // TODO:
+        // this->_audio_mgr->set_panning(this->_audio.get(), , );
+    }
+
+    int get_panning() { return this->_pan; }
 
   private:
     my::AudioMgr *_audio_mgr;
     std::shared_ptr<my::Audio> _audio;
-    int _fade_time = 0;
+    int _fade_time{0};
+    int _pan{0};
 };
 
 class TJS2WaveSoundBuffer : public tTJSNativeClass {
@@ -124,6 +153,55 @@ class TJS2WaveSoundBuffer : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_METHOD_DECL(/*func. name*/ stopFade)
+
+        TJS_BEGIN_NATIVE_PROP_DECL(paused) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            *result = _this->is_paused();
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            _this->set_paused(*param);
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(paused)
+        TJS_BEGIN_NATIVE_PROP_DECL(pan) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            *result = _this->get_panning();
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            _this->set_panning(*param);
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(pan)
 
         TJS_END_NATIVE_MEMBERS
     }

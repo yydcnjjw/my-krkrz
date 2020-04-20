@@ -32,7 +32,6 @@ void Application::_init_basic_path(const char *exec_path) {
 void Application::run() {
     TJS2NativeScripts::get()->boot_start();
     this->_base_app->run();
-    TJS2NativeScripts::get()->stop();
 }
 
 Application *Application::get() {

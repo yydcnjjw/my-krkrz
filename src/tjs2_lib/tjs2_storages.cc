@@ -80,6 +80,35 @@ class TJS2Storages : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ getPlacedPath)
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ extractStorageName) {
+            if (numparams < 1)
+                return TJS_E_BADPARAMCOUNT;
+
+            ttstr path = *param[0];
+
+            if (result)
+                *result =
+                    krkrz::TJS2NativeStorages::get()->extract_storage_name(
+                        path.AsStdString());
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ extractStorageName)
+
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ chopStorageExt) {
+            if (numparams < 1)
+                return TJS_E_BADPARAMCOUNT;
+
+            ttstr path = *param[0];
+
+            if (result)
+                *result =
+                    krkrz::TJS2NativeStorages::get()->chop_storage_ext(
+                        path.AsStdString());
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ chopStorageExt)
 
         TJS_END_NATIVE_MEMBERS
     }
@@ -101,9 +130,9 @@ build_search_path(const my::fs::path &file_path,
 
     std::string uri_str;
     if (!query_path.empty()) {
-        uri_str =
-            (boost::format("file://%1%?path=%2%") % file_path.string() % query_path.string())
-                .str();
+        uri_str = (boost::format("file://%1%?path=%2%") % file_path.string() %
+                   query_path.string())
+                      .str();
     } else {
         uri_str = (boost::format("file://%1%") % file_path.string()).str();
     }

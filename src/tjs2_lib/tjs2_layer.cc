@@ -633,6 +633,99 @@ class TJS2Layer : public tTJSNativeClass {
         }
         TJS_END_NATIVE_PROP_DECL(showParentHint)
 
+        TJS_BEGIN_NATIVE_PROP_DECL(opacity) {
+            // TODO: Layer.opacity
+            TJS_BEGIN_NATIVE_PROP_GETTER
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            *result = 255; //_this->GetOpacity();
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            // _this->SetOpacity(*param);
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(opacity)
+        TJS_BEGIN_NATIVE_PROP_DECL(absolute) // not absoluteOrderIndex
+        {
+            // TODO: Layer.absolute
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            *result = 0; //(tjs_int)_this->GetAbsoluteOrderIndex();
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            // _this->SetAbsoluteOrderIndex(*param);
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(absolute)
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ setMode) {
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+
+            // _this->SetMode();
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setMode)
+
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ removeMode) {
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+
+            // _this->RemoveMode();
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ removeMode)
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ drawText) {
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeLayer);
+            if (numparams < 4)
+                return TJS_E_BADPARAMCOUNT;
+            _this->draw_text(*param[0], *param[1], ((ttstr)*param[2]).c_str(),
+                             static_cast<tjs_uint32>((tjs_int64)*param[3]),
+                             (numparams >= 5 && param[4]->Type() != tvtVoid)
+                                 ? (tjs_int)*param[4]
+                                 : (tjs_int)255,
+                             (numparams >= 6 && param[5]->Type() != tvtVoid)
+                                 ? param[5]->operator bool()
+                                 : true,
+                             (numparams >= 7 && param[6]->Type() != tvtVoid)
+                                 ? (tjs_int)*param[6]
+                                 : 0,
+                             (numparams >= 8 && param[7]->Type() != tvtVoid)
+                                 ? static_cast<tjs_uint32>((tjs_int64)*param[7])
+                                 : 0,
+                             (numparams >= 9 && param[8]->Type() != tvtVoid)
+                                 ? (tjs_int)*param[8]
+                                 : 0,
+                             (numparams >= 10 && param[9]->Type() != tvtVoid)
+                                 ? (tjs_int)*param[9]
+                                 : 0,
+                             (numparams >= 11 && param[10]->Type() != tvtVoid)
+                                 ? (tjs_int)*param[10]
+                                 : 0);
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_METHOD_DECL(/*func. name*/ drawText)
         TJS_END_NATIVE_MEMBERS
     } // namespace
     static tjs_uint32 ClassID;

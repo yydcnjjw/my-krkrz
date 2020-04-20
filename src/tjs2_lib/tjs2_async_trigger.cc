@@ -3,6 +3,7 @@
 #include <util/logger.h>
 
 #include <MsgIntf.h>
+#include <krkrz_application.h>
 
 namespace {
 
@@ -22,6 +23,8 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
         if (numparams < 1)
             return TJS_E_BADPARAMCOUNT;
 
+        this->_this = tjs_obj;
+
         if (numparams >= 2 && param[1]->Type() != tvtVoid) {
             this->action_name =
                 ((ttstr)*param[1])
@@ -32,7 +35,13 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
         return TJS_S_OK;
     }
 
-    void trigger() { krkrz::TJS::func_call(this->_this, "onFire"); }
+    void trigger() {
+        krkrz::Application::get()->base_app()->async_task()->do_async<void>(
+            [this](std::shared_ptr<my::promise<void>>) {
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+                krkrz::TJS::func_call(this->_this, "onFire");
+            });
+    }
 
     void cancel() {}
 

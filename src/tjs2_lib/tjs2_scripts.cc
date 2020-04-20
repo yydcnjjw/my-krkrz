@@ -5,13 +5,81 @@
 #include <util/logger.h>
 
 #include "krkrz_application.h"
-#include "tjs2_storages.h"
 #include "tjs2_font.h"
+#include "tjs2_storages.h"
 #include <MsgIntf.h>
 #include <MsgLoad.h>
 #include <tjs2_plugin/KAGParser.h>
 
 namespace {
+
+class TJS2TextReadStream : public iTJSTextReadStream {
+  public:
+    TJS2TextReadStream(const std::u16string name, const std::u16string mode) {
+        GLOG_D("read stream %s,%s", codecvt::utf_to_utf<char>(name).c_str(),
+               codecvt::utf_to_utf<char>(mode).c_str());
+    }
+    tjs_uint TJS_INTF_METHOD Read(tTJSString &targ, tjs_uint size) override {}
+    void TJS_INTF_METHOD Destruct() override {}
+};
+
+class TJS2TextWriteStream : public iTJSTextWriteStream {
+  public:
+    TJS2TextWriteStream(const std::u16string name, const std::u16string mode) {
+        GLOG_D("write stream %s,%s", codecvt::utf_to_utf<char>(name).c_str(),
+               codecvt::utf_to_utf<char>(mode).c_str());
+    }
+    void TJS_INTF_METHOD Write(const tTJSString &targ) override {}
+    void TJS_INTF_METHOD Destruct() override {}
+};
+
+// class iTJSBinaryStream {
+//   public:
+//     /* if error, position is not changed */
+//     virtual tjs_uint64 TJS_INTF_METHOD Seek(tjs_int64 offset,
+//                                             tjs_int whence) = 0;
+
+//     /* returns actually read size */
+//     virtual tjs_uint TJS_INTF_METHOD Read(void *buffer, tjs_uint read_size) =
+//     0;
+
+//     /* returns actually written size */
+//     virtual tjs_uint TJS_INTF_METHOD Write(const void *buffer,
+//                                            tjs_uint write_size) = 0;
+
+//     // the default behavior is raising a exception
+//     /* if error, raises exception */
+//     virtual void TJS_INTF_METHOD SetEndOfStorage() = 0;
+
+//     //-- should re-implement for higher performance
+//     virtual tjs_uint64 TJS_INTF_METHOD GetSize() = 0;
+
+//     virtual void TJS_INTF_METHOD Destruct() = 0; // must delete itself
+
+//     virtual tjs_uint64 TJS_INTF_METHOD GetPosition() = 0;
+
+//     virtual void TJS_INTF_METHOD SetPosition(tjs_uint64 pos) = 0;
+// };
+
+iTJSTextReadStream *TVPCreateTextStreamForRead(const ttstr &name,
+                                               const ttstr &modestr) {
+    return new TJS2TextReadStream(name.AsStdString(), modestr.AsStdString());
+}
+
+iTJSTextWriteStream *TVPCreateTextStreamForWrite(const ttstr &name,
+                                                 const ttstr &modestr) {
+    return new TJS2TextWriteStream(name.AsStdString(), modestr.AsStdString());
+}
+
+// iTJSBinaryStream *TVPCreateBinaryStreamInterfaceForRead(const ttstr &name,
+//                                                         const ttstr &modestr)
+//                                                         {}
+
+// iTJSBinaryStream *TVPCreateBinaryStreamInterfaceForWrite(const ttstr &name,
+//                                                          const ttstr
+//                                                          &modestr) {
+
+// }
 
 class TJS2Scripts : public tTJSNativeClass {
     typedef tTJSNativeClass inherited;
@@ -77,15 +145,20 @@ void TJS2NativeScripts::boot_start() {
             if (this->_tjs_thread.joinable()) {
                 this->_tjs_thread.join();
             }
+            TJS2NativeScripts::get()->stop();
         });
     this->_tjs_thread = std::thread([this, app]() {
         TVPLoadMessage();
         this->_set_default_ppvalue();
         this->_tjs_engine->SetConsoleOutput(this->_tjs_console_output.get());
+        TJSCreateTextStreamForRead = TVPCreateTextStreamForRead;
+        TJSCreateTextStreamForWrite = TVPCreateTextStreamForWrite;
+
         this->_load_tjs_lib();
+
         GLOG_D("tjs script exec start");
         try {
-            boost::timer::auto_cpu_timer t;            
+            boost::timer::auto_cpu_timer t;
             bool is_debug = false;
             my::program_options::variable_value value;
             if (Application::get()->base_app()->get_program_option("debug",
@@ -109,13 +182,26 @@ void TJS2NativeScripts::boot_start() {
     });
 }
 
-void TJS2NativeScripts::stop() { this->_tjs_engine->Shutdown(); }
+void TJS2NativeScripts::stop() {
+    {
+        std::unique_lock<std::shared_mutex> l_lock(this->_lock);
+        this->_is_stopping = true;
+    }
+
+    this->_tjs_engine->Shutdown();
+}
 
 TJS2NativeScripts::TJS2NativeScripts()
     : _tjs_engine(new tTJS()),
       _tjs_console_output(std::make_shared<TJSConsoleOutput>()) {}
 
-TJS2NativeScripts::~TJS2NativeScripts() { this->_tjs_engine->Release(); }
+TJS2NativeScripts::~TJS2NativeScripts() {
+    try {
+        this->_tjs_engine->Release();
+    } catch (eTJSError &e) {
+        GLOG_D(utf16_codecvt().to_bytes(e.GetMessage().AsStdString()).c_str());
+    }
+}
 void TJS2NativeScripts::_set_default_ppvalue() {
     this->_tjs_engine->SetPPValue(TJS_W("kirkiriz"), 1);
     this->_tjs_engine->SetPPValue(TJS_W("linux"), 1);
@@ -141,7 +227,8 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(Layer, create_tjs2_layer());
     REGISTER_OBJECT(Timer, create_tjs2_timer());
     REGISTER_OBJECT(AsyncTrigger, create_tjs2_async_trigger());
-    REGISTER_OBJECT(WaveSoundBuffer, create_tjs2_wave_sound_buffer());    
+    REGISTER_OBJECT(WaveSoundBuffer, create_tjs2_wave_sound_buffer());
+    REGISTER_OBJECT(VideoOverlay, create_tjs2_video_overlay());
     REGISTER_OBJECT(Font, TJS2Font::get());
     REGISTER_OBJECT(KAGParser, TVPCreateNativeClass_KAGParser());
 }

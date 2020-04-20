@@ -3,8 +3,9 @@
 #include <util/codecvt.h>
 #include <util/logger.h>
 
-#include "krkrz_application.h"
 #include <MsgIntf.h>
+#include <krkrz_application.h>
+#include <tjs2_lib/tjs2_scripts.h>
 
 namespace {
 
@@ -30,15 +31,26 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                     .AsStdString(); // action function to be called
 
         this->action = param[0]->AsObjectClosure();
-
-        this->_timer = krkrz::Application::get()
-                           ->base_app()
-                           ->async_task()
-                           ->create_timer_interval(
-                               std::function<void(void)>([tjs_obj]() -> void {
-                                   krkrz::TJS::func_call(tjs_obj, "onTimer");
-                               }),
-                               std::chrono::milliseconds(this->_interval));
+        this->_timer =
+            krkrz::Application::get()
+                ->base_app()
+                ->async_task()
+                ->create_timer_interval(
+                    std::function<void(void)>([tjs_obj, this]() -> void {
+                        if (krkrz::TJS2NativeScripts::get()->is_stopping()) {
+                            return;
+                        }
+                        try {
+                            krkrz::TJS::func_call(tjs_obj, "onTimer");
+                        } catch (eTJSError &e) {
+                            GLOG_D(utf16_codecvt()
+                                       .to_bytes(e.GetMessage().AsStdString())
+                                       .c_str());
+                            this->disable();
+                            krkrz::Application::get()->base_app()->quit();
+                        }
+                    }),
+                    std::chrono::milliseconds(this->_interval));
         return TJS_S_OK;
     }
 
@@ -47,28 +59,38 @@ class TJS2NativeTimer : public tTJSNativeInstance {
         this->action.Release();
     }
 
-    bool is_enable() { return this->_enabled; }
+    bool is_enable() { return !this->_timer->is_cancel(); }
 
     void disable() {
-        this->_enabled = false;
+        GLOG_D("direct disable timer");
         this->_timer->cancel();
     }
 
     void enable() {
-        this->_enabled = true;
+        GLOG_D("direct enable timer");
         this->_timer->start();
     }
 
     void set_interval(int64_t mil) {
+        GLOG_D("interval %d", mil);
+        if (mil == 0) {
+            GLOG_D("disable timer");
+            this->_timer->cancel();
+            return;
+        }
+
         this->_interval = mil;
         this->_timer->set_interval(std::chrono::milliseconds(mil));
+        if (!this->is_enable()) {
+            GLOG_D("enable timer");
+            this->enable();
+        }
     }
 
     ino64_t get_interval() { return this->_interval; }
 
   private:
     std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>> _timer;
-    bool _enabled = false;
     int64_t _interval;
 };
 

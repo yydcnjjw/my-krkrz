@@ -161,6 +161,30 @@ TJS2Font::TJS2Font() : inherited(TJS_W("Font")) {
     }
     TJS_END_NATIVE_PROP_DECL(angle)
 
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getTextWidth) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeFont);
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+
+        if (result)
+            *result = _this->get_text_width(((ttstr)*param[0]).AsStdString());
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getTextWidth)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getTextHeight) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeFont);
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+
+        if (result)
+            *result = _this->get_text_height(((ttstr)*param[0]).AsStdString());
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getTextHeight)
     TJS_END_NATIVE_MEMBERS
 }
 } // namespace krkrz
