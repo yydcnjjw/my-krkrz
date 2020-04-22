@@ -12,7 +12,6 @@ tTJSNativeClass *create_tjs2_debug();
 tTJSNativeClass *create_tjs2_storages();
 tTJSNativeClass *create_tjs2_scripts();
 tTJSNativeClass *create_tjs2_window();
-tTJSNativeClass *create_tjs2_layer();
 tTJSNativeClass *create_tjs2_timer();
 tTJSNativeClass *create_tjs2_async_trigger();
 tTJSNativeClass *create_tjs2_wave_sound_buffer();

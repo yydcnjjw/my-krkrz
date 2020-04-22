@@ -71,19 +71,21 @@ struct TJSEvent {
 class TJS2NativeLayer;
 class TJS2NativeWindow : public tTJSNativeInstance {
   public:
-    TJS2NativeWindow()
-        : _base_app(Application::get()->base_app()),
-          _primary_layer(std::make_shared<TJS2NativeLayer>()) {}
+    TJS2NativeWindow() : _base_app(Application::get()->base_app()) {}
 
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) {
+        if (!this->_main_window) {
+            this->_main_window = this;
+        }
         this->_this_obj = tjs_obj;
         this->_window =
             this->_base_app->win_mgr()->create_window("test", 640, 480);
 
         this->_canvas = std::make_shared<my::Canvas>(
             this->_base_app->renderer(), this->_window,
-            this->_base_app->resource_mgr(), this->_base_app->font_mgr());
+            this->_base_app->ev_bus(), this->_base_app->resource_mgr(),
+            this->_base_app->font_mgr());
 
         this->_subscribe_event(tjs_obj);
         this->_render();
@@ -95,6 +97,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
             obj.Release();
         }
         this->_render_task->cancel();
+        this->_unsubscribe_event();
         this->_base_app->win_mgr()->remove_window(this->_window);
     }
 
@@ -129,20 +132,60 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     my::Canvas *canvas() { return this->_canvas.get(); }
 
+    void set_primary_layer(TJS2NativeLayer *layer) {
+        this->_primary_layer = layer;
+    }
+    TJS2NativeLayer *get_primary_layer() { return this->_primary_layer; }
+
+    static TJS2NativeWindow *main_window() {
+        return TJS2NativeWindow::_main_window;
+    }
+
+    void set_zoom(int number, int denom) {
+        this->set_zoom_number(number);
+        this->set_zoom_denom(denom);
+        GLOG_D("zoom %d/%d", this->get_zoom_number(), this->get_zoom_denom());
+    }
+
+    void set_zoom_number(int number) {
+        this->_zoom_number = number == 0 ? 1 : number;
+    }
+    void set_zoom_denom(int denom) {
+        this->_zoom_denom = denom == 0 ? 1 : denom;
+    }
+    int get_zoom_number() { return this->_zoom_number; }
+    int get_zoom_denom() { return this->_zoom_denom; }
+
+    void show_modal() {
+        while (this->base_window()->is_visible()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
+    }
+
   private:
-    iTJSDispatch2 *_this_obj;
-    my::Application *_base_app;
-    my::Window *_window;
-    std::vector<tTJSVariantClosure> _objects;
-    std::shared_ptr<TJS2NativeLayer> _primary_layer;
-    std::shared_ptr<my::Canvas> _canvas;
+    static TJS2NativeWindow *_main_window;
+    iTJSDispatch2 *_this_obj{};
+    my::Application *_base_app{};
+    my::Window *_window{};
+    std::vector<tTJSVariantClosure> _objects{};
+    TJS2NativeLayer *_primary_layer{};
+    std::shared_ptr<my::Canvas> _canvas{};
 
     typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
         RenderTask;
-    RenderTask _render_task;
-    bool _is_full_screen;
+    RenderTask _render_task{};
+    bool _is_full_screen{};
 
+    int _zoom_number{1};
+    int _zoom_denom{1};
+
+    rxcpp::composite_subscription _mouse_button_cs;
+    rxcpp::composite_subscription _mouse_motion_cs;
+    rxcpp::composite_subscription _mouse_wheel_cs;
+    rxcpp::composite_subscription _window_cs;
+    rxcpp::composite_subscription _keyboard_cs;
     void _subscribe_event(iTJSDispatch2 *obj);
+    void _unsubscribe_event();
     void _render();
 };
 

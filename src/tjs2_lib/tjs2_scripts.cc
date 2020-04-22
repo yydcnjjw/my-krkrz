@@ -6,6 +6,7 @@
 
 #include "krkrz_application.h"
 #include "tjs2_font.h"
+#include "tjs2_layer.h"
 #include "tjs2_storages.h"
 #include <MsgIntf.h>
 #include <MsgLoad.h>
@@ -224,7 +225,7 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(Storages, create_tjs2_storages());
     REGISTER_OBJECT(Scripts, create_tjs2_scripts());
     REGISTER_OBJECT(Window, create_tjs2_window());
-    REGISTER_OBJECT(Layer, create_tjs2_layer());
+    REGISTER_OBJECT(Layer, TJS2Layer::get());
     REGISTER_OBJECT(Timer, create_tjs2_timer());
     REGISTER_OBJECT(AsyncTrigger, create_tjs2_async_trigger());
     REGISTER_OBJECT(WaveSoundBuffer, create_tjs2_wave_sound_buffer());

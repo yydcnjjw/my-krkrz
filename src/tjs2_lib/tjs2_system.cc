@@ -1,4 +1,4 @@
-#include "tjs2_lib.h"
+#include "tjs2_system.h"
 
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -7,6 +7,7 @@
 #include <util/logger.h>
 
 #include "krkrz_application.h"
+#include "tjs2_lib.h"
 #include <MsgIntf.h>
 
 namespace {
@@ -107,23 +108,6 @@ inline unsigned long ColorToRGB(unsigned long col) {
     return col; // unknown, passthru
 }
 
-uint32_t TJSToActualColor(uint32_t color) {
-    if (color & 0xff000000) {
-        color = ColorToRGB(color); // system color to RGB
-        // convert byte order to 0xRRGGBB since ColorToRGB's return value is in
-        // a format of 0xBBGGRR.
-        return ((color & 0xff) << 16) + (color & 0xff00) +
-               ((color & 0xff0000) >> 16);
-    } else {
-        return color;
-    }
-}
-//---------------------------------------------------------------------------
-uint32_t TJSFromActualColor(u_int32_t color) {
-    color &= 0xffffff;
-    return color;
-}
-
 class TJS2NativeSystem {
   public:
     static TJS2NativeSystem *get() {
@@ -137,7 +121,7 @@ class TJS2NativeSystem {
     }
 
     bool create_app_lock() {
-        // TODO: 
+        // TODO:
         return true;
     }
 
@@ -409,7 +393,7 @@ class TJS2System : public tTJSNativeClass {
 
             if (result) {
                 tjs_uint32 color = (tjs_int)(*param[0]);
-                color = TJSToActualColor(color);
+                color = krkrz::TJSToActualColor(color);
                 *result = (tjs_int)color;
             }
 
@@ -726,4 +710,21 @@ tjs_uint32 TJS2System::ClassID = (tjs_uint32)-1;
 
 namespace krkrz {
 tTJSNativeClass *create_tjs2_system() { return new TJS2System(); }
+
+uint32_t TJSToActualColor(uint32_t color) {
+    if (color & 0xff000000) {
+        color = ColorToRGB(color); // system color to RGB
+        // convert byte order to 0xRRGGBB since ColorToRGB's return value is in
+        // a format of 0xBBGGRR.
+        return ((color & 0xff) << 16) + (color & 0xff00) +
+               ((color & 0xff0000) >> 16);
+    } else {
+        return color;
+    }
+}
+
+uint32_t TJSFromActualColor(uint32_t color) {
+    color &= 0xffffff;
+    return color;
+}
 } // namespace krkrz

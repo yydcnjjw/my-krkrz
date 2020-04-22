@@ -31,12 +31,18 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                     .AsStdString(); // action function to be called
 
         this->action = param[0]->AsObjectClosure();
-        this->_timer =
-            krkrz::Application::get()
-                ->base_app()
-                ->async_task()
-                ->create_timer_interval(
-                    std::function<void(void)>([tjs_obj, this]() -> void {
+        auto bus = krkrz::Application::get()->base_app()->ev_bus();
+        auto cs =
+            bus->on_event<TJSTimerEvent>()
+                .filter(
+                    [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
+                        return *e->data == this->_timer;
+                    })
+                .subscribe_on(bus->ev_bus_worker())
+                .observe_on(bus->ev_bus_worker())
+                .subscribe(
+                    [tjs_obj,
+                     this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
                         if (krkrz::TJS2NativeScripts::get()->is_stopping()) {
                             return;
                         }
@@ -49,8 +55,16 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                             this->disable();
                             krkrz::Application::get()->base_app()->quit();
                         }
-                    }),
-                    std::chrono::milliseconds(this->_interval));
+                    });
+
+        this->_timer = krkrz::Application::get()
+                           ->base_app()
+                           ->async_task()
+                           ->create_timer_interval(
+                               std::function<void(void)>([bus, this]() -> void {
+                                   bus->post<TJSTimerEvent>(this->_timer);
+                               }),
+                               std::chrono::milliseconds(this->_interval));
         return TJS_S_OK;
     }
 
@@ -90,6 +104,8 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     ino64_t get_interval() { return this->_interval; }
 
   private:
+    typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
+        TJSTimerEvent;
     std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>> _timer;
     int64_t _interval;
 };

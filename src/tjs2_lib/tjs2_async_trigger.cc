@@ -31,22 +31,32 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
                     .AsStdString(); // action function to be called
         }
         this->action = param[0]->AsObjectClosure();
-
+        this->_ev_bus = krkrz::Application::get()->base_app()->ev_bus();
         return TJS_S_OK;
     }
 
     void trigger() {
-        krkrz::Application::get()->base_app()->async_task()->do_async<void>(
-            [this](std::shared_ptr<my::promise<void>>) {
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-                krkrz::TJS::func_call(this->_this, "onFire");
-            });
+        if (this->_cs.is_subscribed()) {
+            return;
+        }
+        this->_cs = this->_ev_bus->on_event<my::IdleEvent>()
+                        .observe_on(this->_ev_bus->ev_bus_worker())
+                        .subscribe([this](const auto &) {
+                            krkrz::TJS::func_call(this->_this, "onFire");
+                            this->cancel();
+                        });
     }
 
-    void cancel() {}
+    void cancel() {
+        if (this->_cs.is_subscribed()) {
+            this->_cs.unsubscribe();
+        }
+    }
 
   private:
     iTJSDispatch2 *_this;
+    my::EventBus *_ev_bus;
+    rxcpp::composite_subscription _cs;
 };
 
 class TJS2AsyncTrigger : public tTJSNativeClass {
