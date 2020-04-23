@@ -38,8 +38,8 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                     [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
                         return *e->data == this->_timer;
                     })
-                .subscribe_on(bus->ev_bus_worker())
-                .observe_on(bus->ev_bus_worker())
+                .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .subscribe(
                     [tjs_obj,
                      this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
@@ -81,7 +81,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     }
 
     void enable() {
-        GLOG_D("direct enable timer");
+        GLOG_D("direct enable timer %d", this->get_interval());
         this->_timer->start();
     }
 
@@ -101,13 +101,13 @@ class TJS2NativeTimer : public tTJSNativeInstance {
         }
     }
 
-    ino64_t get_interval() { return this->_interval; }
+    int64_t get_interval() { return this->_interval; }
 
   private:
     typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
         TJSTimerEvent;
     std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>> _timer;
-    int64_t _interval;
+    int64_t _interval{};
 };
 
 class TJS2Timer : public tTJSNativeClass {

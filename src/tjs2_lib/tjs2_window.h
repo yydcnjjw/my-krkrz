@@ -7,6 +7,7 @@
 
 #include "krkrz_application.h"
 #include "tjs2_lib.h"
+#include <tjs2_lib/tjs2_scripts.h>
 
 namespace krkrz {
 enum TJSMouseButton { mbLeft, mbRight, mbMiddle, mbX1, mbX2 };
@@ -132,9 +133,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     my::Canvas *canvas() { return this->_canvas.get(); }
 
-    void set_primary_layer(TJS2NativeLayer *layer) {
-        this->_primary_layer = layer;
-    }
+    void set_primary_layer(TJS2NativeLayer *layer);
     TJS2NativeLayer *get_primary_layer() { return this->_primary_layer; }
 
     static TJS2NativeWindow *main_window() {
@@ -158,7 +157,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     void show_modal() {
         while (this->base_window()->is_visible()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            TJS2NativeScripts::get()->yield();
         }
     }
 
@@ -184,8 +183,18 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     rxcpp::composite_subscription _mouse_wheel_cs;
     rxcpp::composite_subscription _window_cs;
     rxcpp::composite_subscription _keyboard_cs;
+    rxcpp::composite_subscription _paint_cs;
+
+    std::mutex _lock;
+
     void _subscribe_event(iTJSDispatch2 *obj);
     void _unsubscribe_event();
+    void _event_disptach(const std::string &event_name,
+                         const std::vector<tTJSVariant> &args);
+    void _paint_event_disptach();
+    void _mouse_event_disptach(const std::string &event_name,
+                               const std::vector<tTJSVariant> &args,
+                               const my::PixelPos &mouse_pos);
     void _render();
 };
 

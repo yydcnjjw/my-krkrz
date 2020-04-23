@@ -4,6 +4,7 @@
 
 #include <MsgIntf.h>
 #include <krkrz_application.h>
+#include <tjs2_lib/tjs2_scripts.h>
 
 namespace {
 
@@ -39,12 +40,14 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
         if (this->_cs.is_subscribed()) {
             return;
         }
-        this->_cs = this->_ev_bus->on_event<my::IdleEvent>()
-                        .observe_on(this->_ev_bus->ev_bus_worker())
-                        .subscribe([this](const auto &) {
-                            krkrz::TJS::func_call(this->_this, "onFire");
-                            this->cancel();
-                        });
+        this->_cs =
+            this->_ev_bus->on_event<krkrz::TJSIdleEvent>()
+                .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                .subscribe([this](const auto &) {
+                    krkrz::TJS::func_call(this->_this, "onFire");
+                    this->cancel();
+                });
     }
 
     void cancel() {

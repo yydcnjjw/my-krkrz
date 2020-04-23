@@ -2,7 +2,15 @@
 
 #include <boost/timer/timer.hpp>
 
-#include "tjs2_layer.h"
+#include <tjs2_lib/tjs2_layer.h>
+#include <tjs2_lib/tjs2_scripts.h>
+
+namespace {
+struct PaintEvent {
+    my::WindowID win_id;
+    PaintEvent(my::WindowID id) : win_id(id) {}
+};
+} // namespace
 
 namespace krkrz {
 
@@ -26,6 +34,26 @@ TJSMouseButton from_sdl(uint32_t button) {
     }
 }
 
+uint32_t to_shift(my::Keymod &keymod, uint32_t btn_state) {
+    uint32_t shift = TJS_SS_NONE;
+    if (keymod & KMOD_SHIFT) {
+        shift |= TJS_SS_SHIFT;
+    } else if (keymod & KMOD_ALT) {
+        shift |= TJS_SS_ALT;
+    } else if (keymod & KMOD_CTRL) {
+        shift |= TJS_SS_CTRL;
+    }
+
+    if (btn_state & BUTTON_LMASK) {
+        shift |= TJS_SS_LEFT;
+    } else if (btn_state & BUTTON_RMASK) {
+        shift |= TJS_SS_RIGHT;
+    } else if (btn_state & BUTTON_MMASK) {
+        shift |= TJS_SS_MIDDLE;
+    }
+    return shift;
+}
+
 void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
     auto bus = this->_base_app->ev_bus();
     auto win_id = this->_window->get_window_id();
@@ -38,6 +66,7 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
         }
         this->_base_app->quit();
     };
+    auto &tjs_worker = TJS2NativeScripts::get()->tjs_worker();
     this->_mouse_button_cs =
         bus->on_event<my::MouseButtonEvent>()
             .filter(
@@ -45,24 +74,17 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .observe_on(bus->ev_bus_worker())
+            .subscribe_on(tjs_worker)
+            .observe_on(tjs_worker)
             .subscribe(
-                [this, obj](
+                [this](
                     const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
                     auto button = e->data;
                     std::vector<tTJSVariant> args{button->pos.x, button->pos.y};
 
                     auto keymod = this->_base_app->win_mgr()->get_key_mode();
 
-                    uint32_t shift = TJS_SS_NONE;
-                    if (keymod & KMOD_SHIFT) {
-                        shift |= TJS_SS_SHIFT;
-                    } else if (keymod & KMOD_ALT) {
-                        shift |= TJS_SS_ALT;
-                    } else if (keymod & KMOD_CTRL) {
-                        shift |= TJS_SS_CTRL;
-                    }
-                    args.push_back((int)shift);
+                    args.push_back((int)to_shift(keymod, 0));
 
                     auto btn = from_sdl(button->button);
                     args.push_back(btn);
@@ -71,20 +93,24 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     case SDL_PRESSED: {
                         switch (button->clicks) {
                         case 1: // single click
-                            TJS::func_call(obj, "onClick",
-                                           {button->pos.x, button->pos.y});
+                            this->_mouse_event_disptach(
+                                "onClick", {button->pos.x, button->pos.y},
+                                button->pos);
                             break;
                         case 2: // double click
-                            TJS::func_call(obj, "onDoubleClick",
-                                           {button->pos.x, button->pos.y});
+                            this->_mouse_event_disptach(
+                                "onDoubleClick", {button->pos.x, button->pos.y},
+                                button->pos);
                             break;
                         }
-                        TJS::func_call(obj, "onMouseDown", args);
+                        this->_mouse_event_disptach("onMouseDown", args,
+                                                    button->pos);
                         break;
                     }
 
                     case SDL_RELEASED:
-                        TJS::func_call(obj, "onMouseUp", args);
+                        this->_mouse_event_disptach("onMouseUp", args,
+                                                    button->pos);
                         break;
                     }
                 },
@@ -97,30 +123,16 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .observe_on(bus->ev_bus_worker())
+            .subscribe_on(tjs_worker)
+            .observe_on(tjs_worker)
             .subscribe(
                 [this, obj](
                     const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
                     auto keymod = this->_base_app->win_mgr()->get_key_mode();
-                    uint32_t shift = TJS_SS_NONE;
-                    if (keymod & KMOD_SHIFT) {
-                        shift |= TJS_SS_SHIFT;
-                    } else if (keymod & KMOD_ALT) {
-                        shift |= TJS_SS_ALT;
-                    } else if (keymod & KMOD_CTRL) {
-                        shift |= TJS_SS_CTRL;
-                    }
-
                     auto btn_state = e->data->state;
-                    if (btn_state & BUTTON_LMASK) {
-                        shift |= TJS_SS_LEFT;
-                    } else if (btn_state & BUTTON_RMASK) {
-                        shift |= TJS_SS_RIGHT;
-                    } else if (btn_state & BUTTON_MMASK) {
-                        shift |= TJS_SS_MIDDLE;
-                    }
-                    std::vector<tTJSVariant> args{e->data->pos.x,
-                                                  e->data->pos.y, (int)shift};
+                    std::vector<tTJSVariant> args{
+                        e->data->pos.x, e->data->pos.y,
+                        (int)to_shift(keymod, btn_state)};
                     TJS::func_call(obj, "onMouseMove", args);
                 },
                 error_handle);
@@ -132,32 +144,19 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::MoushWheelEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .observe_on(bus->ev_bus_worker())
+            .subscribe_on(tjs_worker)
+            .observe_on(tjs_worker)
             .subscribe(
                 [this, obj](
                     const std::shared_ptr<my::Event<my::MoushWheelEvent>> &e) {
                     auto keymod = this->_base_app->win_mgr()->get_key_mode();
-                    uint32_t shift = TJS_SS_NONE;
-                    if (keymod & KMOD_SHIFT) {
-                        shift |= TJS_SS_SHIFT;
-                    } else if (keymod & KMOD_ALT) {
-                        shift |= TJS_SS_ALT;
-                    } else if (keymod & KMOD_CTRL) {
-                        shift |= TJS_SS_CTRL;
-                    }
-
                     auto btn_state =
                         this->_base_app->win_mgr()->get_mouse_state().mask;
-                    if (btn_state & BUTTON_LMASK) {
-                        shift |= TJS_SS_LEFT;
-                    } else if (btn_state & BUTTON_RMASK) {
-                        shift |= TJS_SS_RIGHT;
-                    } else if (btn_state & BUTTON_MMASK) {
-                        shift |= TJS_SS_MIDDLE;
-                    }
+
                     std::vector<tTJSVariant> args{
-                        (int)shift, 120, e->data->pos.x, e->data->pos.y};
-                    TJS::func_call(obj, "onMouseMove", args);
+                        (int)to_shift(keymod, btn_state), 120, e->data->pos.x,
+                        e->data->pos.y};
+                    TJS::func_call(obj, "onMouseWheel", args);
                 },
                 error_handle);
 
@@ -167,7 +166,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                 [win_id](const std::shared_ptr<my::Event<my::WindowEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .observe_on(bus->ev_bus_worker())
+            .subscribe_on(tjs_worker)
+            .observe_on(tjs_worker)
             .subscribe(
                 [this,
                  obj](const std::shared_ptr<my::Event<my::WindowEvent>> &e) {
@@ -178,8 +178,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                         TJS::func_call(obj, "onMouseEnter");
                         break;
                     case SDL_WINDOWEVENT_LEAVE:
-                        TJS::func_call(obj, "onDeactivate");
                         TJS::func_call(obj, "onMouseLeave");
+                        TJS::func_call(obj, "onDeactivate");
                         break;
                     case SDL_WINDOWEVENT_CLOSE:
                         TJS::func_call(obj, "onCloseQuery");
@@ -198,7 +198,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .observe_on(bus->ev_bus_worker())
+            .subscribe_on(tjs_worker)
+            .observe_on(tjs_worker)
             .subscribe(
                 [this,
                  obj](const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
@@ -216,6 +217,18 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     }
                 },
                 error_handle);
+    this->_paint_cs =
+        bus->on_event<PaintEvent>()
+            .filter([win_id](const std::shared_ptr<my::Event<PaintEvent>> &e) {
+                return e->data->win_id == win_id;
+            })
+            .subscribe_on(tjs_worker)
+            .observe_on(tjs_worker)
+            .subscribe(
+                [this](const std::shared_ptr<my::Event<PaintEvent>> &e) {
+                    this->_paint_event_disptach();
+                },
+                error_handle);
 }
 
 void TJS2NativeWindow::_unsubscribe_event() {
@@ -224,31 +237,80 @@ void TJS2NativeWindow::_unsubscribe_event() {
     this->_mouse_wheel_cs.unsubscribe();
     this->_window_cs.unsubscribe();
     this->_keyboard_cs.unsubscribe();
+    this->_paint_cs.unsubscribe();
 }
+
+bool is_point_at(TJS2NativeLayer *layer, const my::PixelPos &mouse_pos) {
+    auto a = layer->pos;
+    auto b = my::PixelPos{layer->pos.x + layer->size.w,
+                          layer->pos.y + layer->size.h};
+
+    return mouse_pos.x > a.x && mouse_pos.x < b.x && mouse_pos.y > a.y &&
+           mouse_pos.y < b.y;
+}
+
+void TJS2NativeWindow::_mouse_event_disptach(
+    const std::string &event_name, const std::vector<tTJSVariant> &args,
+    const my::PixelPos &mouse_pos) {
+    auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
+        if (!layer) {
+            return;
+        }
+
+        if (!layer->visible) {
+            return;
+        }
+
+        if (!is_point_at(layer, mouse_pos)) {
+            return;
+        }
+
+        TJS::func_call(layer->this_obj(), event_name, args);
+        for (const auto child : layer->get_children()) {
+            self(child);
+        }
+    });
+    func(this->_primary_layer);
+}
+
+void TJS2NativeWindow::_paint_event_disptach() {
+    auto func = my::y_combinator([](const auto &self, TJS2NativeLayer *layer) {
+        if (!layer) {
+            return;
+        }
+
+        if (!layer->visible) {
+            return;
+        }
+
+        TJS::func_call(layer->this_obj(), "onPaint");
+
+        for (const auto child : layer->get_children()) {
+            self(child);
+        }
+    });
+
+    func(this->_primary_layer);
+}
+
+void TJS2NativeWindow::_event_disptach(const std::string &event_name,
+                                       const std::vector<tTJSVariant> &args) {}
 
 void TJS2NativeWindow::_render() {
     this->_render_task =
         Application::get()->base_app()->async_task()->create_timer_interval(
             std::function<void(void)>([this]() {
-                boost::timer::auto_cpu_timer t;
-                auto func = my::y_combinator(
-                    [](const auto &self, TJS2NativeLayer *layer) {
-                        if (!layer) {
-                            return;
-                        }
-                        for (const auto child : layer->get_children()) {
-                            if (child->visible) {
-                                TJS::func_call(child->this_obj(), "onPaint");
-                            }
-
-                            self(child);
-                        }
-                    });
-                func(this->_primary_layer);
+                this->_base_app->ev_bus()->post<PaintEvent>(
+                    this->base_window()->get_window_id());
                 this->_canvas->render();
             }),
             std::chrono::milliseconds(1000 / 30));
     this->_render_task->start();
+}
+
+void TJS2NativeWindow::set_primary_layer(TJS2NativeLayer *layer) {
+    this->_primary_layer = layer;
+    this->_primary_layer->visible = true;
 }
 
 TJS2NativeWindow *TJS2NativeWindow::_main_window{};
@@ -839,11 +901,15 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ showModal)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onCloseQuery) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onCloseQuery)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown)
+
     TJS_END_NATIVE_MEMBERS
 }
 

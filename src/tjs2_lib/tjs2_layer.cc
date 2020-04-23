@@ -846,6 +846,10 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         TJS_DENY_NATIVE_PROP_SETTER
     }
     TJS_END_NATIVE_PROP_DECL(focused)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown)
     TJS_END_NATIVE_MEMBERS
 }
 

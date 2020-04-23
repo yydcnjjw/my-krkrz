@@ -143,54 +143,120 @@ void TJS2NativeScripts::boot_start() {
         ->on_event<my::QuitEvent>()
         .observe_on(app->ev_bus()->ev_bus_worker())
         .subscribe([this](const auto &) {
+            {
+                std::unique_lock<std::shared_mutex> l_lock(this->_lock);
+                this->_is_stopping = true;
+            }
             if (this->_tjs_thread.joinable()) {
                 this->_tjs_thread.join();
             }
             TJS2NativeScripts::get()->stop();
         });
-    this->_tjs_thread = std::thread([this, app]() {
-        TVPLoadMessage();
-        this->_set_default_ppvalue();
-        this->_tjs_engine->SetConsoleOutput(this->_tjs_console_output.get());
-        TJSCreateTextStreamForRead = TVPCreateTextStreamForRead;
-        TJSCreateTextStreamForWrite = TVPCreateTextStreamForWrite;
 
-        this->_load_tjs_lib();
+    std::promise<rxcpp::observe_on_one_worker *> promise;
+    auto future = promise.get_future();
 
-        GLOG_D("tjs script exec start");
-        try {
-            boost::timer::auto_cpu_timer t;
-            bool is_debug = false;
-            my::program_options::variable_value value;
-            if (Application::get()->base_app()->get_program_option("debug",
-                                                                   value)) {
-                is_debug = value.as<bool>();
+    this->_tjs_thread = std::thread(
+        [this, app](std::promise<rxcpp::observe_on_one_worker *> promise) {
+            rxcpp::schedulers::run_loop rlp;
+            auto rlp_worker = rxcpp::observe_on_run_loop(rlp);
+            promise.set_value(&rlp_worker);
+            pthread_setname_np(pthread_self(), "TJS");
+
+            TVPLoadMessage();
+            this->_set_default_ppvalue();
+            this->_tjs_engine->SetConsoleOutput(
+                this->_tjs_console_output.get());
+            TJSCreateTextStreamForRead = TVPCreateTextStreamForRead;
+            TJSCreateTextStreamForWrite = TVPCreateTextStreamForWrite;
+
+            this->_load_tjs_lib();
+
+            GLOG_D("tjs script exec start");
+            try {
+                boost::timer::auto_cpu_timer t;
+                bool is_debug = false;
+                my::program_options::variable_value value;
+                if (Application::get()->base_app()->get_program_option("debug",
+                                                                       value)) {
+                    is_debug = value.as<bool>();
+                }
+
+                if (is_debug) {
+                    this->exec_storage(u"debug.tjs");
+                } else {
+                    this->exec_storage(u"SysInitScript.tjs");
+                    this->exec_storage(u"startup.tjs");
+                }
+
+            } catch (eTJSError &e) {
+                GLOG_D(utf16_codecvt()
+                           .to_bytes(e.GetMessage().AsStdString())
+                           .c_str());
+                app->quit();
             }
 
-            if (is_debug) {
-                this->exec_storage(u"debug.tjs");
-            } else {
-                this->exec_storage(u"SysInitScript.tjs");
-                this->exec_storage(u"startup.tjs");
+            for (;;) {
+                while (!rlp.empty() && rlp.peek().when < rlp.now()) {
+                    auto source = std::make_shared<coro_t::pull_type>(
+                        [&](coro_t::push_type &sink) {
+                            this->_current_sink = &sink;
+                            rlp.dispatch();
+                        });
+                    if (*source) {
+                        GLOG_D("---------------------reschedule----------------"
+                               "-----------");
+                        this->_coroutines.push_back(
+                            {this->_current_sink, source});
+                    }
+                }
+                app->ev_bus()->post<TJSIdleEvent>();
+                while (!rlp.empty() && rlp.peek().when < rlp.now()) {
+                    auto source = std::make_shared<coro_t::pull_type>(
+                        [&](coro_t::push_type &sink) {
+                            this->_current_sink = &sink;
+                            rlp.dispatch();
+                        });
+                    if (*source) {
+                        GLOG_D("---------------------reschedule----------------"
+                               "-----------");
+                        this->_coroutines.push_back(
+                            {this->_current_sink, source});
+                    }
+                }
+
+                auto it = this->_coroutines.begin();
+                while (it != this->_coroutines.end()) {
+                    if (*it->source) {
+                        this->_current_sink = it->sink;
+                        (*it->source)();
+                        ++it;
+                    } else {
+                        it = this->_coroutines.erase(it);
+                    }
+                }
+
+                {
+                    if (this->is_stopping()) {
+                        break;
+                    }
+                    std::this_thread::yield();
+                    // if (rlp.empty()) {
+                    //     this->_cv.wait(l_lock, [this, &rlp] {
+                    //         return !rlp.empty() || this->_is_stopping;
+                    //     });
+                    // }
+                }
             }
-            // this->_tjs_engine->Shutdown();
-        } catch (eTJSError &e) {
-            GLOG_D(
-                utf16_codecvt().to_bytes(e.GetMessage().AsStdString()).c_str());
-            app->quit();
-        }
-        GLOG_D("tjs script exec finished");
-    });
+
+            GLOG_D("tjs script exec finished");
+        },
+        std::move(promise));
+
+    this->_tjs_worker = future.get();
 }
 
-void TJS2NativeScripts::stop() {
-    {
-        std::unique_lock<std::shared_mutex> l_lock(this->_lock);
-        this->_is_stopping = true;
-    }
-
-    this->_tjs_engine->Shutdown();
-}
+void TJS2NativeScripts::stop() { this->_tjs_engine->Shutdown(); }
 
 TJS2NativeScripts::TJS2NativeScripts()
     : _tjs_engine(new tTJS()),
