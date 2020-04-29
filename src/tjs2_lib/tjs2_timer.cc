@@ -239,7 +239,7 @@ class TJS2Timer : public tTJSNativeClass {
     static tjs_uint32 ClassID;
 
   protected:
-    tTJSNativeInstance *CreateNativeInstance() { return new TJS2NativeTimer; }
+    tTJSNativeInstance *CreateNativeInstance() override { return new TJS2NativeTimer; }
 };
 
 tjs_uint32 TJS2Timer::ClassID = (tjs_uint32)-1;

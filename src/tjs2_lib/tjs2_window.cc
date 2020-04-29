@@ -3,12 +3,13 @@
 #include <boost/timer/timer.hpp>
 
 #include <tjs2_lib/tjs2_layer.h>
+#include <tjs2_lib/tjs2_lib.h>
 #include <tjs2_lib/tjs2_scripts.h>
 
 namespace {
 struct PaintEvent {
     my::WindowID win_id;
-    PaintEvent(my::WindowID id) : win_id(id) {}
+    explicit PaintEvent(my::WindowID id) : win_id(id) {}
 };
 } // namespace
 
@@ -34,7 +35,7 @@ TJSMouseButton from_sdl(uint32_t button) {
     }
 }
 
-uint32_t to_shift(my::Keymod &keymod, uint32_t btn_state) {
+uint32_t to_shift(const my::Keymod &keymod, uint32_t btn_state) {
     uint32_t shift = TJS_SS_NONE;
     if (keymod & KMOD_SHIFT) {
         shift |= TJS_SS_SHIFT;
@@ -56,6 +57,7 @@ uint32_t to_shift(my::Keymod &keymod, uint32_t btn_state) {
 
 void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
     auto bus = this->_base_app->ev_bus();
+    auto win_mgr = this->_base_app->win_mgr();
     auto win_id = this->_window->get_window_id();
     auto error_handle = [this](std::exception_ptr &e) {
         try {
@@ -84,13 +86,15 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
 
                     auto keymod = this->_base_app->win_mgr()->get_key_mode();
 
-                    args.push_back((int)to_shift(keymod, 0));
+                    args.emplace_back((int)to_shift(keymod, 0));
 
                     auto btn = from_sdl(button->button);
-                    args.push_back(btn);
+                    args.emplace_back(btn);
 
                     switch (button->state) {
                     case SDL_PRESSED: {
+                        this->_mouse_event_disptach("onMouseDown", args,
+                                                    button->pos);
                         switch (button->clicks) {
                         case 1: // single click
                             this->_mouse_event_disptach(
@@ -103,8 +107,6 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                                 button->pos);
                             break;
                         }
-                        this->_mouse_event_disptach("onMouseDown", args,
-                                                    button->pos);
                         break;
                     }
 
@@ -225,7 +227,12 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
             .subscribe_on(tjs_worker)
             .observe_on(tjs_worker)
             .subscribe(
-                [this](const std::shared_ptr<my::Event<PaintEvent>> &e) {
+                [this,
+                 win_mgr](const std::shared_ptr<my::Event<PaintEvent>> &e) {
+                    if (!win_mgr->has_window(e->data->win_id)) {
+                        assert("window is released but call paint");
+                        return;
+                    }
                     this->_paint_event_disptach();
                 },
                 error_handle);
@@ -252,6 +259,7 @@ bool is_point_at(TJS2NativeLayer *layer, const my::PixelPos &mouse_pos) {
 void TJS2NativeWindow::_mouse_event_disptach(
     const std::string &event_name, const std::vector<tTJSVariant> &args,
     const my::PixelPos &mouse_pos) {
+    TJS::func_call(this->this_obj(), event_name, args);    
     auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
         if (!layer) {
             return;
@@ -330,7 +338,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ add) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         if (numparams < 1)
             return TJS_E_BADPARAMCOUNT;
         tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
@@ -341,7 +349,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ remove) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         if (numparams < 1)
             return TJS_E_BADPARAMCOUNT;
         tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
@@ -351,14 +359,15 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ remove)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ close) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         _this->base_window()->hide();
+        TJS::func_call(_this->this_obj(), "onCloseQuery");
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ close)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ hideMouseCursor) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         _this->base_window()->show_cursor(false);
         return TJS_S_OK;
     }
@@ -369,7 +378,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         *result = 0;
         return TJS_S_OK;
 
@@ -378,7 +387,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -387,12 +396,12 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ postInputEvent) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
 
         if (numparams < 1)
             return TJS_E_BADPARAMCOUNT;
         ttstr eventname;
-        iTJSDispatch2 *eventparams = NULL;
+        iTJSDispatch2 *eventparams = nullptr;
 
         eventname = *param[0];
         if (numparams >= 2)
@@ -406,7 +415,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ setSize) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         if (numparams < 2)
             return TJS_E_BADPARAMCOUNT;
         int w = *param[0];
@@ -418,7 +427,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ setMinSize) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         if (numparams < 2)
             return TJS_E_BADPARAMCOUNT;
         int w = *param[0];
@@ -465,7 +474,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     TJS_BEGIN_NATIVE_PROP_DECL(fullScreen) {
         TJS_BEGIN_NATIVE_PROP_GETTER
         TJS_GET_NATIVE_INSTANCE(
-            /*var. name*/ _this, /*var. type*/ TJS2NativeWindow);
+            /*var. name*/ _this, /*var. type*/ TJS2NativeWindow)
         *result = _this->get_full_screen();
         return TJS_S_OK;
 
@@ -473,7 +482,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_BEGIN_NATIVE_PROP_SETTER
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         _this->set_full_screen(0 != (tjs_int)*param);
         return TJS_S_OK;
 
@@ -484,7 +493,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto [w, h] = _this->base_window()->get_size();
         *result = (int)w;
         return TJS_S_OK;
@@ -494,7 +503,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto size = _this->base_window()->get_size();
         size.w = (int)*param;
         _this->base_window()->set_size(size);
@@ -543,7 +552,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto size = _this->base_window()->get_min_size();
         size.w = (int)*param;
         _this->base_window()->set_min_size(size);
@@ -557,7 +566,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto [w, h] = _this->base_window()->get_min_size();
         *result = (int)h;
         return TJS_S_OK;
@@ -567,7 +576,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto size = _this->base_window()->get_min_size();
         size.h = (int)*param;
         _this->base_window()->set_min_size(size);
@@ -581,7 +590,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
 
         auto [w, h] = _this->base_window()->get_max_size();
         *result = (int)w;
@@ -592,7 +601,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto size = _this->base_window()->get_max_size();
         size.w = (int)*param;
         _this->base_window()->set_max_size(size);
@@ -677,7 +686,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         auto size = _this->base_window()->get_frame_buffer_size();
         *result = (int)size.w;
         return TJS_S_OK;
@@ -810,7 +819,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
             iTJSDispatch2 *dsp = TJS2NativeWindow::main_window()->this_obj();
             *result = tTJSVariant(dsp, dsp);
         } else {
-            *result = tTJSVariant((iTJSDispatch2 *)NULL);
+            *result = tTJSVariant((iTJSDispatch2 *)nullptr);
         }
         return TJS_S_OK;
 
@@ -828,10 +837,9 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         if (!pri)
             TVPThrowExceptionMessage(TVPWindowHasNoLayer);
 
-        if (pri && pri->this_obj())
-            *result = tTJSVariant(pri->this_obj(), pri->this_obj());
-        else
-            *result = tTJSVariant((iTJSDispatch2 *)NULL);
+        *result = pri && pri->this_obj()
+                      ? tTJSVariant(pri->this_obj(), pri->this_obj())
+                      : tTJSVariant((iTJSDispatch2 *)nullptr);
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -842,7 +850,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ setZoom) {
         // TODO: Window.setZoom
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         if (numparams < 2)
             return TJS_E_BADPARAMCOUNT;
         _this->set_zoom(*param[0], *param[1]);
@@ -854,7 +862,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         *result = _this->get_zoom_number();
         return TJS_S_OK;
 
@@ -863,7 +871,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         _this->set_zoom_number(*param);
         return TJS_S_OK;
 
@@ -876,7 +884,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         *result = _this->get_zoom_denom();
         return TJS_S_OK;
 
@@ -885,7 +893,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         _this->set_zoom_denom(*param);
         return TJS_S_OK;
 
@@ -895,7 +903,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ showModal) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeWindow);
+                                /*var. type*/ TJS2NativeWindow)
         _this->show_modal();
         return TJS_S_OK;
     }
@@ -906,10 +914,29 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onCloseQuery)
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow)
+
+        TVP_ACTION_INVOKE_BEGIN(4, "onMouseDown", objthis)
+        TVP_ACTION_INVOKE_MEMBER("x")
+        TVP_ACTION_INVOKE_MEMBER("y")
+        TVP_ACTION_INVOKE_MEMBER("button")
+        TVP_ACTION_INVOKE_MEMBER("shift")
+        TVP_ACTION_INVOKE_END(tTJSVariantClosure(objthis, objthis));
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onClick) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow)
+        TVP_ACTION_INVOKE_BEGIN(2, "onClick", objthis)
+        TVP_ACTION_INVOKE_MEMBER("x")
+        TVP_ACTION_INVOKE_MEMBER("y")
+        TVP_ACTION_INVOKE_END(tTJSVariantClosure(objthis, objthis))
 
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onClick)
     TJS_END_NATIVE_MEMBERS
 }
 

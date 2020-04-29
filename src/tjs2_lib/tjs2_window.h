@@ -93,13 +93,15 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         return TJS_S_OK;
     }
     void TJS_INTF_METHOD Invalidate() {
+        this->_base_app->win_mgr()->remove_window(this->_window);        
+        this->_unsubscribe_event();
+        this->_render_task->cancel();
+        this->_render_task->wait();
+
         for (auto &obj : this->_objects) {
             obj.Invalidate(0, nullptr, nullptr, nullptr);
             obj.Release();
         }
-        this->_render_task->cancel();
-        this->_unsubscribe_event();
-        this->_base_app->win_mgr()->remove_window(this->_window);
     }
 
     void add(tTJSVariantClosure clo) {
@@ -159,6 +161,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         while (this->base_window()->is_visible()) {
             TJS2NativeScripts::get()->yield();
         }
+        GLOG_D("show modal end");
     }
 
   private:

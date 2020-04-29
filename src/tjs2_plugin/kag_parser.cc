@@ -9,7 +9,7 @@
 // KAG Parser Utility Class
 //---------------------------------------------------------------------------
 
-#include "KAGParser.h"
+#include "kag_parser.h"
 
 #include <util/codecvt.h>
 #include <util/logger.h>

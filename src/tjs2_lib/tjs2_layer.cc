@@ -19,6 +19,7 @@ tjs_error TJS_INTF_METHOD TJS2NativeLayer::Construct(tjs_int numparams,
     }
 
     this->_this_obj = tjs_obj;
+    this->_this_action_obj = param[0]->AsObjectClosure();
 
     TJS_NATIVE_INSTANCE(param[0], win, TJS2NativeWindow, TJS2Window);
     this->_win = win;
@@ -846,10 +847,54 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         TJS_DENY_NATIVE_PROP_SETTER
     }
     TJS_END_NATIVE_PROP_DECL(focused)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ focus) { return TJS_S_OK; }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ focus)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getProvincePixel) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 2)
+            return TJS_E_BADPARAMCOUNT;
+        if (result)
+            *result = 0;
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getProvincePixel)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ setProvincePixel) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 3)
+            return TJS_E_BADPARAMCOUNT;
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setProvincePixel)
+
+    // event
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onClick) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        tTJSVariantClosure obj = _this->this_action_obj();
+        if (obj.Object) {
+            TVP_ACTION_INVOKE_BEGIN(2, "onClick", objthis);
+            TVP_ACTION_INVOKE_MEMBER("x");
+            TVP_ACTION_INVOKE_MEMBER("y");
+            TVP_ACTION_INVOKE_END(obj);
+        }
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onClick)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onDoubleClick) {
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onDoubleClick)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseUp) { return TJS_S_OK; }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseUp)
     TJS_END_NATIVE_MEMBERS
 }
 

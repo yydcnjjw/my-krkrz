@@ -10,13 +10,13 @@
 #include "tjs2_storages.h"
 #include <MsgIntf.h>
 #include <MsgLoad.h>
-#include <tjs2_plugin/KAGParser.h>
+#include <tjs2_plugin/tjs2_plugin.h>
 
 namespace {
 
 class TJS2TextReadStream : public iTJSTextReadStream {
   public:
-    TJS2TextReadStream(const std::u16string name, const std::u16string mode) {
+    TJS2TextReadStream(const std::u16string &name, const std::u16string &mode) {
         GLOG_D("read stream %s,%s", codecvt::utf_to_utf<char>(name).c_str(),
                codecvt::utf_to_utf<char>(mode).c_str());
     }
@@ -26,7 +26,8 @@ class TJS2TextReadStream : public iTJSTextReadStream {
 
 class TJS2TextWriteStream : public iTJSTextWriteStream {
   public:
-    TJS2TextWriteStream(const std::u16string name, const std::u16string mode) {
+    TJS2TextWriteStream(const std::u16string &name,
+                        const std::u16string &mode) {
         GLOG_D("write stream %s,%s", codecvt::utf_to_utf<char>(name).c_str(),
                codecvt::utf_to_utf<char>(mode).c_str());
     }
@@ -110,7 +111,7 @@ class TJS2Scripts : public tTJSNativeClass {
             iTJSDispatch2 *context =
                 numparams >= 3 && param[2]->Type() != tvtVoid
                     ? param[2]->AsObjectNoAddRef()
-                    : NULL;
+                    : nullptr;
 
             krkrz::TJS2NativeScripts::get()->exec_storage(
                 name.AsStdString(), context, result, modestr.c_str());
@@ -124,7 +125,7 @@ class TJS2Scripts : public tTJSNativeClass {
     static tjs_uint32 ClassID;
 
   protected:
-    tTJSNativeInstance *CreateNativeInstance() {
+    tTJSNativeInstance *CreateNativeInstance() override {
         TVPThrowExceptionMessage(TVPCannotCreateInstance);
         return nullptr;
     }
@@ -204,8 +205,7 @@ void TJS2NativeScripts::boot_start() {
                             rlp.dispatch();
                         });
                     if (*source) {
-                        GLOG_D("---------------------reschedule----------------"
-                               "-----------");
+                        GLOG_D("------------------reschedule----------------");
                         this->_coroutines.push_back(
                             {this->_current_sink, source});
                     }
@@ -218,8 +218,7 @@ void TJS2NativeScripts::boot_start() {
                             rlp.dispatch();
                         });
                     if (*source) {
-                        GLOG_D("---------------------reschedule----------------"
-                               "-----------");
+                        GLOG_D("-------------------reschedule----------------");
                         this->_coroutines.push_back(
                             {this->_current_sink, source});
                     }
@@ -298,6 +297,7 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(VideoOverlay, create_tjs2_video_overlay());
     REGISTER_OBJECT(Font, TJS2Font::get());
     REGISTER_OBJECT(KAGParser, TVPCreateNativeClass_KAGParser());
+    REGISTER_OBJECT(MenuItem, create_tjs2_menu_item(global));
 }
 
 void TJS2NativeScripts::exec_storage(const std::u16string &path,

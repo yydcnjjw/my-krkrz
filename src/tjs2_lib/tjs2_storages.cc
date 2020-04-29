@@ -1,5 +1,6 @@
 #include "tjs2_storages.h"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
 #include <util/logger.h>
@@ -102,9 +103,8 @@ class TJS2Storages : public tTJSNativeClass {
             ttstr path = *param[0];
 
             if (result)
-                *result =
-                    krkrz::TJS2NativeStorages::get()->chop_storage_ext(
-                        path.AsStdString());
+                *result = krkrz::TJS2NativeStorages::get()->chop_storage_ext(
+                    path.AsStdString());
 
             return TJS_S_OK;
         }
@@ -198,13 +198,21 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
             continue;
         }
 
-        auto archive_path_uri =
-            build_search_path(archive_auto_path->path, path);
-        if (this->_resource_mgr->exist(*archive_path_uri)) {
-            auto search_path = std::make_shared<SearchPathCache>(
-                archive_path_uri, archive_auto_path);
-            this->_search_path_cache.insert({path, search_path});
-            return search_path;
+        auto filename = path.filename().generic_string();
+
+        auto archive_path_uris = {
+            build_search_path(archive_auto_path->path, path),
+            build_search_path(archive_auto_path->path,
+
+                              my::fs::path(path).replace_filename(
+                                  boost::algorithm::to_lower_copy(filename)))};
+        for (const auto &archive_path_uri : archive_path_uris) {
+            if (this->_resource_mgr->exist(*archive_path_uri)) {
+                auto search_path = std::make_shared<SearchPathCache>(
+                    archive_path_uri, archive_auto_path);
+                this->_search_path_cache.insert({path, search_path});
+                return search_path;
+            }
         }
 
         for (auto &dir_auto_path : this->_auto_paths) {
@@ -212,13 +220,22 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
                 continue;
             }
 
-            archive_path_uri = build_search_path(archive_auto_path->path,
-                                                 dir_auto_path->path / path);
-            if (this->_resource_mgr->exist(*archive_path_uri)) {
-                auto search_path = std::make_shared<SearchPathCache>(
-                    archive_path_uri, archive_auto_path, dir_auto_path);
-                this->_search_path_cache.insert({path, search_path});
-                return search_path;
+            auto archive_path_uris = {
+                build_search_path(archive_auto_path->path,
+                                  dir_auto_path->path / path),
+                build_search_path(
+                    archive_auto_path->path,
+                    dir_auto_path->path /
+                        my::fs::path(path).replace_filename(
+                            boost::algorithm::to_lower_copy(filename)))};
+
+            for (const auto &archive_path_uri : archive_path_uris) {
+                if (this->_resource_mgr->exist(*archive_path_uri)) {
+                    auto search_path = std::make_shared<SearchPathCache>(
+                        archive_path_uri, archive_auto_path, dir_auto_path);
+                    this->_search_path_cache.insert({path, search_path});
+                    return search_path;
+                }
             }
         }
     }

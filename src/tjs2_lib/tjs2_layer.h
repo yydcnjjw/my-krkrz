@@ -62,6 +62,11 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) override;
 
+    void TJS_INTF_METHOD Invalidate() override {
+        this->_this_action_obj.Release();
+        this->_this_action_obj = {nullptr, nullptr};
+    }
+
     my::ColorRGBAub color_convert(uint32_t color, int opa) {
         return my::ColorRGBAub{color & 0x00ff0000 >> 16,
                                color & 0x0000ff00 >> 8, color & 0x000000ff,
@@ -84,9 +89,9 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         }
 
         my::ColorRGBAub col = this->color_convert(color, opa);
-        GLOG_D("color rect face=%d, %d,%d = %d,%d color %d %d %d %d",
-               this->face, x, y, x + w, y + h, color & 0x00ff0000 >> 16,
-               color & 0x0000ff00 >> 8, color & 0x000000ff, opa);
+        // GLOG_D("color rect face=%d, %d,%d = %d,%d color %d %d %d %d",
+        //        this->face, x, y, x + w, y + h, color & 0x00ff0000 >> 16,
+        //        color & 0x0000ff00 >> 8, color & 0x000000ff, opa);
 
         this->_canvas().fill_rect({x, y}, {x + w, y + h}, col);
     }
@@ -105,8 +110,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         color = krkrz::TJSToActualColor(color);
 
         my::ColorRGBAub col = this->color_convert(color, opa);
-        GLOG_D("draw text %d,%d %s", x, y,
-               codecvt::utf_to_utf<char>(text).c_str());
+        // GLOG_D("draw text %d,%d %s", x, y,
+        //        codecvt::utf_to_utf<char>(text).c_str());
         this->_canvas().fill_text(codecvt::utf_to_utf<char>(text), {x, y},
                                   nullptr, 16, col);
     }
@@ -114,6 +119,10 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     iTJSDispatch2 *this_obj() {
         assert(this->_this_obj);
         return this->_this_obj;
+    }
+
+    tTJSVariantClosure this_action_obj() const {
+        return this->_this_action_obj;
     }
 
     iTJSDispatch2 *get_font() { return this->_font; }
@@ -165,6 +174,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
   private:
     iTJSDispatch2 *_this_obj{};
+    tTJSVariantClosure _this_action_obj{nullptr, nullptr};
     TJS2NativeLayer *_parent{};
     std::list<TJS2NativeLayer *> _children{};
     iTJSDispatch2 *_font{};

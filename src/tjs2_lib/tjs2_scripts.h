@@ -69,17 +69,17 @@ class TJS2NativeScripts {
 
     void yield() {
         if (!this->_current_sink) {
-            std::runtime_error("yield error");
+            throw std::runtime_error("yield error");
         }
         (*this->_current_sink)();
     }
 
   private:
     std::thread _tjs_thread;
-    rxcpp::observe_on_one_worker *_tjs_worker;
+    rxcpp::observe_on_one_worker *_tjs_worker{};
 
-    tTJS *_tjs_engine;
-    std::shared_ptr<TJSConsoleOutput> _tjs_console_output;
+    tTJS *_tjs_engine{};
+    std::shared_ptr<TJSConsoleOutput> _tjs_console_output{};
     bool _is_stopping{false};
     std::shared_mutex _lock;
     std::condition_variable_any _cv;
@@ -87,7 +87,7 @@ class TJS2NativeScripts {
         coro_t::push_type *sink{};
         std::shared_ptr<coro_t::pull_type> source;
     };
-    std::list<CoroCtx> _coroutines;
+    std::list<CoroCtx> _coroutines{};
 
     coro_t::push_type *_current_sink{};
 

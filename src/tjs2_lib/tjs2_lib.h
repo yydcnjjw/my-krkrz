@@ -31,6 +31,39 @@ namespace TJS {
             return TJS_E_NATIVECLASSCRASH;                                     \
     }
 
+iTJSDispatch2 *create_event_object(const tjs_char *type,
+                                   iTJSDispatch2 *targthis,
+                                   iTJSDispatch2 *targ);
+
+extern ttstr action_name;
+#define TVP_ACTION_INVOKE_BEGIN(argnum, name, object)                          \
+    {                                                                          \
+        if (numparams < (argnum))                                              \
+            return TJS_E_BADPARAMCOUNT;                                        \
+        tjs_int arg_count = 0;                                                 \
+        iTJSDispatch2 *evobj =                                                 \
+            TJS::create_event_object(TJS_W(name), (object), (object));         \
+        tTJSVariant evval(evobj, evobj);                                       \
+        evobj->Release();
+
+#define TVP_ACTION_INVOKE_MEMBER(name)                                         \
+    {                                                                          \
+        static ttstr member_name(TJS_W(name));                                 \
+        evobj->PropSet(TJS_MEMBERENSURE | TJS_IGNOREPROP, member_name.c_str(), \
+                       member_name.GetHint(), param[arg_count++], evobj);      \
+    }
+
+#define TVP_ACTION_INVOKE_END(object)                                          \
+    tTJSVariant *pevval = &evval;                                              \
+    (object).FuncCall(0, TJS::action_name.c_str(), TJS::action_name.GetHint(), \
+                      result, 1, &pevval, NULL);                               \
+    }
+
+#define TVP_ACTION_INVOKE_END_NAME(object, name, hint)                         \
+    tTJSVariant *pevval = &evval;                                              \
+    (object).FuncCall(0, (name), (hint), result, 1, &pevval, NULL);            \
+    }
+
 void func_call(iTJSDispatch2 *obj, const std::string &func_name,
                const std::vector<tTJSVariant> &args = {});
 
