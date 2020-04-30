@@ -50,9 +50,12 @@ class TJS2NativeScripts {
                       tTJSVariant *result = nullptr,
                       const tjs_char *modestr = nullptr);
     void exec(const std::u16string &content, iTJSDispatch2 *context = nullptr,
-              tTJSVariant *result = nullptr, const std::u16string &name = u"");
+              tTJSVariant *result = nullptr, const std::u16string &name = u"",
+              int lineofs = 0);
 
-    void eval();
+    void eval(const std::u16string &content, iTJSDispatch2 *context = nullptr,
+              tTJSVariant *result = nullptr, const std::u16string &name = u"",
+              int lineofs = 0);
 
     rxcpp::observe_on_one_worker &tjs_worker() { return *this->_tjs_worker; }
 

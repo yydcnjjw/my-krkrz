@@ -76,19 +76,19 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     bool is_enable() { return !this->_timer->is_cancel(); }
 
     void disable() {
-        GLOG_D("direct disable timer");
+        // GLOG_D("direct disable timer");
         this->_timer->cancel();
     }
 
     void enable() {
-        GLOG_D("direct enable timer %d", this->get_interval());
+        // GLOG_D("direct enable timer %d", this->get_interval());
         this->_timer->start();
     }
 
     void set_interval(int64_t mil) {
-        GLOG_D("interval %d", mil);
+        // GLOG_D("interval %d", mil);
         if (mil == 0) {
-            GLOG_D("disable timer");
+            // GLOG_D("disable timer");
             this->_timer->cancel();
             return;
         }
@@ -96,7 +96,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
         this->_interval = mil;
         this->_timer->set_interval(std::chrono::milliseconds(mil));
         if (!this->is_enable()) {
-            GLOG_D("enable timer");
+            // GLOG_D("enable timer");
             this->enable();
         }
     }

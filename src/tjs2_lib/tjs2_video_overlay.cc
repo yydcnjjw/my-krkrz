@@ -17,6 +17,7 @@ class TJS2NativeVideoOverlay : public tTJSNativeInstance {
 
         return TJS_S_OK;
     }
+
   private:
 };
 
@@ -35,6 +36,28 @@ class TJS2VideoOverlay : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_CONSTRUCTOR_DECL(/*TJS class name*/ VideoOverlay)
+
+        TJS_BEGIN_NATIVE_PROP_DECL(mode) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeVideoOverlay);
+            // *result = (tjs_int)_this->GetMode();
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeVideoOverlay);
+
+            // _this->SetMode((tTVPVideoOverlayMode) (tjs_int)*param);
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(mode)
         TJS_END_NATIVE_MEMBERS
     }
     static tjs_uint32 ClassID;

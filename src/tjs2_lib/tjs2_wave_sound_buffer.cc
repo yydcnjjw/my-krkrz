@@ -30,15 +30,35 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
             codecvt::utf_to_utf<char>(path));
     }
 
-    void play() { this->_audio_mgr->play(this->_audio.get()); }
-    void stop() { this->_audio_mgr->pause(this->_audio.get()); }
+    void play() {
+        if (!this->_audio) {
+            GLOG_W("warn: audio is not be opened");
+            return;
+        }
+        this->_audio_mgr->play(this->_audio.get());
+    }
+    void stop() {
+        if (!this->_audio) {
+            GLOG_W("warn: audio is not be opened");
+            return;
+        }
+        this->_audio_mgr->pause(this->_audio.get());
+    }
 
     void fade(int ms) {
+        if (!this->_audio) {
+            GLOG_W("warn: audio is not be opened");
+            return;
+        }
         this->_fade_time = ms;
         this->_audio_mgr->play_fade(this->_audio.get(), this->_fade_time);
     }
 
     void stop_fade() {
+        if (!this->_audio) {
+            GLOG_W("warn: audio is not be opened");
+            return;
+        }
         this->_audio_mgr->stop_fade(this->_audio.get(), this->_fade_time);
     }
 
@@ -56,6 +76,10 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
         if (paused) {
             pause();
         } else {
+            if (!this->_audio) {
+                GLOG_W("warn: audio is not be opened");
+                return;
+            }
             this->_audio_mgr->resume(this->_audio.get());
         }
     }
@@ -202,6 +226,57 @@ class TJS2WaveSoundBuffer : public tTJSNativeClass {
             TJS_END_NATIVE_PROP_SETTER
         }
         TJS_END_NATIVE_PROP_DECL(pan)
+        TJS_BEGIN_NATIVE_PROP_DECL(volume) {
+            // TODO: WaveSoundBuffer.volume
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            // *result = _this->GetVolume();
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            // _this->SetVolume(*param);
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(volume)
+
+        TJS_BEGIN_NATIVE_PROP_DECL(volume2) {
+            // TODO: WaveSoundBuffer.volume2
+            TJS_BEGIN_NATIVE_PROP_GETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            // *result = _this->GetVolume2();
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            // _this->SetVolume2(*param);
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(volume2)
 
         TJS_END_NATIVE_MEMBERS
     }

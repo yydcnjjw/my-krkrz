@@ -7,6 +7,7 @@
 #include "tjs2_system.h"
 #include "tjs2_window.h"
 #include <MsgIntf.h>
+#include <tjs2_lib/tjs2_storages.h>
 
 namespace krkrz {
 
@@ -116,6 +117,38 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                                   nullptr, 16, col);
     }
 
+    void load_image(const std::u16string &_path) {
+        auto path = my::fs::path(codecvt::utf_to_utf<char>(_path));
+
+        if (path.has_extension()) {
+            this->_image =
+                TJS2NativeStorages::get()->get_storage<my::Image>(path);
+            return;
+        }
+
+        for (auto extension : {".png", ".jpg"}) {
+            path.replace_extension(extension);
+            try {
+                this->_image =
+                    TJS2NativeStorages::get()->get_storage<my::Image>(path);
+            } catch (...) {
+                break;
+            }
+        }
+    }
+
+    void assign_images(TJS2NativeLayer *layer) { this->_image = layer->_image; }
+
+    void on_paint() {
+        if (this->_image) {
+            int x = this->image_pos.x;
+            int y = this->image_pos.y;
+            this->_canvas().draw_image(
+                this->_image, {x, y},
+                {x + this->image_size.w, y + this->image_size.h});
+        }
+    }
+
     iTJSDispatch2 *this_obj() {
         assert(this->_this_obj);
         return this->_this_obj;
@@ -154,10 +187,13 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         return this->_children;
     }
 
+    bool is_primary_layer() { return this->_win->get_primary_layer() == this; }
+
     my::Size2D size{};
     my::PixelPos pos{};
     my::Size2D image_size{};
     my::PixelPos image_pos{};
+    std::shared_ptr<my::Image> _image;
 
     // TODO:
     int type{};
@@ -171,6 +207,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     bool focusable{false};
     bool visible{false};
     bool image_modified{false};
+    bool absolute_order_mode{false};
+    bool hold_alpha{false};
 
   private:
     iTJSDispatch2 *_this_obj{};

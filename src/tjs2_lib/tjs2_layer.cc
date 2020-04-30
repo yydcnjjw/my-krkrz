@@ -794,9 +794,33 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         // 	TVP_ACTION_INVOKE_END(obj);
         // }
 
+        _this->on_paint();
+
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onPaint)
+
+    TJS_BEGIN_NATIVE_PROP_DECL(callOnPaint) {
+        // TODO: Layer.callOnPaint
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        // *result = _this->GetCallOnPaint();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        // _this->SetCallOnPaint(param->operator bool());
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(callOnPaint)
 
     TJS_BEGIN_NATIVE_PROP_DECL(enabled) {
         // TODO: Layer.enabled
@@ -869,6 +893,262 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setProvincePixel)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ loadImages) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+        ttstr name(*param[0]);
+        _this->load_image(name.AsStdString());
+
+        if (result)
+            *result = tTJSVariant(); // TODO: image tag information(dict)
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ loadImages)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ assignImages) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+
+        TJS2NativeLayer *src;
+        tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
+        if (clo.Object) {
+            if (TJS_FAILED(clo.Object->NativeInstanceSupport(
+                    TJS_NIS_GETINSTANCE, TJS2Layer::ClassID,
+                    (iTJSNativeInstance **)&src)))
+                TVPThrowExceptionMessage(TVPSpecifyLayer);
+        }
+        if (!src)
+            TVPThrowExceptionMessage(TVPSpecifyLayer);
+
+        _this->assign_images(src);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ assignImages)
+    TJS_BEGIN_NATIVE_PROP_DECL(isPrimary) {
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = (tjs_int)_this->is_primary_layer();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_DENY_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(isPrimary)
+
+    TJS_BEGIN_NATIVE_PROP_DECL(absoluteOrderMode) // not absoluteOrderIndexMode
+    {
+        // TODO: Layer.absoluteOrderMode
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = (tjs_int)_this->absolute_order_mode;
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        _this->absolute_order_mode = (bool)(*param);
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(absoluteOrderMode)
+
+    TJS_BEGIN_NATIVE_PROP_DECL(holdAlpha) {
+        // TODO: Layer.holdAlpha
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = (tjs_int)_this->hold_alpha;
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        _this->hold_alpha = (0 != (tjs_int)*param);
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(holdAlpha)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ adjustGamma) {
+        // TODO: Layer.adjustGamma
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        if (numparams == 0)
+            return TJS_S_OK;
+
+        // tTVPGLGammaAdjustData data;
+        // memcpy(&data, &TVPIntactGammaAdjustData, sizeof(data));
+
+        // if(numparams >= 1 && param[0]->Type() != tvtVoid)
+        // 	data.RGamma = static_cast<float>((double)*param[0]);
+        // if(numparams >= 2 && param[1]->Type() != tvtVoid)
+        // 	data.RFloor = *param[1];
+        // if(numparams >= 3 && param[2]->Type() != tvtVoid)
+        // 	data.RCeil  = *param[2];
+        // if(numparams >= 4 && param[3]->Type() != tvtVoid)
+        // 	data.GGamma = static_cast<float>((double)*param[3]);
+        // if(numparams >= 5 && param[4]->Type() != tvtVoid)
+        // 	data.GFloor = *param[4];
+        // if(numparams >= 6 && param[5]->Type() != tvtVoid)
+        // 	data.GCeil  = *param[5];
+        // if(numparams >= 7 && param[6]->Type() != tvtVoid)
+        // 	data.BGamma = static_cast<float>((double)*param[6]);
+        // if(numparams >= 8 && param[7]->Type() != tvtVoid)
+        // 	data.BFloor = *param[7];
+        // if(numparams >= 9 && param[8]->Type() != tvtVoid)
+        // 	data.BCeil  = *param[8];
+
+        // _this->AdjustGamma(data);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ adjustGamma)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ beginTransition) {
+        // TODO: Layer.beginTransition
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        // parameters are : <name>, [<withchildren>=true], [<transwith>=null],
+        //                  [<options>]
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+        // ttstr name = *param[0];
+        // bool withchildren = true;
+        // if(numparams >= 2 && param[1]->Type() != tvtVoid)
+        // 	withchildren = param[1]->operator bool();
+        // tTJSNI_BaseLayer * transsrc = NULL;
+        // if(numparams >= 3 && param[2]->Type() != tvtVoid)
+        // {
+        // 	tTJSVariantClosure clo = param[2]->AsObjectClosureNoAddRef();
+        // 	if(clo.Object)
+        // 	{
+        // 		if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
+        // 			tTJSNC_Layer::ClassID,
+        // (iTJSNativeInstance**)&transsrc)))
+        // 			TVPThrowExceptionMessage(TVPSpecifyLayer);
+        // 	}
+        // }
+        // if(!transsrc) TVPThrowExceptionMessage(TVPSpecifyLayer);
+
+        // tTJSVariantClosure options(NULL, NULL);
+        // if(numparams >= 4 && param[3]->Type() != tvtVoid)
+        // 	options = param[3]->AsObjectClosureNoAddRef();
+
+        // _this->StartTransition(name, withchildren, transsrc, options);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ beginTransition)
+    //----------------------------------------------------------------------
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ stopTransition) {
+        // TODO: Layer.stopTransition
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        // _this->StopTransition();
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ stopTransition)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ piledCopy) {
+        // TODO: Layer.piledCopy
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 7)
+            return TJS_E_BADPARAMCOUNT;
+
+        // tTJSNI_BaseLayer * src = NULL;
+        // tTJSVariantClosure clo = param[2]->AsObjectClosureNoAddRef();
+        // if(clo.Object)
+        // {
+        // 	if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
+        // 		tTJSNC_Layer::ClassID, (iTJSNativeInstance**)&src)))
+        // 		TVPThrowExceptionMessage(TVPSpecifyLayer);
+        // }
+        // if(!src) TVPThrowExceptionMessage(TVPSpecifyLayer);
+
+        // tTVPRect rect(*param[3], *param[4], *param[5], *param[6]);
+        // rect.right += rect.left;
+        // rect.bottom += rect.top;
+
+        // _this->PiledCopy(*param[0], *param[1], src, rect);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ piledCopy)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ stretchCopy) {
+        // TODO: Layer.stretchCopy
+        // dx, dy, dw, dh, src, sx, sy, sw, sh, type=0
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 9)
+            return TJS_E_BADPARAMCOUNT;
+
+        // tTVPBaseBitmap* src = NULL;
+        // tTJSVariantClosure clo = param[4]->AsObjectClosureNoAddRef();
+        // if(clo.Object)
+        // {
+        // 	tTJSNI_BaseLayer * srclayer = NULL;
+        // 	if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
+        // 		tTJSNC_Layer::ClassID,
+        // (iTJSNativeInstance**)&srclayer))) 		src = NULL; 	else 		src =
+        // srclayer->GetMainImage();
+
+        // 	if( src == NULL )
+        // 	{	// try to get bitmap interface
+        // 		tTJSNI_Bitmap * srcbmp = NULL;
+        // 		if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
+        // 			tTJSNC_Bitmap::ClassID,
+        // (iTJSNativeInstance**)&srcbmp))) 			src = NULL; 		else 			src =
+        // srcbmp->GetBitmap();
+        // 	}
+        // }
+        // if(!src) TVPThrowExceptionMessage(TVPSpecifyLayerOrBitmap);
+
+        // tTVPRect destrect(*param[0], *param[1], *param[2], *param[3]);
+        // destrect.right += destrect.left;
+        // destrect.bottom += destrect.top;
+
+        // tTVPRect srcrect(*param[5], *param[6], *param[7], *param[8]);
+        // srcrect.right += srcrect.left;
+        // srcrect.bottom += srcrect.top;
+
+        // tTVPBBStretchType type = stNearest;
+        // if(numparams >= 10)
+        // 	type = (tTVPBBStretchType)(tjs_int)*param[9];
+
+        // tjs_real typeopt = 0.0;
+        // if(numparams >= 11)
+        // 	typeopt = (tjs_real)*param[10];
+        // else if( type == stFastCubic || type == stCubic )
+        // 	typeopt = -1.0;
+
+        // _this->StretchCopy(destrect, src, srcrect, type, typeopt);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ stretchCopy)
 
     // event
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {

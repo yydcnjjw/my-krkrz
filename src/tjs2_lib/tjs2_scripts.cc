@@ -97,6 +97,32 @@ class TJS2Scripts : public tTJSNativeClass {
         }
         TJS_END_NATIVE_CONSTRUCTOR_DECL(/*TJS class name*/ Scripts)
 
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ exec) {
+            // execute given string as a script
+            if (numparams < 1)
+                return TJS_E_BADPARAMCOUNT;
+
+            ttstr content = *param[0];
+
+            ttstr name;
+            tjs_int lineofs = 0;
+            if (numparams >= 2 && param[1]->Type() != tvtVoid)
+                name = *param[1];
+            if (numparams >= 3 && param[2]->Type() != tvtVoid)
+                lineofs = *param[2];
+
+            iTJSDispatch2 *context =
+                numparams >= 4 && param[3]->Type() != tvtVoid
+                    ? param[3]->AsObjectNoAddRef()
+                    : NULL;
+
+            krkrz::TJS2NativeScripts::get()->exec(content.AsStdString(),
+                                                  context, result,
+                                                  name.AsStdString(), lineofs);
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ exec)
+
         TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ execStorage) {
             // execute script which stored in storage
             if (numparams < 1)
@@ -119,6 +145,32 @@ class TJS2Scripts : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ execStorage)
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ eval) {
+            // execute given string as a script
+            if (numparams < 1)
+                return TJS_E_BADPARAMCOUNT;
+
+            ttstr content = *param[0];
+
+            ttstr name;
+            tjs_int lineofs = 0;
+            if (numparams >= 2 && param[1]->Type() != tvtVoid)
+                name = *param[1];
+            if (numparams >= 3 && param[2]->Type() != tvtVoid)
+                lineofs = *param[2];
+
+            iTJSDispatch2 *context =
+                numparams >= 4 && param[3]->Type() != tvtVoid
+                    ? param[3]->AsObjectNoAddRef()
+                    : NULL;
+
+            krkrz::TJS2NativeScripts::get()->eval(content.AsStdString(),
+                                                  context, result,
+                                                  name.AsStdString(), lineofs);
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ eval)
 
         TJS_END_NATIVE_MEMBERS
     }
@@ -284,9 +336,9 @@ void TJS2NativeScripts::_load_tjs_lib() {
     cls->Release();                                                            \
     global->PropSet(TJS_MEMBERENSURE | TJS_IGNOREPROP, TJS_W(#classname),      \
                     nullptr, &cls_val, global);
-
-    REGISTER_OBJECT(System, create_tjs2_system());
     REGISTER_OBJECT(Debug, create_tjs2_debug());
+    REGISTER_OBJECT(Plugins, create_tjs2_plugins());
+    REGISTER_OBJECT(System, create_tjs2_system());
     REGISTER_OBJECT(Storages, create_tjs2_storages());
     REGISTER_OBJECT(Scripts, create_tjs2_scripts());
     REGISTER_OBJECT(Window, create_tjs2_window());
@@ -312,9 +364,18 @@ void TJS2NativeScripts::exec_storage(const std::u16string &path,
 
 void TJS2NativeScripts::exec(const std::u16string &content,
                              iTJSDispatch2 *context, tTJSVariant *result,
-                             const std::u16string &name) {
+                             const std::u16string &name, int lineofs) {
     ttstr short_name = name;
-    this->_tjs_engine->ExecScript(content, result, context, &short_name);
+    this->_tjs_engine->ExecScript(content, result, context, &short_name,
+                                  lineofs);
+}
+
+void TJS2NativeScripts::eval(const std::u16string &content,
+                             iTJSDispatch2 *context, tTJSVariant *result,
+                             const std::u16string &name, int lineofs) {
+    ttstr short_name = name;
+    this->_tjs_engine->EvalExpression(content, result, context, &short_name,
+                                      lineofs);
 }
 
 } // namespace krkrz

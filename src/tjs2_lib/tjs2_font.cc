@@ -185,6 +185,32 @@ TJS2Font::TJS2Font() : inherited(TJS_W("Font")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getTextHeight)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ mapPrerenderedFont) {
+        // TODO: Font.mapPrerenderedFont
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeFont);
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+
+        // _this->MapPrerenderedFont(*param[0]);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ mapPrerenderedFont)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ unmapPrerenderedFont) {
+        // TODO: Font.mapPrerenderedFont
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeFont);
+        if (numparams < 0)
+            return TJS_E_BADPARAMCOUNT;
+
+        // _this->UnmapPrerenderedFont();
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ unmapPrerenderedFont)
     TJS_END_NATIVE_MEMBERS
 }
 } // namespace krkrz
