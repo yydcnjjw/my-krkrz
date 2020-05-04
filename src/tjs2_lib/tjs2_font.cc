@@ -40,7 +40,7 @@ TJS2Font::TJS2Font() : inherited(TJS_W("Font")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeFont);
-        *result = _this->height;
+        *result = _this->get_height();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -49,7 +49,7 @@ TJS2Font::TJS2Font() : inherited(TJS_W("Font")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeFont);
-        _this->height = *param;
+        _this->set_height(*param);
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER

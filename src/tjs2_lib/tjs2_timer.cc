@@ -53,7 +53,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                                        .to_bytes(e.GetMessage().AsStdString())
                                        .c_str());
                             this->disable();
-                            krkrz::Application::get()->base_app()->quit();
+                            krkrz::Application::get()->base_app()->quit(true);
                         }
                     });
 

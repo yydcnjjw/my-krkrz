@@ -1,5 +1,6 @@
 #pragma once
 
+#include <render/canvas.h>
 #include <util/logger.h>
 
 #include "tjs2_font.h"
@@ -56,6 +57,37 @@ enum TJS2LayerType {
     ltPsExclusion = 28
 };
 
+enum TJS2BlendOperationMode {
+    omPsNormal = ltPsNormal,
+    omPsAdditive = ltPsAdditive,
+    omPsSubtractive = ltPsSubtractive,
+    omPsMultiplicative = ltPsMultiplicative,
+    omPsScreen = ltPsScreen,
+    omPsOverlay = ltPsOverlay,
+    omPsHardLight = ltPsHardLight,
+    omPsSoftLight = ltPsSoftLight,
+    omPsColorDodge = ltPsColorDodge,
+    omPsColorDodge5 = ltPsColorDodge5,
+    omPsColorBurn = ltPsColorBurn,
+    omPsLighten = ltPsLighten,
+    omPsDarken = ltPsDarken,
+    omPsDifference = ltPsDifference,
+    omPsDifference5 = ltPsDifference5,
+    omPsExclusion = ltPsExclusion,
+    omAdditive = ltAdditive,
+    omSubtractive = ltSubtractive,
+    omMultiplicative = ltMultiplicative,
+    omDodge = ltDodge,
+    omDarken = ltDarken,
+    omLighten = ltLighten,
+    omScreen = ltScreen,
+    omAlpha = ltTransparent,
+    omAddAlpha = ltAddAlpha,
+    omOpaque = ltCoverRect,
+
+    omAuto = 128 // operation mode is guessed from the source layer type
+};
+
 class TJS2NativeLayer : public tTJSNativeInstance {
   public:
     TJS2NativeLayer();
@@ -66,6 +98,9 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void TJS_INTF_METHOD Invalidate() override {
         this->_this_action_obj.Release();
         this->_this_action_obj = {nullptr, nullptr};
+        auto font_obj = this->_font->this_obj();
+        font_obj->Invalidate(0, nullptr, nullptr, font_obj);
+        font_obj->Release();
     }
 
     my::ColorRGBAub color_convert(uint32_t color, int opa) {
@@ -90,11 +125,28 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         }
 
         my::ColorRGBAub col = this->color_convert(color, opa);
-        // GLOG_D("color rect face=%d, %d,%d = %d,%d color %d %d %d %d",
-        //        this->face, x, y, x + w, y + h, color & 0x00ff0000 >> 16,
-        //        color & 0x0000ff00 >> 8, color & 0x000000ff, opa);
 
-        this->_canvas().fill_rect({x, y}, {x + w, y + h}, col);
+        // bound check
+        if (x < 0) {
+            x = 0;
+        }
+        if (y < 0) {
+            y = 0;
+        }
+        int right{x + w};
+        if (right > this->size.w) {
+            right = this->size.w;
+        }
+        int bottom{y + h};
+        if (bottom > this->size.h) {
+            bottom = this->size.h;
+        }
+
+        GLOG_D("color rect face=%d, {%d,%d}={%d,%d} color %d %d %d %d",
+               this->face, x, y, right, bottom, color & 0x00ff0000 >> 16,
+               color & 0x0000ff00 >> 8, color & 0x000000ff, opa);
+
+        this->_canvas().fill_rect({x, y}, {right, bottom}, col);
     }
 
     void fill_rect(int x, int y, int w, int h, uint32_t color) {
@@ -111,38 +163,83 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         color = krkrz::TJSToActualColor(color);
 
         my::ColorRGBAub col = this->color_convert(color, opa);
-        // GLOG_D("draw text %d,%d %s", x, y,
-        //        codecvt::utf_to_utf<char>(text).c_str());
+        GLOG_D("draw text height %d, %d,%d %s", this->_font->get_height(), x, y,
+               codecvt::utf_to_utf<char>(text).c_str());
         this->_canvas().fill_text(codecvt::utf_to_utf<char>(text), {x, y},
-                                  nullptr, 16, col);
+                                  nullptr, this->_font->get_height(), col);
     }
 
     void load_image(const std::u16string &_path) {
         auto path = my::fs::path(codecvt::utf_to_utf<char>(_path));
 
+        GLOG_D("load image: %s", path.c_str());
+
         if (path.has_extension()) {
             this->_image =
                 TJS2NativeStorages::get()->get_storage<my::Image>(path);
-            return;
-        }
-
-        for (auto extension : {".png", ".jpg"}) {
-            path.replace_extension(extension);
-            try {
-                this->_image =
-                    TJS2NativeStorages::get()->get_storage<my::Image>(path);
-            } catch (...) {
+        } else {
+            for (auto extension : {".png", ".jpg"}) {
+                path.replace_extension(extension);
+                try {
+                    this->_image =
+                        TJS2NativeStorages::get()->get_storage<my::Image>(path);
+                } catch (...) {
+                    this->_image = nullptr;
+                    continue;
+                }
                 break;
             }
+        }
+
+        if (!this->_image) {
+            throw std::runtime_error(
+                (boost::format("load image failure %1%") % path).str());
+        } else {
+            this->on_paint();
         }
     }
 
     void assign_images(TJS2NativeLayer *layer) { this->_image = layer->_image; }
 
+    auto get_layer_image_data(const my::PixelPos &_off,
+                              const my::Size2D &size) {
+        auto off = this->pos + _off;
+        // TODO: check overflow
+        return this->_canvas().get_image_data(off, size);
+    }
+
+    void put_layer_image_data(std::shared_ptr<my::RGBAImage> image,
+                              const my::PixelPos &off) {
+        // TODO: check overflow
+        this->_canvas().put_image_data(image, off);
+    }
+
+    auto get_layer_texture() {
+        return this->get_layer_image_data({0, 0}, this->size);
+    }
+
+    void get_layer_pixel(const my::PixelPos &off) {
+        this->get_layer_image_data(off, {1, 1});
+    }
+
+    void operate_rect(const my::PixelPos &d_off, TJS2NativeLayer *layer,
+                      const my::PixelPos &s_off, const my::Size2D &s_size,
+                      TJS2BlendOperationMode mode) {
+        if (s_size.w * s_size.h == 0) {
+            return;
+        }
+        auto s_image = layer->get_layer_image_data(s_off, s_size);
+        this->put_layer_image_data(s_image, d_off);
+    }
+
     void on_paint() {
+        if (!this->visible) {
+            return;
+        }
         if (this->_image) {
             int x = this->image_pos.x;
             int y = this->image_pos.y;
+            GLOG_D("draw image {%d, %d}={%d, %d}", x, y, this->image_size.w, this->image_size.h);
             this->_canvas().draw_image(
                 this->_image, {x, y},
                 {x + this->image_size.w, y + this->image_size.h});
@@ -158,7 +255,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         return this->_this_action_obj;
     }
 
-    iTJSDispatch2 *get_font() { return this->_font; }
+    iTJSDispatch2 *get_font() { return this->_font->this_obj(); }
 
     TJS2NativeWindow *get_window() {
         assert(this->_win);
@@ -215,7 +312,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     tTJSVariantClosure _this_action_obj{nullptr, nullptr};
     TJS2NativeLayer *_parent{};
     std::list<TJS2NativeLayer *> _children{};
-    iTJSDispatch2 *_font{};
+    TJS2NativeFont *_font{};
     TJS2NativeWindow *_win{};
     my::WindowMgr *_win_mgr{};
 

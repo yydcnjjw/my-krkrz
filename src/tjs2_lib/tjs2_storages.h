@@ -45,23 +45,25 @@ class TJS2NativeStorages {
     search_storage(const my::fs::path &path);
 
     template <typename T>
-    std::shared_ptr<T> get_storage(const my::fs::path &path) {
-        auto search_path = this->search_storage(path);
+    std::shared_ptr<T> get_storage(const std::string &uri) {
+        auto search_path = this->search_storage(
+            my::fs::path(my::uri(uri).encoded_path().to_string())
+                .lexically_normal());
         if (search_path.has_value()) {
             return this->_resource_mgr
                 ->load_from_uri<T>(*search_path.value()->search_uri)
                 .get();
         } else {
             throw std::runtime_error(
-                (boost::format("%1% is not exist") % path).str());
+                (boost::format("%1% is not exist") % uri).str());
         }
     }
 
-    bool is_exist_storage(const std::u16string &utf16_path) {
-        return !this->get_placed_path(utf16_path).empty();
+    bool is_exist_storage(const std::u16string &utf16_uri) {
+        return !this->get_placed_path(utf16_uri).empty();
     }
 
-    std::u16string get_placed_path(const std::u16string &utf16_path);
+    std::u16string get_placed_path(const std::u16string &utf16_uri);
 
     void add_auto_path(const std::u16string &utf16_path) {
         this->_add_auto_path(codecvt::utf_to_utf<char>(utf16_path));
@@ -79,8 +81,7 @@ class TJS2NativeStorages {
     std::u16string chop_storage_ext(const std::u16string &utf16_path) {
         auto path = my::fs::path(codecvt::utf_to_utf<char>(utf16_path));
         return (path.parent_path() / path.stem()).u16string();
-        
-    }    
+    }
 
   private:
     my::ResourceMgr *_resource_mgr;

@@ -38,7 +38,7 @@ class TJS2Storages : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ addAutoPath)
-        //----------------------------------------------------------------------
+
         TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ removeAutoPath) {
             if (numparams < 1)
                 return TJS_E_BADPARAMCOUNT;
@@ -127,7 +127,6 @@ tjs_uint32 TJS2Storages::ClassID = (tjs_uint32)-1;
 std::shared_ptr<my::uri>
 build_search_path(const my::fs::path &file_path,
                   const my::fs::path &query_path = {}) {
-
     std::string uri_str;
     if (!query_path.empty()) {
         uri_str = (boost::format("file://%1%?path=%2%") % file_path.string() %
@@ -136,7 +135,6 @@ build_search_path(const my::fs::path &file_path,
     } else {
         uri_str = (boost::format("file://%1%") % file_path.string()).str();
     }
-    // GLOG_D(uri_str.c_str());
     return std::make_shared<my::uri>(uri_str);
 }
 
@@ -148,7 +146,7 @@ tTJSNativeClass *create_tjs2_storages() { return new TJS2Storages(); }
 
 TJS2NativeStorages::TJS2NativeStorages()
     : _resource_mgr(Application::get()->base_app()->resource_mgr()),
-      _app_path(krkrz::Application::get()->app_path),
+      _app_path(krkrz::Application::get()->app_path.encoded_path().to_string()),
       _default_storage_data_path(this->_app_path / "data") {
     this->_add_auto_path(this->_app_path / "data.xp3>");
 }
@@ -244,10 +242,11 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
 }
 
 std::u16string
-TJS2NativeStorages::get_placed_path(const std::u16string &utf16_path) {
-    auto path = my::fs::path(codecvt::utf_to_utf<char>(utf16_path));
+TJS2NativeStorages::get_placed_path(const std::u16string &utf16_uri) {
+    auto uri = my::uri(codecvt::utf_to_utf<char>(utf16_uri));
 
-    auto cache = this->search_storage(path);
+    auto cache = this->search_storage(
+        my::fs::path(uri.encoded_path().to_string()).lexically_normal());
     if (cache.has_value()) {
         return codecvt::utf_to_utf<char16_t>(
             cache.value()->search_uri->encoded_url().to_string());

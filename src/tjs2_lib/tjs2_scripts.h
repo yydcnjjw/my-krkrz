@@ -39,16 +39,19 @@ class TJS2NativeScripts {
     ~TJS2NativeScripts();
 
     void boot_start();
-    bool is_stopping() {
-        std::shared_lock<std::shared_mutex> l_lock(this->_lock);
-        return this->_is_stopping;
-    }
+    bool is_stopping() { return this->_is_stopping; }
     void stop();
 
-    void exec_storage(const std::u16string &path,
+    void exec_storage(const std::u16string &uri,
                       iTJSDispatch2 *context = nullptr,
                       tTJSVariant *result = nullptr,
                       const tjs_char *modestr = nullptr);
+
+    void eval_storage(const std::u16string &uri,
+                      iTJSDispatch2 *context = nullptr,
+                      tTJSVariant *result = nullptr,
+                      const tjs_char *modestr = nullptr);
+
     void exec(const std::u16string &content, iTJSDispatch2 *context = nullptr,
               tTJSVariant *result = nullptr, const std::u16string &name = u"",
               int lineofs = 0);
@@ -83,7 +86,7 @@ class TJS2NativeScripts {
 
     tTJS *_tjs_engine{};
     std::shared_ptr<TJSConsoleOutput> _tjs_console_output{};
-    bool _is_stopping{false};
+    std::atomic_bool _is_stopping{false};
     std::shared_mutex _lock;
     std::condition_variable_any _cv;
     struct CoroCtx {

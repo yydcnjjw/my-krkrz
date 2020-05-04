@@ -783,23 +783,6 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ update)
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onPaint) {
-        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
-                                /*var. type*/ TJS2NativeLayer);
-
-        // tTJSVariantClosure obj = _this->GetActionOwnerNoAddRef();
-        // if(obj.Object)
-        // {
-        // 	TVP_ACTION_INVOKE_BEGIN(0, "onPaint", objthis);
-        // 	TVP_ACTION_INVOKE_END(obj);
-        // }
-
-        _this->on_paint();
-
-        return TJS_S_OK;
-    }
-    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onPaint)
-
     TJS_BEGIN_NATIVE_PROP_DECL(callOnPaint) {
         // TODO: Layer.callOnPaint
         TJS_BEGIN_NATIVE_PROP_GETTER
@@ -1092,7 +1075,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         // rect.bottom += rect.top;
 
         // _this->PiledCopy(*param[0], *param[1], src, rect);
-
+        GLOG_D("call Layer.PiledCopy");
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ piledCopy)
@@ -1112,16 +1095,16 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         // 	tTJSNI_BaseLayer * srclayer = NULL;
         // 	if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
         // 		tTJSNC_Layer::ClassID,
-        // (iTJSNativeInstance**)&srclayer))) 		src = NULL; 	else 		src =
-        // srclayer->GetMainImage();
+        // (iTJSNativeInstance**)&srclayer))) 		src = NULL; 	else
+        // src = srclayer->GetMainImage();
 
         // 	if( src == NULL )
         // 	{	// try to get bitmap interface
         // 		tTJSNI_Bitmap * srcbmp = NULL;
         // 		if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
         // 			tTJSNC_Bitmap::ClassID,
-        // (iTJSNativeInstance**)&srcbmp))) 			src = NULL; 		else 			src =
-        // srcbmp->GetBitmap();
+        // (iTJSNativeInstance**)&srcbmp))) 			src = NULL;
+        // else 			src = srcbmp->GetBitmap();
         // 	}
         // }
         // if(!src) TVPThrowExceptionMessage(TVPSpecifyLayerOrBitmap);
@@ -1145,10 +1128,59 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         // 	typeopt = -1.0;
 
         // _this->StretchCopy(destrect, src, srcrect, type, typeopt);
+        GLOG_D("call Layer.StretchCopy");
 
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ stretchCopy)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ saveLayerImage) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 1)
+            return TJS_E_BADPARAMCOUNT;
+        ttstr name(*param[0]);
+        ttstr type(TJS_W("bmp"));
+        if (numparams >= 2 && param[1]->Type() != tvtVoid)
+            type = *param[1];
+        // _this->SaveLayerImage(name, type);
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ saveLayerImage)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ operateRect) {
+        // TODO: Layer.operateRect
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 7)
+            return TJS_E_BADPARAMCOUNT;
+        TJS2NativeLayer *srclayer{};
+        tTJSVariantClosure clo = param[2]->AsObjectClosureNoAddRef();
+        if (clo.Object) {
+            if (TJS_FAILED(clo.Object->NativeInstanceSupport(
+                    TJS_NIS_GETINSTANCE, TJS2Layer::ClassID,
+                    (iTJSNativeInstance **)&srclayer))) {
+                throw std::runtime_error(
+                    "TODO: Layer.operateRect only support Layer");
+            }
+        }
+
+        // if(!src) TVPThrowExceptionMessage(TVPSpecifyLayerOrBitmap);
+
+        TJS2BlendOperationMode mode;
+        if (numparams >= 8 && param[7]->Type() != tvtVoid)
+            mode = (TJS2BlendOperationMode)(tjs_int)(*param[7]);
+        else
+            mode = omAuto;
+
+        if (mode == omAuto)
+            mode = omAlpha;
+
+        _this->operate_rect(
+            {*param[0], *param[1]}, srclayer, {*param[3], *param[4]},
+            {(uint32_t)(int)*param[5], (uint32_t)(int)*param[6]}, mode);
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ operateRect)
 
     // event
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {
@@ -1175,7 +1207,23 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onDoubleClick)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseUp) { return TJS_S_OK; }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseUp)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onPaint) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        // tTJSVariantClosure obj = _this->GetActionOwnerNoAddRef();
+        // if(obj.Object)
+        // {
+        // 	TVP_ACTION_INVOKE_BEGIN(0, "onPaint", objthis);
+        // 	TVP_ACTION_INVOKE_END(obj);
+        // }
+
+        _this->on_paint();
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onPaint)
     TJS_END_NATIVE_MEMBERS
-}
+} // namespace krkrz
 
 } // namespace krkrz

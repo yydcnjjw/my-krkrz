@@ -45,7 +45,14 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
                 .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .subscribe([this](const auto &) {
-                    krkrz::TJS::func_call(this->_this, "onFire");
+                    try {
+                        krkrz::TJS::func_call(this->_this, "onFire");
+                    } catch (eTJSError &e) {
+                        GLOG_D(utf16_codecvt()
+                                   .to_bytes(e.GetMessage().AsStdString())
+                                   .c_str());
+                        krkrz::Application::get()->base_app()->quit(true);
+                    }
                     this->cancel();
                 });
     }

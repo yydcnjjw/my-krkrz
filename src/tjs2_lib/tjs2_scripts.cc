@@ -1,5 +1,7 @@
 #include "tjs2_scripts.h"
 
+#include <fstream>
+
 #include <boost/timer/timer.hpp>
 
 #include <util/logger.h>
@@ -17,22 +19,49 @@ namespace {
 class TJS2TextReadStream : public iTJSTextReadStream {
   public:
     TJS2TextReadStream(const std::u16string &name, const std::u16string &mode) {
-        GLOG_D("read stream %s,%s", codecvt::utf_to_utf<char>(name).c_str(),
-               codecvt::utf_to_utf<char>(mode).c_str());
+        my::uri uri(codecvt::utf_to_utf<char>(name).c_str());
+        auto path =
+            my::fs::path(uri.encoded_path().to_string()).lexically_normal();
+        GLOG_D("read stream %s", path.c_str());
+        this->_ifs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        this->_ifs.open(path);
     }
-    tjs_uint TJS_INTF_METHOD Read(tTJSString &targ, tjs_uint size) override {}
+    tjs_uint TJS_INTF_METHOD Read(tTJSString &targ, tjs_uint size) override {
+        tjs_char *buf = targ.AppendBuffer(size);
+        auto len = this->_ifs.readsome(reinterpret_cast<char *>(buf), size * 2);
+        assert(len % 2 == 0);
+        return len / 2;
+    }
     void TJS_INTF_METHOD Destruct() override {}
+
+  private:
+    std::ifstream _ifs;
 };
 
 class TJS2TextWriteStream : public iTJSTextWriteStream {
   public:
     TJS2TextWriteStream(const std::u16string &name,
                         const std::u16string &mode) {
-        GLOG_D("write stream %s,%s", codecvt::utf_to_utf<char>(name).c_str(),
-               codecvt::utf_to_utf<char>(mode).c_str());
+        my::uri uri(codecvt::utf_to_utf<char>(name).c_str());
+        auto path =
+            my::fs::path(uri.encoded_path().to_string()).lexically_normal();
+        GLOG_D("write stream %s", path.c_str());
+
+        if (!my::fs::exists(path.parent_path())) {
+            my::fs::create_directory(path.parent_path());
+        }
+
+        this->_ofs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        this->_ofs.open(path, std::ios::binary);
     }
-    void TJS_INTF_METHOD Write(const tTJSString &targ) override {}
+    void TJS_INTF_METHOD Write(const tTJSString &targ) override {
+        auto data = codecvt::utf_to_utf<char>(targ.AsStdString());
+        this->_ofs << data;
+    }
     void TJS_INTF_METHOD Destruct() override {}
+
+  private:
+    std::ofstream _ofs;
 };
 
 // class iTJSBinaryStream {
@@ -145,6 +174,28 @@ class TJS2Scripts : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ execStorage)
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ evalStorage) {
+            // execute expression which stored in storage
+            if (numparams < 1)
+                return TJS_E_BADPARAMCOUNT;
+
+            ttstr name = *param[0];
+
+            ttstr modestr;
+            if (numparams >= 2 && param[1]->Type() != tvtVoid)
+                modestr = *param[1];
+
+            iTJSDispatch2 *context =
+                numparams >= 3 && param[2]->Type() != tvtVoid
+                    ? param[2]->AsObjectNoAddRef()
+                    : NULL;
+
+            krkrz::TJS2NativeScripts::get()->eval_storage(
+                name.AsStdString(), context, result, modestr.c_str());
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ evalStorage)
         TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ eval) {
             // execute given string as a script
             if (numparams < 1)
@@ -195,15 +246,15 @@ void TJS2NativeScripts::boot_start() {
     app->ev_bus()
         ->on_event<my::QuitEvent>()
         .observe_on(app->ev_bus()->ev_bus_worker())
-        .subscribe([this](const auto &) {
-            {
-                std::unique_lock<std::shared_mutex> l_lock(this->_lock);
-                this->_is_stopping = true;
-            }
+        .subscribe([this](const std::shared_ptr<my::Event<my::QuitEvent>> &ev) {
+            this->_is_stopping = true;
+
             if (this->_tjs_thread.joinable()) {
                 this->_tjs_thread.join();
             }
-            TJS2NativeScripts::get()->stop();
+            if (!ev->data->is_on_error) {
+                TJS2NativeScripts::get()->stop();
+            }
         });
 
     std::promise<rxcpp::observe_on_one_worker *> promise;
@@ -246,7 +297,7 @@ void TJS2NativeScripts::boot_start() {
                 GLOG_D(utf16_codecvt()
                            .to_bytes(e.GetMessage().AsStdString())
                            .c_str());
-                app->quit();
+                app->quit(true);
             }
 
             for (;;) {
@@ -352,14 +403,24 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(MenuItem, create_tjs2_menu_item(global));
 }
 
-void TJS2NativeScripts::exec_storage(const std::u16string &path,
+void TJS2NativeScripts::exec_storage(const std::u16string &uri,
                                      iTJSDispatch2 *context,
                                      tTJSVariant *result,
                                      const tjs_char *modestr) {
     auto tjs2_script = TJS2NativeStorages::get()->get_storage<my::TJS2Script>(
-        codecvt::utf_to_utf<char>(path));
+        codecvt::utf_to_utf<char>(uri));
     this->exec(codecvt::utf_to_utf<char16_t>(tjs2_script->script), context,
-               result, path);
+               result, uri);
+}
+
+void TJS2NativeScripts::eval_storage(const std::u16string &uri,
+                                     iTJSDispatch2 *context,
+                                     tTJSVariant *result,
+                                     const tjs_char *modestr) {
+    auto tjs2_script = TJS2NativeStorages::get()->get_storage<my::TJS2Script>(
+        codecvt::utf_to_utf<char>(uri));
+    this->eval(codecvt::utf_to_utf<char16_t>(tjs2_script->script), context,
+               result, uri);
 }
 
 void TJS2NativeScripts::exec(const std::u16string &content,
