@@ -5,6 +5,98 @@
 namespace {} // namespace
 
 namespace krkrz {
+
+TJS2DrawFace convert_draw_face(TJS2LayerType type) {
+    TJS2DrawFace face;
+    switch (type) {
+        //	case ltBinder:
+    case ltOpaque:
+        face = dfOpaque;
+        break;
+    case ltAlpha:
+        face = dfAlpha;
+        break;
+    case ltAdditive:
+        face = dfOpaque;
+        break;
+    case ltSubtractive:
+        face = dfOpaque;
+        break;
+    case ltMultiplicative:
+        face = dfOpaque;
+        break;
+        //	case ltEffect:
+        //	case ltFilter:
+    case ltDodge:
+        face = dfOpaque;
+        break;
+    case ltDarken:
+        face = dfOpaque;
+        break;
+    case ltLighten:
+        face = dfOpaque;
+        break;
+    case ltScreen:
+        face = dfOpaque;
+        break;
+    case ltAddAlpha:
+        face = dfAddAlpha;
+        break;
+    case ltPsNormal:
+        face = dfAlpha;
+        break;
+    case ltPsAdditive:
+        face = dfAlpha;
+        break;
+    case ltPsSubtractive:
+        face = dfAlpha;
+        break;
+    case ltPsMultiplicative:
+        face = dfAlpha;
+        break;
+    case ltPsScreen:
+        face = dfAlpha;
+        break;
+    case ltPsOverlay:
+        face = dfAlpha;
+        break;
+    case ltPsHardLight:
+        face = dfAlpha;
+        break;
+    case ltPsSoftLight:
+        face = dfAlpha;
+        break;
+    case ltPsColorDodge:
+        face = dfAlpha;
+        break;
+    case ltPsColorDodge5:
+        face = dfAlpha;
+        break;
+    case ltPsColorBurn:
+        face = dfAlpha;
+        break;
+    case ltPsLighten:
+        face = dfAlpha;
+        break;
+    case ltPsDarken:
+        face = dfAlpha;
+        break;
+    case ltPsDifference:
+        face = dfAlpha;
+        break;
+    case ltPsDifference5:
+        face = dfAlpha;
+        break;
+    case ltPsExclusion:
+        face = dfAlpha;
+        break;
+    default:
+        face = dfOpaque;
+        break;
+    }
+    return face;
+}
+
 tTJSNativeClass *create_tjs2_layer() { return new TJS2Layer(); }
 
 TJS2NativeLayer::TJS2NativeLayer()
@@ -32,6 +124,139 @@ tjs_error TJS_INTF_METHOD TJS2NativeLayer::Construct(tjs_int numparams,
     }
 
     return TJS_S_OK;
+}
+
+void TJS2NativeLayer::color_rect(int x, int y, int w, int h, uint32_t color,
+                                 int opa) {
+    color = krkrz::TJSToActualColor(color);
+
+    auto face = this->face;
+    if (face == TJS2DrawFace::dfAuto) {
+        face = convert_draw_face(this->type);
+    }
+
+    if (face == TJS2DrawFace::dfAlpha) {
+        if (opa <= 0) {
+            color = 0x000000;
+            opa = -opa;
+        }
+    } else {
+        if (opa == 0) {
+            return;
+        }
+    }
+
+    my::ColorRGBAub col = this->color_convert(color, opa);
+
+    // bound check
+    x = x + this->pos.x;
+    y = y + this->pos.y;
+    assert(w > 0 && h > 0);
+    my::Rect draw_rect{{x, y}, {(uint32_t)w, (uint32_t)h}};
+    my::Rect layer_rect{this->pos, this->size};
+
+    try {
+        draw_rect = layer_rect.cut(draw_rect);
+    } catch (my::RectOutRangeError &) {
+        return;
+    }
+
+    GLOG_D("color rect face=%d, %s color %d %d %d %d", face,
+           draw_rect.str().c_str(), color & 0x00ff0000 >> 16,
+           color & 0x0000ff00 >> 8, color & 0x000000ff, opa);
+    this->set_image_modified(true);
+    if (face == TJS2DrawFace::dfProvince || face == TJS2DrawFace::dfMask) {
+        return;
+    }
+    this->_canvas().fill_rect(draw_rect.pos(),
+                              {draw_rect.right, draw_rect.bottom}, col);
+}
+
+void TJS2NativeLayer::fill_rect(int x, int y, int w, int h, uint32_t color) {
+    auto face = this->face;
+    if (face == TJS2DrawFace::dfAuto) {
+        face = convert_draw_face(this->type);
+    }
+
+    // bound check
+    x = x + this->pos.x;
+    y = y + this->pos.y;
+    assert(w >= 0 && h >= 0);
+    my::Rect draw_rect{{x, y}, {(uint32_t)w, (uint32_t)h}};
+    my::Rect layer_rect{this->pos, this->size};
+
+    try {
+        draw_rect = layer_rect.cut(draw_rect);
+    } catch (my::RectOutRangeError &) {
+        return;
+    }
+
+    if (draw_rect.empty()) {
+        return;
+    }
+
+    GLOG_D("fill rect face=%d, %s color(ARGB) %#x", face,
+           draw_rect.str().c_str(), color);
+
+    this->set_image_modified(true);
+    if (face == TJS2DrawFace::dfProvince || face == TJS2DrawFace::dfMask) {
+        return;
+    }
+
+    auto image = std::make_shared<my::RGBAImage>(draw_rect.w(), draw_rect.h());
+    boost::gil::fill_pixels(
+        boost::gil::view(*image),
+        boost::gil::rgba8_pixel_t((color & 0xff000000) +
+                                  krkrz::TJSToActualColor(color & 0xffffff)));
+
+    this->put_layer_image_data(image, draw_rect.pos());
+}
+
+void TJS2NativeLayer::draw_text(int x, int y, const std::u16string &text,
+                                uint32_t color, int opa, bool aa,
+                                int shadowlevel, uint32_t shadowcolor,
+                                int shadowwidth, int shadowofsx,
+                                int shadowofsy) {
+    x = x + this->pos.x;
+    y = y + this->pos.y;
+
+    color = krkrz::TJSToActualColor(color);
+
+    my::ColorRGBAub col = this->color_convert(color, opa);
+    GLOG_D("draw text height %d, %d,%d %s", this->_font->get_height(), x, y,
+           codecvt::utf_to_utf<char>(text).c_str());
+    this->_canvas().fill_text(codecvt::utf_to_utf<char>(text), {x, y}, nullptr,
+                              this->_font->get_height(), col);
+    this->set_image_modified(true);
+}
+
+void TJS2NativeLayer::load_image(const std::u16string &_path) {
+    auto path = my::fs::path(codecvt::utf_to_utf<char>(_path));
+
+    GLOG_D("load image: %s", path.c_str());
+
+    if (path.has_extension()) {
+        this->_image = TJS2NativeStorages::get()->get_storage<my::Image>(path);
+    } else {
+        for (auto extension : {".png", ".jpg"}) {
+            path.replace_extension(extension);
+            try {
+                this->_image =
+                    TJS2NativeStorages::get()->get_storage<my::Image>(path);
+            } catch (...) {
+                this->_image = nullptr;
+                continue;
+            }
+            break;
+        }
+    }
+
+    if (!this->_image) {
+        throw std::runtime_error(
+            (boost::format("load image failure %1%") % path).str());
+    } else {
+        // this->on_paint();
+    }
 }
 
 iTJSDispatch2 *TJS2NativeLayer::get_children_obj() const {
@@ -353,7 +578,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        _this->type = ((int)*param);
+        _this->type = ((krkrz::TJS2LayerType)(int)*param);
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -612,7 +837,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        *result = _this->visible;
+        *result = _this->is_visible();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -621,7 +846,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        _this->visible = param->operator bool();
+        _this->set_visible(param->operator bool());
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -633,7 +858,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        *result = (tjs_int)_this->image_modified;
+        *result = (tjs_int)_this->is_image_modified();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -642,7 +867,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        _this->image_modified = param->operator bool();
+        _this->set_image_modified(param->operator bool());
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -765,7 +990,8 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ update) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        // TJS::func_call(_this->this_obj(), "onPaint");
+        _this->update();
+
         // if (numparams < 1) {
         //     _this->UpdateByScript();
         //     // update entire area of the layer

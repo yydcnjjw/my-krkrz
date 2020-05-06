@@ -109,97 +109,21 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                                opa};
     }
 
-    void color_rect(int x, int y, int w, int h, uint32_t color, int opa = 255) {
-        x = x + this->pos.x;
-        y = y + this->pos.y;
+    void color_rect(int x, int y, int w, int h, uint32_t color, int opa = 255);
 
-        color = krkrz::TJSToActualColor(color);
-
-        if (opa < 0) {
-            if (this->face == TJS2DrawFace::dfAlpha) {
-                color = 0xffffff;
-                opa = 255 + opa;
-            } else {
-                opa = 255;
-            }
-        }
-
-        my::ColorRGBAub col = this->color_convert(color, opa);
-
-        // bound check
-        if (x < 0) {
-            x = 0;
-        }
-        if (y < 0) {
-            y = 0;
-        }
-        int right{x + w};
-        if (right > this->size.w) {
-            right = this->size.w;
-        }
-        int bottom{y + h};
-        if (bottom > this->size.h) {
-            bottom = this->size.h;
-        }
-
-        GLOG_D("color rect face=%d, {%d,%d}={%d,%d} color %d %d %d %d",
-               this->face, x, y, right, bottom, color & 0x00ff0000 >> 16,
-               color & 0x0000ff00 >> 8, color & 0x000000ff, opa);
-
-        this->_canvas().fill_rect({x, y}, {right, bottom}, col);
-    }
-
-    void fill_rect(int x, int y, int w, int h, uint32_t color) {
-        color = krkrz::TJSToActualColor(color);
-        this->color_rect(x, y, w, h, color & 0x00ffffff, color & 0xff000000);
-    }
+    void fill_rect(int x, int y, int w, int h, uint32_t color);
 
     void draw_text(int x, int y, const std::u16string &text, uint32_t color,
                    int opa, bool aa, int shadowlevel, uint32_t shadowcolor,
-                   int shadowwidth, int shadowofsx, int shadowofsy) {
-        x = x + this->pos.x;
-        y = y + this->pos.y;
+                   int shadowwidth, int shadowofsx, int shadowofsy);
 
-        color = krkrz::TJSToActualColor(color);
-
-        my::ColorRGBAub col = this->color_convert(color, opa);
-        GLOG_D("draw text height %d, %d,%d %s", this->_font->get_height(), x, y,
-               codecvt::utf_to_utf<char>(text).c_str());
-        this->_canvas().fill_text(codecvt::utf_to_utf<char>(text), {x, y},
-                                  nullptr, this->_font->get_height(), col);
-    }
-
-    void load_image(const std::u16string &_path) {
-        auto path = my::fs::path(codecvt::utf_to_utf<char>(_path));
-
-        GLOG_D("load image: %s", path.c_str());
-
-        if (path.has_extension()) {
-            this->_image =
-                TJS2NativeStorages::get()->get_storage<my::Image>(path);
-        } else {
-            for (auto extension : {".png", ".jpg"}) {
-                path.replace_extension(extension);
-                try {
-                    this->_image =
-                        TJS2NativeStorages::get()->get_storage<my::Image>(path);
-                } catch (...) {
-                    this->_image = nullptr;
-                    continue;
-                }
-                break;
-            }
-        }
-
-        if (!this->_image) {
-            throw std::runtime_error(
-                (boost::format("load image failure %1%") % path).str());
-        } else {
-            this->on_paint();
-        }
-    }
+    void load_image(const std::u16string &_path);
 
     void assign_images(TJS2NativeLayer *layer) { this->_image = layer->_image; }
+
+    void set_image_modified(bool v) { this->_image_modified = v; }
+
+    bool is_image_modified() { return this->_image_modified; }
 
     auto get_layer_image_data(const my::PixelPos &_off,
                               const my::Size2D &size) {
@@ -233,17 +157,36 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     }
 
     void on_paint() {
-        if (!this->visible) {
+        if (!this->is_visible()) {
             return;
         }
         if (this->_image) {
             int x = this->image_pos.x;
             int y = this->image_pos.y;
-            GLOG_D("draw image {%d, %d}={%d, %d}", x, y, this->image_size.w, this->image_size.h);
+            GLOG_D("draw image {%d, %d}={%d, %d}", x, y, this->image_size.w,
+                   this->image_size.h);
             this->_canvas().draw_image(
                 this->_image, {x, y},
                 {x + this->image_size.w, y + this->image_size.h});
         }
+    }
+
+    void update() {
+        if (!this->is_visible()) {
+            return;
+        }
+        this->fill_rect(this->pos.x, this->pos.y, this->size.w, this->size.h, 0);
+        TJS::func_call(this->this_obj(), "onPaint");
+    }
+
+    void set_visible(bool v) {
+        if (this->_visible != v) {
+            this->_visible = v;
+            this->update();
+        }
+    }
+    bool is_visible() {
+        return this->_visible;
     }
 
     iTJSDispatch2 *this_obj() {
@@ -293,7 +236,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     std::shared_ptr<my::Image> _image;
 
     // TODO:
-    int type{};
+    TJS2LayerType type{};
     int hit_type{};
     int hit_threshold{};
     TJS2DrawFace face{};
@@ -302,8 +245,6 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     std::u16string name;
 
     bool focusable{false};
-    bool visible{false};
-    bool image_modified{false};
     bool absolute_order_mode{false};
     bool hold_alpha{false};
 
@@ -315,6 +256,9 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     TJS2NativeFont *_font{};
     TJS2NativeWindow *_win{};
     my::WindowMgr *_win_mgr{};
+    
+    bool _visible{false};
+    bool _image_modified{false};
 
     void add_children(TJS2NativeLayer *layer) {
         this->_children.push_back(layer);

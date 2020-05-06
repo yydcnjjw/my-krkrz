@@ -35,9 +35,9 @@ class TJS2NativeFont : public tTJSNativeInstance {
     std::u16string get_face() { return u""; }
 
     int get_text_width(std::u16string _text) {
-        float scale = this->get_height() / this->_font->font_size();
+        float scale = (float)this->get_height() / (float)this->_font->font_size();
         auto text = codecvt::utf_to_utf<wchar_t>(_text);
-        float width = 0;
+        float width{0.0f};
         for (auto ch : text) {
             const auto &glyph = this->_font->get_glyph(ch);
             width += glyph.advance_x * scale;

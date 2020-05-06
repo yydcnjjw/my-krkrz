@@ -233,7 +233,7 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                         assert("window is released but call paint");
                         return;
                     }
-                    this->_paint_event_disptach();
+                    // this->_paint_event_disptach();
                 },
                 error_handle);
 }
@@ -259,13 +259,13 @@ bool is_point_at(TJS2NativeLayer *layer, const my::PixelPos &mouse_pos) {
 void TJS2NativeWindow::_mouse_event_disptach(
     const std::string &event_name, const std::vector<tTJSVariant> &args,
     const my::PixelPos &mouse_pos) {
-    TJS::func_call(this->this_obj(), event_name, args);    
+    TJS::func_call(this->this_obj(), event_name, args);
     auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
         if (!layer) {
             return;
         }
 
-        if (!layer->visible) {
+        if (!layer->is_visible()) {
             return;
         }
 
@@ -287,7 +287,7 @@ void TJS2NativeWindow::_paint_event_disptach() {
             return;
         }
 
-        if (!layer->visible) {
+        if (!layer->is_visible()) {
             return;
         }
 
@@ -308,8 +308,8 @@ void TJS2NativeWindow::_render() {
     this->_render_task =
         Application::get()->base_app()->async_task()->create_timer_interval(
             std::function<void(void)>([this]() {
-                this->_base_app->ev_bus()->post<PaintEvent>(
-                    this->base_window()->get_window_id());
+                // this->_base_app->ev_bus()->post<PaintEvent>(
+                //     this->base_window()->get_window_id());
                 this->_canvas->render();
             }),
             std::chrono::milliseconds(1000 / 30));
@@ -318,7 +318,7 @@ void TJS2NativeWindow::_render() {
 
 void TJS2NativeWindow::set_primary_layer(TJS2NativeLayer *layer) {
     this->_primary_layer = layer;
-    this->_primary_layer->visible = true;
+    this->_primary_layer->set_visible(true);
 }
 
 TJS2NativeWindow *TJS2NativeWindow::_main_window{};
