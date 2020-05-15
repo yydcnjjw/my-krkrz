@@ -63,8 +63,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
         try {
             std::rethrow_exception(e);
         } catch (eTJSError &e) {
-            GLOG_D(
-                utf16_codecvt().to_bytes(e.GetMessage().AsStdString()).c_str());
+            GLOG_D(codecvt::utf_to_utf<char>(e.GetMessage().AsStdString())
+                       .c_str());
+        } catch (std::exception &e) {
+            GLOG_D(e.what());
         }
         this->_base_app->quit();
     };
@@ -82,7 +84,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                 [this](
                     const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
                     auto button = e->data;
-                    std::vector<tTJSVariant> args{button->pos.x, button->pos.y};
+                    std::vector<tTJSVariant> args{button->pos.x(),
+                                                  button->pos.y()};
 
                     auto keymod = this->_base_app->win_mgr()->get_key_mode();
 
@@ -98,12 +101,13 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                         switch (button->clicks) {
                         case 1: // single click
                             this->_mouse_event_disptach(
-                                "onClick", {button->pos.x, button->pos.y},
+                                "onClick", {button->pos.x(), button->pos.y()},
                                 button->pos);
                             break;
                         case 2: // double click
                             this->_mouse_event_disptach(
-                                "onDoubleClick", {button->pos.x, button->pos.y},
+                                "onDoubleClick",
+                                {button->pos.x(), button->pos.y()},
                                 button->pos);
                             break;
                         }
@@ -133,7 +137,7 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     auto keymod = this->_base_app->win_mgr()->get_key_mode();
                     auto btn_state = e->data->state;
                     std::vector<tTJSVariant> args{
-                        e->data->pos.x, e->data->pos.y,
+                        e->data->pos.x(), e->data->pos.y(),
                         (int)to_shift(keymod, btn_state)};
                     TJS::func_call(obj, "onMouseMove", args);
                 },
@@ -156,8 +160,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                         this->_base_app->win_mgr()->get_mouse_state().mask;
 
                     std::vector<tTJSVariant> args{
-                        (int)to_shift(keymod, btn_state), 120, e->data->pos.x,
-                        e->data->pos.y};
+                        (int)to_shift(keymod, btn_state), 120, e->data->pos.x(),
+                        e->data->pos.y()};
                     TJS::func_call(obj, "onMouseWheel", args);
                 },
                 error_handle);
@@ -233,7 +237,7 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                         assert("window is released but call paint");
                         return;
                     }
-                    // this->_paint_event_disptach();
+                    this->_paint_event_disptach();
                 },
                 error_handle);
 }
@@ -247,18 +251,13 @@ void TJS2NativeWindow::_unsubscribe_event() {
     this->_paint_cs.unsubscribe();
 }
 
-bool is_point_at(TJS2NativeLayer *layer, const my::PixelPos &mouse_pos) {
-    auto a = layer->pos;
-    auto b = my::PixelPos{layer->pos.x + layer->size.w,
-                          layer->pos.y + layer->size.h};
-
-    return mouse_pos.x > a.x && mouse_pos.x < b.x && mouse_pos.y > a.y &&
-           mouse_pos.y < b.y;
+bool is_point_at(TJS2NativeLayer *layer, const my::IPoint2D &mouse_pos) {
+    return layer->layer_rect().contains(mouse_pos.x(), mouse_pos.y());
 }
 
 void TJS2NativeWindow::_mouse_event_disptach(
     const std::string &event_name, const std::vector<tTJSVariant> &args,
-    const my::PixelPos &mouse_pos) {
+    const my::IPoint2D &mouse_pos) {
     TJS::func_call(this->this_obj(), event_name, args);
     auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
         if (!layer) {
@@ -282,43 +281,73 @@ void TJS2NativeWindow::_mouse_event_disptach(
 }
 
 void TJS2NativeWindow::_paint_event_disptach() {
-    auto func = my::y_combinator([](const auto &self, TJS2NativeLayer *layer) {
-        if (!layer) {
-            return;
-        }
-
-        if (!layer->is_visible()) {
-            return;
-        }
-
-        TJS::func_call(layer->this_obj(), "onPaint");
-
-        for (const auto child : layer->get_children()) {
-            self(child);
-        }
-    });
-
-    func(this->_primary_layer);
+    if (!this->is_visible()) {
+        return;
+    }
+    this->_draw_layer();
+    this->_render();
 }
 
 void TJS2NativeWindow::_event_disptach(const std::string &event_name,
                                        const std::vector<tTJSVariant> &args) {}
 
-void TJS2NativeWindow::_render() {
+void TJS2NativeWindow::_render_task_start() {
     this->_render_task =
         Application::get()->base_app()->async_task()->create_timer_interval(
             std::function<void(void)>([this]() {
-                // this->_base_app->ev_bus()->post<PaintEvent>(
-                //     this->base_window()->get_window_id());
-                this->_canvas->render();
+                this->_base_app->ev_bus()->post<PaintEvent>(
+                    this->base_window()->get_window_id());
             }),
             std::chrono::milliseconds(1000 / 30));
     this->_render_task->start();
 }
 
+void TJS2NativeWindow::_render_task_stop() {
+    this->_render_task->cancel();
+    this->_render_task->wait();
+}
+
+void TJS2NativeWindow::_draw_layer() {
+    auto func =
+        my::y_combinator([this](const auto &self, TJS2NativeLayer *layer) {
+            if (!layer) {
+                return;
+            }
+
+            if (!layer->is_visible()) {
+                return;
+            }
+
+            if (layer->call_on_paint) {
+                layer->call_on_paint = false;
+                TJS::func_call(layer->this_obj(), "onPaint");
+            }
+
+            auto [x, y] = layer->pos();
+            this->_canvas()->drawImage(layer->image_snapshot(), x, y);
+
+            for (const auto child : layer->get_children()) {
+                self(child);
+            }
+        });
+
+    func(this->_primary_layer);
+}
+void TJS2NativeWindow::_render() {
+    this->_canvas()->flush();
+    this->base_window()->swap_window();
+}
+
 void TJS2NativeWindow::set_primary_layer(TJS2NativeLayer *layer) {
+    this->_layer_cs.unsubscribe();
+
     this->_primary_layer = layer;
-    this->_primary_layer->set_visible(true);
+
+    if (this->_primary_layer) {
+        this->_primary_layer->set_visible(true);
+        this->_layer_cs =
+            this->_primary_layer->on_event().subscribe([this](LayerEvent e) {});
+    }
 }
 
 TJS2NativeWindow *TJS2NativeWindow::_main_window{};
@@ -420,7 +449,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
             return TJS_E_BADPARAMCOUNT;
         int w = *param[0];
         int h = *param[1];
-        _this->base_window()->set_size(my::Size2D(w, h));
+        _this->set_size(my::ISize2D::Make(w, h));
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setSize)
@@ -432,7 +461,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
             return TJS_E_BADPARAMCOUNT;
         int w = *param[0];
         int h = *param[1];
-        _this->base_window()->set_min_size(my::Size2D(w, h));
+        _this->set_min_size(my::ISize2D::Make(w, h));
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setMinSize)
@@ -444,7 +473,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
             return TJS_E_BADPARAMCOUNT;
         int w = *param[0];
         int h = *param[1];
-        _this->base_window()->set_max_size(my::Size2D(w, h));
+        _this->set_max_size(my::ISize2D::Make(w, h));
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setMaxSize)
@@ -467,7 +496,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
             return TJS_E_BADPARAMCOUNT;
         int w = *param[0];
         int h = *param[1];
-        _this->base_window()->set_frame_buffer_size(my::Size2D(w, h));
+        _this->base_window()->set_frame_buffer_size(my::ISize2D::Make(w, h));
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ setInnerSize)
@@ -504,9 +533,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow)
-        auto size = _this->base_window()->get_size();
-        size.w = (int)*param;
-        _this->base_window()->set_size(size);
+        auto [w, h] = _this->base_window()->get_size();
+        _this->base_window()->set_size({(int)*param, h});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -528,10 +556,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
-        auto size = _this->base_window()->get_size();
-        size.h = (int)*param;
-        _this->base_window()->set_size(size);
-
+        auto [w, h] = _this->base_window()->get_size();
+        _this->base_window()->set_size({w, (int)*param});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -553,9 +579,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow)
-        auto size = _this->base_window()->get_min_size();
-        size.w = (int)*param;
-        _this->base_window()->set_min_size(size);
+        auto [w, h] = _this->base_window()->get_min_size();
+        _this->base_window()->set_min_size({(int)*param, h});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -577,9 +602,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow)
-        auto size = _this->base_window()->get_min_size();
-        size.h = (int)*param;
-        _this->base_window()->set_min_size(size);
+        auto [w, h] = _this->base_window()->get_min_size();
+        _this->base_window()->set_min_size({w, (int)*param});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -602,9 +626,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow)
-        auto size = _this->base_window()->get_max_size();
-        size.w = (int)*param;
-        _this->base_window()->set_max_size(size);
+        auto [w, h] = _this->base_window()->get_max_size();
+        _this->base_window()->set_max_size({(int)*param, h});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -626,9 +649,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
-        auto size = _this->base_window()->get_max_size();
-        size.h = (int)*param;
-        _this->base_window()->set_max_size(size);
+        auto [w, h] = _this->base_window()->get_max_size();
+        _this->base_window()->set_max_size({w, (int)*param});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -641,7 +663,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
         auto pos = _this->base_window()->get_pos();
-        *result = (int)pos.x;
+        *result = pos.x();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -650,9 +672,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
-        auto pos = _this->base_window()->get_pos();
-        pos.x = *param;
-        _this->base_window()->set_pos(pos);
+        auto [x, y] = _this->base_window()->get_pos();
+        _this->base_window()->set_pos({(int)*param, y});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -665,7 +686,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
         auto pos = _this->base_window()->get_pos();
-        *result = (int)pos.y;
+        *result = pos.y();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -674,9 +695,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
-        auto pos = _this->base_window()->get_pos();
-        pos.y = *param;
-        _this->base_window()->set_pos(pos);
+        auto [x, y] = _this->base_window()->get_pos();
+        _this->base_window()->set_pos({x, (int)*param});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -688,7 +708,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow)
         auto size = _this->base_window()->get_frame_buffer_size();
-        *result = (int)size.w;
+        *result = size.width();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -697,9 +717,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
-        auto size = _this->base_window()->get_frame_buffer_size();
-        size.w = (int)*param;
-        _this->base_window()->set_frame_buffer_size(size);
+        auto [w, h] = _this->base_window()->get_frame_buffer_size();
+        _this->base_window()->set_frame_buffer_size({(int)*param, h});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -712,7 +731,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
         auto size = _this->base_window()->get_frame_buffer_size();
-        *result = (int)size.h;
+        *result = size.height();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -721,9 +740,8 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow);
-        auto size = _this->base_window()->get_frame_buffer_size();
-        size.h = (int)*param;
-        _this->base_window()->set_frame_buffer_size(size);
+        auto [w, h] = _this->base_window()->get_frame_buffer_size();
+        _this->base_window()->set_frame_buffer_size({w, (int)*param});
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER

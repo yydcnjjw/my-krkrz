@@ -2,10 +2,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <storage/font_mgr.h>
-#include <util/codecvt.h>
-#include <util/logger.h>
-
 #include <MsgIntf.h>
 #include <krkrz_application.h>
 #include <tjs2_lib/tjs2_lib.h>
@@ -14,10 +10,16 @@ namespace krkrz {
 
 class TJS2NativeFont : public tTJSNativeInstance {
   public:
-    TJS2NativeFont() : _font_mgr(Application::get()->base_app()->font_mgr()) {
-        this->_font = this->_font_mgr->add_font(
-            "/home/yydcnjjw/workspace/code/project/my-gui/assets/fonts/"
-            "NotoSansCJK-Regular.ttc");
+    TJS2NativeFont() {
+        this->_font =
+            Application::get()
+                ->base_app()
+                ->resource_mgr()
+                ->load<my::Font>(
+                    "/home/yydcnjjw/workspace/code/project/my-gui/assets/fonts/"
+                    "NotoSansCJK-Regular.ttc")
+                .get();
+        this->_sk_font = SkFont(this->_font->get_sk_typeface());
     }
 
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
@@ -35,17 +37,10 @@ class TJS2NativeFont : public tTJSNativeInstance {
     std::u16string get_face() { return u""; }
 
     int get_text_width(std::u16string _text) {
-        float scale = (float)this->get_height() / (float)this->_font->font_size();
-        auto text = codecvt::utf_to_utf<wchar_t>(_text);
-        float width{0.0f};
-        for (auto ch : text) {
-            const auto &glyph = this->_font->get_glyph(ch);
-            width += glyph.advance_x * scale;
-        }
-        return width + 1;
+        return this->_sk_font.measureText(_text.data(), _text.size() * 2,
+                                          SkTextEncoding::kUTF16);
     }
-    int get_text_height(std::u16string _text) {
-        // auto text = codecvt::utf_to_utf<wchar_t>(_text);
+    int get_text_height(std::u16string _text = {}) {
         return this->get_height();
     }
 
@@ -59,10 +54,13 @@ class TJS2NativeFont : public tTJSNativeInstance {
             height = -height;
         }
         this->_height = height;
+        this->_sk_font.setSize(this->_height);
     }
 
-    int get_height() {
-        return this->_height;
+    int get_height() { return this->_height; }
+
+    const SkFont &sk_font() {
+        return this->_sk_font;
     }
 
     int angle{0};
@@ -72,14 +70,14 @@ class TJS2NativeFont : public tTJSNativeInstance {
     bool underline{false};
     int rasterizer{0};
 
-    std::vector<std::string> faces;
+    std::vector<std::string> faces{};
 
-    my::Font *_font;
-    my::FontMgr *_font_mgr;
+    SkFont _sk_font{};
+    std::shared_ptr<my::Font> _font{};
 
   private:
     iTJSDispatch2 *_this_obj;
-    int _height{16};    
+    int _height{16};
 };
 
 class TJS2Font : public tTJSNativeClass {

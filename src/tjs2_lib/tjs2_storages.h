@@ -3,10 +3,7 @@
 #include <memory>
 #include <string>
 
-#include <boost/format.hpp>
-
-#include <storage/resource_mgr.hpp>
-#include <util/codecvt.h>
+#include <tjs2_lib/tjs2_lib.h>
 
 namespace krkrz {
 class TJS2NativeStorages {
@@ -25,14 +22,15 @@ class TJS2NativeStorages {
     };
 
     struct SearchPathCache {
-        std::shared_ptr<my::uri> search_uri;
+        my::uri search_uri;
         std::shared_ptr<AutoPath> archive_auto_path;
         std::shared_ptr<AutoPath> dir_auto_path;
         explicit SearchPathCache(
-            std::shared_ptr<my::uri> search_uri,
+            const my::uri &search_uri,
             std::shared_ptr<AutoPath> archive_auto_path = nullptr,
             std::shared_ptr<AutoPath> dir_auto_path = nullptr)
-            : search_uri(search_uri), archive_auto_path(archive_auto_path),
+            : search_uri(search_uri.encoded_url().to_string()),
+              archive_auto_path(archive_auto_path),
               dir_auto_path(dir_auto_path) {}
     };
 
@@ -45,14 +43,17 @@ class TJS2NativeStorages {
     search_storage(const my::fs::path &path);
 
     template <typename T>
+    std::shared_ptr<T> get_storage(const std::u16string &uri) {
+        return this->get_storage<T>(codecvt::utf_to_utf<char>(uri));
+    }
+
+    template <typename T>
     std::shared_ptr<T> get_storage(const std::string &uri) {
         auto search_path = this->search_storage(
             my::fs::path(my::uri(uri).encoded_path().to_string())
                 .lexically_normal());
         if (search_path.has_value()) {
-            return this->_resource_mgr
-                ->load_from_uri<T>(*search_path.value()->search_uri)
-                .get();
+            return this->_resource_mgr->load<T>(search_path.value()->search_uri).get();
         } else {
             throw std::runtime_error(
                 (boost::format("%1% is not exist") % uri).str());

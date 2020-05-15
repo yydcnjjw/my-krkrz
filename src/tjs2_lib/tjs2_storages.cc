@@ -124,20 +124,6 @@ class TJS2Storages : public tTJSNativeClass {
 
 tjs_uint32 TJS2Storages::ClassID = (tjs_uint32)-1;
 
-std::shared_ptr<my::uri>
-build_search_path(const my::fs::path &file_path,
-                  const my::fs::path &query_path = {}) {
-    std::string uri_str;
-    if (!query_path.empty()) {
-        uri_str = (boost::format("file://%1%?path=%2%") % file_path.string() %
-                   query_path.string())
-                      .str();
-    } else {
-        uri_str = (boost::format("file://%1%") % file_path.string()).str();
-    }
-    return std::make_shared<my::uri>(uri_str);
-}
-
 } // namespace
 
 namespace krkrz {
@@ -167,8 +153,8 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
 
     for (const auto &fs_path : fs_paths) {
         if (my::ResourceMgr::exist(fs_path)) {
-            auto search_path =
-                std::make_shared<SearchPathCache>(build_search_path(fs_path));
+            auto search_path = std::make_shared<SearchPathCache>(
+                my::make_path_search_uri(fs_path));
             this->_search_path_cache.insert({path, search_path});
             return search_path;
         }
@@ -184,7 +170,7 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
             this->_default_storage_data_path / auto_path->path / path;
         if (my::ResourceMgr::exist(fs_path)) {
             auto search_path = std::make_shared<SearchPathCache>(
-                build_search_path(fs_path), nullptr, auto_path);
+                my::make_path_search_uri(fs_path), nullptr, auto_path);
             this->_search_path_cache.insert({path, search_path});
             return search_path;
         }
@@ -199,13 +185,13 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
         auto filename = path.filename().generic_string();
 
         auto archive_path_uris = {
-            build_search_path(archive_auto_path->path, path),
-            build_search_path(archive_auto_path->path,
-
-                              my::fs::path(path).replace_filename(
-                                  boost::algorithm::to_lower_copy(filename)))};
+            my::make_archive_search_uri(archive_auto_path->path, path),
+            my::make_archive_search_uri(
+                archive_auto_path->path,
+                my::fs::path(path).replace_filename(
+                    boost::algorithm::to_lower_copy(filename)))};
         for (const auto &archive_path_uri : archive_path_uris) {
-            if (this->_resource_mgr->exist(*archive_path_uri)) {
+            if (this->_resource_mgr->exist(archive_path_uri)) {
                 auto search_path = std::make_shared<SearchPathCache>(
                     archive_path_uri, archive_auto_path);
                 this->_search_path_cache.insert({path, search_path});
@@ -219,16 +205,16 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
             }
 
             auto archive_path_uris = {
-                build_search_path(archive_auto_path->path,
-                                  dir_auto_path->path / path),
-                build_search_path(
+                my::make_archive_search_uri(archive_auto_path->path,
+                                            dir_auto_path->path / path),
+                my::make_archive_search_uri(
                     archive_auto_path->path,
                     dir_auto_path->path /
                         my::fs::path(path).replace_filename(
                             boost::algorithm::to_lower_copy(filename)))};
 
             for (const auto &archive_path_uri : archive_path_uris) {
-                if (this->_resource_mgr->exist(*archive_path_uri)) {
+                if (this->_resource_mgr->exist(archive_path_uri)) {
                     auto search_path = std::make_shared<SearchPathCache>(
                         archive_path_uri, archive_auto_path, dir_auto_path);
                     this->_search_path_cache.insert({path, search_path});
@@ -249,7 +235,7 @@ TJS2NativeStorages::get_placed_path(const std::u16string &utf16_uri) {
         my::fs::path(uri.encoded_path().to_string()).lexically_normal());
     if (cache.has_value()) {
         return codecvt::utf_to_utf<char16_t>(
-            cache.value()->search_uri->encoded_url().to_string());
+            cache.value()->search_uri.encoded_url().to_string());
     }
     return u"";
 }

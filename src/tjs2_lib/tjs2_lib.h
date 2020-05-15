@@ -2,9 +2,10 @@
 
 #include <memory>
 
-#include <util/codecvt.h>
-
 #include <tjsNative.h>
+
+#include <my_gui.hpp>
+#include <my_storage.hpp>
 
 namespace krkrz {
 tTJSNativeClass *create_tjs2_system();

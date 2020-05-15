@@ -1,8 +1,6 @@
 #include "tjs2_lib.h"
 
-#include <media/audio_mgr.h>
-#include <util/codecvt.h>
-#include <util/logger.h>
+#include <media/audio_mgr.hpp>
 
 #include <MsgIntf.h>
 #include <krkrz_application.h>
@@ -14,8 +12,7 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
     typedef tTJSNativeInstance inherited;
 
   public:
-    TJS2NativeWaveSoundBuffer()
-        : _audio_mgr(krkrz::Application::get()->base_app()->audio_mgr()) {}
+    TJS2NativeWaveSoundBuffer() {}
 
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) {
@@ -32,55 +29,57 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
 
     void play() {
         if (!this->_audio) {
-            GLOG_W("warn: audio is not be opened");
+            GLOG_W("audio is not opened");
             return;
         }
-        this->_audio_mgr->play(this->_audio.get());
+        this->_audio->play();
     }
     void stop() {
         if (!this->_audio) {
-            GLOG_W("warn: audio is not be opened");
+            GLOG_W("audio is not opened");
             return;
         }
-        this->_audio_mgr->pause(this->_audio.get());
+        this->_audio->pause();
     }
 
     void fade(int ms) {
+        this->_fade_time = ms;
+
         if (!this->_audio) {
-            GLOG_W("warn: audio is not be opened");
+            GLOG_W("audio is not opened");
             return;
         }
-        this->_fade_time = ms;
-        this->_audio_mgr->play_fade(this->_audio.get(), this->_fade_time);
+        this->_audio->play_fade(this->_fade_time);
     }
 
     void stop_fade() {
         if (!this->_audio) {
-            GLOG_W("warn: audio is not be opened");
+            GLOG_W("audio is not opened");
             return;
         }
-        this->_audio_mgr->stop_fade(this->_audio.get(), this->_fade_time);
+        this->_audio->stop_fade(this->_fade_time);
     }
 
     bool is_paused() {
         if (!this->_audio) {
+            GLOG_W("audio is not opened");
             return true;
         }
-        return this->_audio_mgr->is_paused(this->_audio.get());
+        return this->_audio->is_paused();
     }
 
     void set_paused(bool paused) {
+        if (!this->_audio) {
+            GLOG_W("audio is not opened");
+            return;
+        }
         if (paused == this->is_paused()) {
             return;
         }
         if (paused) {
             pause();
         } else {
-            if (!this->_audio) {
-                GLOG_W("warn: audio is not be opened");
-                return;
-            }
-            this->_audio_mgr->resume(this->_audio.get());
+            this->_audio->resume();
         }
     }
 
@@ -95,7 +94,6 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
     int get_panning() { return this->_pan; }
 
   private:
-    my::AudioMgr *_audio_mgr;
     std::shared_ptr<my::Audio> _audio;
     int _fade_time{0};
     int _pan{0};

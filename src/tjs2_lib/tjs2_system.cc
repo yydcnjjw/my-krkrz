@@ -1,14 +1,10 @@
 #include "tjs2_system.h"
 
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-
-#include <util/codecvt.h>
-#include <util/logger.h>
-
 #include "krkrz_application.h"
 #include "tjs2_lib.h"
 #include <MsgIntf.h>
+
+#include <util/uuid.hpp>
 
 namespace {
 
@@ -116,8 +112,8 @@ class TJS2NativeSystem {
     }
 
     std::u16string generate_uuid() {
-        auto uuid = this->_uuid_generator();
-        return this->_code_convert.from_bytes(boost::uuids::to_string(uuid));
+        return codecvt::utf_to_utf<char16_t>(
+            my::uuids::to_string(my::uuid_gen()));
     }
 
     bool create_app_lock() {
@@ -139,10 +135,10 @@ class TJS2NativeSystem {
     bool get_program_option_value(const tjs_char *name, tTJSVariant *value) {
         my::program_options::variable_value option_value;
         if (krkrz::Application::get()->base_app()->get_program_option(
-                this->_code_convert.to_bytes(name), option_value)) {
+                codecvt::utf_to_utf<char>(name), option_value)) {
 
             if (typeid(std::string) == option_value.value().type()) {
-                *value = this->_code_convert.from_bytes(
+                *value = codecvt::utf_to_utf<char16_t>(
                     option_value.as<std::string>());
             } else if (typeid(bool) == option_value.value().type()) {
                 *value = option_value.as<bool>();
@@ -164,9 +160,7 @@ class TJS2NativeSystem {
     }
 
   private:
-    boost::uuids::random_generator_pure _uuid_generator;
-    utf16_codecvt _code_convert;
-    TJS2NativeSystem() : _uuid_generator(boost::uuids::random_generator()) {}
+    TJS2NativeSystem() {}
 };
 
 static bool terminate_on_window_close = true;
@@ -442,7 +436,7 @@ class TJS2System : public tTJSNativeClass {
                           ->base_app()
                           ->win_mgr()
                           ->get_desktop_display_mode()
-                          .h;
+                          .size.height();
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -456,7 +450,7 @@ class TJS2System : public tTJSNativeClass {
                           ->base_app()
                           ->win_mgr()
                           ->get_desktop_display_mode()
-                          .w;
+                          .size.width();
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -632,7 +626,7 @@ class TJS2System : public tTJSNativeClass {
                           ->base_app()
                           ->win_mgr()
                           ->get_desktop_display_mode()
-                          .w;
+                          .size.width();
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -646,7 +640,7 @@ class TJS2System : public tTJSNativeClass {
                           ->base_app()
                           ->win_mgr()
                           ->get_desktop_display_mode()
-                          .h;
+                          .size.height();
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER

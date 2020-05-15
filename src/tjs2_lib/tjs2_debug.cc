@@ -1,8 +1,5 @@
 #include "tjs2_lib.h"
 
-#include <util/codecvt.h>
-#include <util/logger.h>
-
 #include <MsgIntf.h>
 
 namespace {

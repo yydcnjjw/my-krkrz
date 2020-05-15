@@ -1,6 +1,5 @@
 #pragma once
 
-#include <render/canvas.h>
 #include <util/logger.h>
 
 #include "tjs2_font.h"
@@ -88,6 +87,13 @@ enum TJS2BlendOperationMode {
     omAuto = 128 // operation mode is guessed from the source layer type
 };
 
+enum class LayerEventType { LAYER_RESIZE, LAYER_POS_CHANGE };
+
+struct LayerEvent {
+    LayerEventType type;
+    TJS2NativeLayer *layer;
+};
+
 class TJS2NativeLayer : public tTJSNativeInstance {
   public:
     TJS2NativeLayer();
@@ -95,27 +101,21 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) override;
 
-    void TJS_INTF_METHOD Invalidate() override {
-        this->_this_action_obj.Release();
-        this->_this_action_obj = {nullptr, nullptr};
-        auto font_obj = this->_font->this_obj();
-        font_obj->Invalidate(0, nullptr, nullptr, font_obj);
-        font_obj->Release();
+    void TJS_INTF_METHOD Invalidate() override;
+
+    SkColor color_convert(uint32_t color, int opa) {
+        return SkColorSetARGB(opa, color & 0x00ff0000 >> 16,
+                              color & 0x0000ff00 >> 8, color & 0x000000ff);
     }
 
-    my::ColorRGBAub color_convert(uint32_t color, int opa) {
-        return my::ColorRGBAub{color & 0x00ff0000 >> 16,
-                               color & 0x0000ff00 >> 8, color & 0x000000ff,
-                               opa};
-    }
+    void color_rect(const my::IRect &, uint32_t color, int opa = 255);
 
-    void color_rect(int x, int y, int w, int h, uint32_t color, int opa = 255);
+    void fill_rect(const my::IRect &, uint32_t color);
 
-    void fill_rect(int x, int y, int w, int h, uint32_t color);
-
-    void draw_text(int x, int y, const std::u16string &text, uint32_t color,
-                   int opa, bool aa, int shadowlevel, uint32_t shadowcolor,
-                   int shadowwidth, int shadowofsx, int shadowofsy);
+    void draw_text(const my::IPoint2D &, const std::u16string &text,
+                   uint32_t color, int opa, bool aa, int shadowlevel,
+                   uint32_t shadowcolor, int shadowwidth, int shadowofsx,
+                   int shadowofsy);
 
     void load_image(const std::u16string &_path);
 
@@ -125,69 +125,54 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     bool is_image_modified() { return this->_image_modified; }
 
-    auto get_layer_image_data(const my::PixelPos &_off,
-                              const my::Size2D &size) {
-        auto off = this->pos + _off;
-        // TODO: check overflow
-        return this->_canvas().get_image_data(off, size);
-    }
-
-    void put_layer_image_data(std::shared_ptr<my::RGBAImage> image,
-                              const my::PixelPos &off) {
-        // TODO: check overflow
-        this->_canvas().put_image_data(image, off);
-    }
-
-    auto get_layer_texture() {
-        return this->get_layer_image_data({0, 0}, this->size);
-    }
-
-    void get_layer_pixel(const my::PixelPos &off) {
-        this->get_layer_image_data(off, {1, 1});
-    }
-
-    void operate_rect(const my::PixelPos &d_off, TJS2NativeLayer *layer,
-                      const my::PixelPos &s_off, const my::Size2D &s_size,
+    void operate_rect(const my::IPoint2D &d_off, TJS2NativeLayer *layer,
+                      const my::IPoint2D &s_off, const my::ISize2D &s_size,
                       TJS2BlendOperationMode mode) {
-        if (s_size.w * s_size.h == 0) {
-            return;
-        }
-        auto s_image = layer->get_layer_image_data(s_off, s_size);
-        this->put_layer_image_data(s_image, d_off);
+        GLOG_D("operate rect: d_off:%d,%d s_off:%d,%d s_size:%d,%d mode:%d "
+               "layer:%p",
+               d_off.x(), d_off.y(), s_off.x(), s_off.y(), s_size.width(),
+               s_size.height(), mode, layer->this_obj());
+        set_image_modified(true);
     }
 
-    void on_paint() {
-        if (!this->is_visible()) {
-            return;
+    SkCanvas *canvas() {
+        if (!this->_surface) {
+            this->_surface = SkSurface::MakeRasterN32Premul(
+                this->_size.width(), this->_size.height());
         }
-        if (this->_image) {
-            int x = this->image_pos.x;
-            int y = this->image_pos.y;
-            GLOG_D("draw image {%d, %d}={%d, %d}", x, y, this->image_size.w,
-                   this->image_size.h);
-            this->_canvas().draw_image(
-                this->_image, {x, y},
-                {x + this->image_size.w, y + this->image_size.h});
-        }
+
+        return this->_surface ? this->_surface->getCanvas() : nullptr;
+    }
+
+    sk_sp<SkImage> image_snapshot() {
+        assert(this->_surface);
+        this->_surface->flush();
+        return this->_surface->makeImageSnapshot();
+    }
+
+    my::IRect layer_rect() {
+        return my::IRect::MakeXYWH(this->pos().x(), this->pos().y(),
+                                   this->size().width(), this->size().height());
     }
 
     void update() {
-        if (!this->is_visible()) {
-            return;
-        }
-        this->fill_rect(this->pos.x, this->pos.y, this->size.w, this->size.h, 0);
-        TJS::func_call(this->this_obj(), "onPaint");
+        this->call_on_paint = true;
     }
 
     void set_visible(bool v) {
         if (this->_visible != v) {
             this->_visible = v;
+
+            if (!this->_surface) {
+                this->_surface = SkSurface::MakeRasterN32Premul(
+                    this->_size.width(), this->_size.height());
+            }
+
             this->update();
         }
     }
-    bool is_visible() {
-        return this->_visible;
-    }
+
+    bool is_visible() { return this->_visible; }
 
     iTJSDispatch2 *this_obj() {
         assert(this->_this_obj);
@@ -229,11 +214,37 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     bool is_primary_layer() { return this->_win->get_primary_layer() == this; }
 
-    my::Size2D size{};
-    my::PixelPos pos{};
-    my::Size2D image_size{};
-    my::PixelPos image_pos{};
-    std::shared_ptr<my::Image> _image;
+    void set_size(const my::ISize2D &size) {
+        this->_size = size;
+
+        if (this->_surface) {
+            this->_surface =
+                SkSurface::MakeRasterN32Premul(size.width(), size.height());
+        }
+    }
+
+    my::ISize2D size() { return this->_size; }
+
+    void set_pos(const my::IPoint2D &pos) {
+        this->_pos = pos;
+    }
+
+    my::IPoint2D pos() { return this->_pos; }
+    void set_image_size(const my::ISize2D &size) { this->_image_size = size; }
+
+    my::ISize2D image_size() { return this->_image_size; }
+
+    void set_image_pos(const my::IPoint2D &pos) { this->_image_pos = pos; }
+
+    my::IPoint2D image_pos() { return this->_image_pos; }
+
+    rxcpp::observable<LayerEvent> on_event() {
+        return this->_event_suject.get_observable();
+    }
+
+    void post(LayerEventType type) {
+        this->_event_suject.get_subscriber().on_next(LayerEvent{type, this});
+    };
 
     // TODO:
     TJS2LayerType type{};
@@ -247,6 +258,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     bool focusable{false};
     bool absolute_order_mode{false};
     bool hold_alpha{false};
+    bool call_on_paint{false};
 
   private:
     iTJSDispatch2 *_this_obj{};
@@ -256,19 +268,41 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     TJS2NativeFont *_font{};
     TJS2NativeWindow *_win{};
     my::WindowMgr *_win_mgr{};
-    
+
+    rxcpp::subjects::subject<LayerEvent> _event_suject{};
+
+    std::shared_ptr<my::Image> _image{};
+    sk_sp<SkSurface> _surface{};
+
     bool _visible{false};
     bool _image_modified{false};
 
+    my::ISize2D _size{};
+    my::IPoint2D _pos{};
+    my::ISize2D _image_size{};
+    my::IPoint2D _image_pos{};
+
     void add_children(TJS2NativeLayer *layer) {
+        if (!layer) {
+            return;
+        }
         this->_children.push_back(layer);
+
+        layer->on_event().subscribe([](LayerEvent e) {
+            switch (e.type) {
+            case LayerEventType::LAYER_POS_CHANGE:
+
+                break;
+            case LayerEventType::LAYER_RESIZE:
+
+                break;
+            }
+        });
     }
 
     void remove_children(TJS2NativeLayer *layer) {
         this->_children.remove(layer);
     }
-
-    my::Canvas &_canvas() { return *this->_win->canvas(); }
 };
 
 class TJS2Layer : public tTJSNativeClass {

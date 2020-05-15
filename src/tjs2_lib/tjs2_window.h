@@ -1,9 +1,6 @@
 #pragma once
 
-#include <render/canvas.h>
-#include <render/window/window_mgr.h>
-#include <util/async_task.hpp>
-#include <util/codecvt.h>
+#include <my_render.hpp>
 
 #include "krkrz_application.h"
 #include "tjs2_lib.h"
@@ -69,6 +66,7 @@ struct TJSEvent {
     TJSEventType type;
     std::vector<tTJSVariant> args;
 };
+
 class TJS2NativeLayer;
 class TJS2NativeWindow : public tTJSNativeInstance {
   public:
@@ -80,23 +78,19 @@ class TJS2NativeWindow : public tTJSNativeInstance {
             this->_main_window = this;
         }
         this->_this_obj = tjs_obj;
-        this->_window =
-            this->_base_app->win_mgr()->create_window("test", 640, 480);
 
-        this->_canvas = std::make_shared<my::Canvas>(
-            this->_base_app->renderer(), this->_window,
-            this->_base_app->ev_bus(), this->_base_app->resource_mgr(),
-            this->_base_app->font_mgr());
+        this->_window = this->_base_app->win_mgr()->create_window("", 0, 0);
 
         this->_subscribe_event(tjs_obj);
-        this->_render();
+        this->_render_task_start();
+
         return TJS_S_OK;
     }
+
     void TJS_INTF_METHOD Invalidate() {
-        this->_base_app->win_mgr()->remove_window(this->_window);        
+        this->_base_app->win_mgr()->remove_window(this->_window);
         this->_unsubscribe_event();
-        this->_render_task->cancel();
-        this->_render_task->wait();
+        this->_render_task_stop();
 
         for (auto &obj : this->_objects) {
             obj.Invalidate(0, nullptr, nullptr, nullptr);
@@ -127,13 +121,39 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         this->_window->set_full_screen(full_screen);
     }
 
+    void update_surface() { this->_surfacee = this->_window->get_sk_surface(); }
+
+    void set_visible(bool v) {
+        if (v != this->is_visible()) {
+            this->base_window()->set_visible(v);
+            if (!this->_surfacee) {
+                this->update_surface();
+            }
+        }
+    }
+
+    void set_size(const my::ISize2D &size) {
+        this->base_window()->set_size(size);
+        this->update_surface();
+    }
+
+    void set_min_size(const my::ISize2D &size) {
+        this->base_window()->set_min_size(size);
+        this->update_surface();
+    }
+
+    void set_max_size(const my::ISize2D &size) {
+        this->base_window()->set_max_size(size);
+        this->update_surface();
+    }
+
+    bool is_visible() { return this->base_window()->is_visible(); }
+
     my::Window *base_window() { return this->_window; }
 
     iTJSDispatch2 *this_obj() { return this->_this_obj; }
 
     std::u16string caption;
-
-    my::Canvas *canvas() { return this->_canvas.get(); }
 
     void set_primary_layer(TJS2NativeLayer *layer);
     TJS2NativeLayer *get_primary_layer() { return this->_primary_layer; }
@@ -171,7 +191,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     my::Window *_window{};
     std::vector<tTJSVariantClosure> _objects{};
     TJS2NativeLayer *_primary_layer{};
-    std::shared_ptr<my::Canvas> _canvas{};
+    sk_sp<SkSurface> _surfacee{};
 
     typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
         RenderTask;
@@ -188,7 +208,16 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     rxcpp::composite_subscription _keyboard_cs;
     rxcpp::composite_subscription _paint_cs;
 
+    rxcpp::composite_subscription _layer_cs;
+
     std::mutex _lock;
+
+    SkCanvas *_canvas() {
+        if (!this->_surfacee) {
+            this->_surfacee = this->_window->get_sk_surface();
+        }
+        return this->_surfacee->getCanvas();
+    }
 
     void _subscribe_event(iTJSDispatch2 *obj);
     void _unsubscribe_event();
@@ -197,7 +226,10 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     void _paint_event_disptach();
     void _mouse_event_disptach(const std::string &event_name,
                                const std::vector<tTJSVariant> &args,
-                               const my::PixelPos &mouse_pos);
+                               const my::IPoint2D &mouse_pos);
+    void _render_task_start();
+    void _render_task_stop();
+    void _draw_layer();
     void _render();
 };
 

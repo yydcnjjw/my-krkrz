@@ -4,12 +4,9 @@
 
 #include <boost/timer/timer.hpp>
 
-#include <util/logger.h>
-
 #include "krkrz_application.h"
 #include "tjs2_font.h"
 #include "tjs2_layer.h"
-#include "tjs2_storages.h"
 #include <MsgIntf.h>
 #include <MsgLoad.h>
 #include <tjs2_plugin/tjs2_plugin.h>
@@ -145,9 +142,8 @@ class TJS2Scripts : public tTJSNativeClass {
                     ? param[3]->AsObjectNoAddRef()
                     : NULL;
 
-            krkrz::TJS2NativeScripts::get()->exec(content.AsStdString(),
-                                                  context, result,
-                                                  name.AsStdString(), lineofs);
+            krkrz::TJS2Script::make(content.AsStdString())
+                ->exec(result, context, name.AsStdString(), lineofs);
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ exec)
@@ -168,8 +164,8 @@ class TJS2Scripts : public tTJSNativeClass {
                     ? param[2]->AsObjectNoAddRef()
                     : nullptr;
 
-            krkrz::TJS2NativeScripts::get()->exec_storage(
-                name.AsStdString(), context, result, modestr.c_str());
+            krkrz::TJS2Script::exec_storage(name.AsStdString(), context, result,
+                                            modestr.c_str());
 
             return TJS_S_OK;
         }
@@ -190,8 +186,8 @@ class TJS2Scripts : public tTJSNativeClass {
                     ? param[2]->AsObjectNoAddRef()
                     : NULL;
 
-            krkrz::TJS2NativeScripts::get()->eval_storage(
-                name.AsStdString(), context, result, modestr.c_str());
+            krkrz::TJS2Script::eval_storage(name.AsStdString(), context, result,
+                                            modestr.c_str());
 
             return TJS_S_OK;
         }
@@ -215,9 +211,8 @@ class TJS2Scripts : public tTJSNativeClass {
                     ? param[3]->AsObjectNoAddRef()
                     : NULL;
 
-            krkrz::TJS2NativeScripts::get()->eval(content.AsStdString(),
-                                                  context, result,
-                                                  name.AsStdString(), lineofs);
+            krkrz::TJS2Script::make(content.AsStdString())
+                ->eval(result, context, name.AsStdString(), lineofs);
 
             return TJS_S_OK;
         }
@@ -287,10 +282,10 @@ void TJS2NativeScripts::boot_start() {
                 }
 
                 if (is_debug) {
-                    this->exec_storage(u"debug.tjs");
+                    TJS2Script::exec_storage(u"debug.tjs");
                 } else {
-                    this->exec_storage(u"SysInitScript.tjs");
-                    this->exec_storage(u"startup.tjs");
+                    TJS2Script::exec_storage(u"SysInitScript.tjs");
+                    TJS2Script::exec_storage(u"startup.tjs");
                 }
 
             } catch (eTJSError &e) {
@@ -302,8 +297,8 @@ void TJS2NativeScripts::boot_start() {
 
             for (;;) {
                 while (!rlp.empty() && rlp.peek().when < rlp.now()) {
-                    auto source = std::make_shared<coro_t::pull_type>(
-                        [&](coro_t::push_type &sink) {
+                    auto source = std::make_shared<my::coro_t::pull_type>(
+                        [&](my::coro_t::push_type &sink) {
                             this->_current_sink = &sink;
                             rlp.dispatch();
                         });
@@ -315,8 +310,8 @@ void TJS2NativeScripts::boot_start() {
                 }
                 app->ev_bus()->post<TJSIdleEvent>();
                 while (!rlp.empty() && rlp.peek().when < rlp.now()) {
-                    auto source = std::make_shared<coro_t::pull_type>(
-                        [&](coro_t::push_type &sink) {
+                    auto source = std::make_shared<my::coro_t::pull_type>(
+                        [&](my::coro_t::push_type &sink) {
                             this->_current_sink = &sink;
                             rlp.dispatch();
                         });
@@ -402,41 +397,4 @@ void TJS2NativeScripts::_load_tjs_lib() {
     REGISTER_OBJECT(KAGParser, TVPCreateNativeClass_KAGParser());
     REGISTER_OBJECT(MenuItem, create_tjs2_menu_item(global));
 }
-
-void TJS2NativeScripts::exec_storage(const std::u16string &uri,
-                                     iTJSDispatch2 *context,
-                                     tTJSVariant *result,
-                                     const tjs_char *modestr) {
-    auto tjs2_script = TJS2NativeStorages::get()->get_storage<my::TJS2Script>(
-        codecvt::utf_to_utf<char>(uri));
-    this->exec(codecvt::utf_to_utf<char16_t>(tjs2_script->script), context,
-               result, uri);
-}
-
-void TJS2NativeScripts::eval_storage(const std::u16string &uri,
-                                     iTJSDispatch2 *context,
-                                     tTJSVariant *result,
-                                     const tjs_char *modestr) {
-    auto tjs2_script = TJS2NativeStorages::get()->get_storage<my::TJS2Script>(
-        codecvt::utf_to_utf<char>(uri));
-    this->eval(codecvt::utf_to_utf<char16_t>(tjs2_script->script), context,
-               result, uri);
-}
-
-void TJS2NativeScripts::exec(const std::u16string &content,
-                             iTJSDispatch2 *context, tTJSVariant *result,
-                             const std::u16string &name, int lineofs) {
-    ttstr short_name = name;
-    this->_tjs_engine->ExecScript(content, result, context, &short_name,
-                                  lineofs);
-}
-
-void TJS2NativeScripts::eval(const std::u16string &content,
-                             iTJSDispatch2 *context, tTJSVariant *result,
-                             const std::u16string &name, int lineofs) {
-    ttstr short_name = name;
-    this->_tjs_engine->EvalExpression(content, result, context, &short_name,
-                                      lineofs);
-}
-
 } // namespace krkrz

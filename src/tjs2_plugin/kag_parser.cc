@@ -13,8 +13,6 @@
 
 #include <tjs2_lib/tjs2_scripts.h>
 #include <tjs2_lib/tjs2_storages.h>
-#include <util/codecvt.h>
-#include <util/logger.h>
 
 #include <MsgIntf.h>
 #include <tjsDictionary.h>
@@ -27,8 +25,7 @@ void TVPAddLog(const ttstr &line) {
 
 void TVPExecuteExpression(const ttstr &content, iTJSDispatch2 *context,
                           tTJSVariant *result) {
-    krkrz::TJS2NativeScripts::get()->eval(content.AsStdString(), context,
-                                          result);
+    krkrz::TJS2Script::make(content.AsStdString())->eval(result, context);
 }
 
 //---------------------------------------------------------------------------
@@ -125,11 +122,9 @@ void tTVPScenarioCacheItem::LoadScenario(const ttstr &name, bool isstring) {
         iTJSTextReadStream *stream = NULL;
 
         try {
-            Buffer = codecvt::utf_to_utf<char16_t>(
-                         krkrz::TJS2NativeStorages::get()
-                             ->get_storage<my::TJS2Script>(
-                                 codecvt::utf_to_utf<char>(name.AsStdString()))
-                             ->script)
+            Buffer = krkrz::TJS2NativeStorages::get()
+                         ->get_storage<krkrz::TJS2Script>(name.AsStdString())
+                         ->script()
                          .c_str();
         } catch (...) {
             if (stream)
@@ -336,7 +331,8 @@ tTJSNI_KAGParser::tTJSNI_KAGParser() {
     DicObj = NULL;
     Macros = NULL;
     // RecordingMacro = NULL;
-    DebugLevel = tkdlSimple;
+    // DebugLevel = tkdlSimple;
+    DebugLevel = tkdlVerbose;
     Interrupted = false;
     MacroArgStackDepth = 0;
     MacroArgStackBase = 0;

@@ -1,8 +1,5 @@
 #include "tjs2_lib.h"
 
-#include <util/codecvt.h>
-#include <util/logger.h>
-
 #include <MsgIntf.h>
 #include <krkrz_application.h>
 #include <tjs2_lib/tjs2_scripts.h>

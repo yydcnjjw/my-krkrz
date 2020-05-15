@@ -2,31 +2,23 @@
 
 #include <shared_mutex>
 
-#include <boost/coroutine2/all.hpp>
-
-#include <util/codecvt.h>
-#include <util/logger.h>
-
 #include "tjs2_lib.h"
+#include "tjs2_storages.h"
+
+#include <my_storage.hpp>
 
 namespace krkrz {
-
-typedef boost::coroutines2::coroutine<void> coro_t;
-
 struct TJSIdleEvent {};
 
 class TJSConsoleOutput : public iTJSConsoleOutput {
   public:
     void ExceptionPrint(const tjs_char *msg) override {
-        GLOG_D(this->_code_cvt.to_bytes(msg).c_str());
+        GLOG_D(codecvt::utf_to_utf<char>(msg).c_str());
     }
 
     void Print(const tjs_char *msg) override {
-        GLOG_D(this->_code_cvt.to_bytes(msg).c_str());
+        GLOG_D(codecvt::utf_to_utf<char>(msg).c_str());
     }
-
-  private:
-    utf16_codecvt _code_cvt;
 };
 
 class TJS2NativeScripts {
@@ -42,36 +34,7 @@ class TJS2NativeScripts {
     bool is_stopping() { return this->_is_stopping; }
     void stop();
 
-    void exec_storage(const std::u16string &uri,
-                      iTJSDispatch2 *context = nullptr,
-                      tTJSVariant *result = nullptr,
-                      const tjs_char *modestr = nullptr);
-
-    void eval_storage(const std::u16string &uri,
-                      iTJSDispatch2 *context = nullptr,
-                      tTJSVariant *result = nullptr,
-                      const tjs_char *modestr = nullptr);
-
-    void exec(const std::u16string &content, iTJSDispatch2 *context = nullptr,
-              tTJSVariant *result = nullptr, const std::u16string &name = u"",
-              int lineofs = 0);
-
-    void eval(const std::u16string &content, iTJSDispatch2 *context = nullptr,
-              tTJSVariant *result = nullptr, const std::u16string &name = u"",
-              int lineofs = 0);
-
     rxcpp::observe_on_one_worker &tjs_worker() { return *this->_tjs_worker; }
-
-    // template <
-    //     typename Func,
-    //     std::enable_if_t<std::is_invocable<Func, coro_t::push_type
-    //     &>::value>>
-    // void make_coroutine(Func &&func) {
-    //     this->_coroutines.push_back(
-    //         std::bind(coro_t::pull_type([](coro_t::push_type &sink,
-    //                                        Func &func) { func(sink); }),
-    //                   std::forward(func)));
-    // }
 
     void yield() {
         if (!this->_current_sink) {
@@ -80,22 +43,24 @@ class TJS2NativeScripts {
         (*this->_current_sink)();
     }
 
+    tTJS *engine() { return this->_tjs_engine; }
+
   private:
-    std::thread _tjs_thread;
+    std::thread _tjs_thread{};
     rxcpp::observe_on_one_worker *_tjs_worker{};
 
     tTJS *_tjs_engine{};
     std::shared_ptr<TJSConsoleOutput> _tjs_console_output{};
     std::atomic_bool _is_stopping{false};
-    std::shared_mutex _lock;
-    std::condition_variable_any _cv;
+    std::shared_mutex _lock{};
+    std::condition_variable_any _cv{};
     struct CoroCtx {
-        coro_t::push_type *sink{};
-        std::shared_ptr<coro_t::pull_type> source;
+        my::coro_t::push_type *sink{};
+        std::shared_ptr<my::coro_t::pull_type> source{};
     };
     std::list<CoroCtx> _coroutines{};
 
-    coro_t::push_type *_current_sink{};
+    my::coro_t::push_type *_current_sink{};
 
     TJS2NativeScripts();
 
@@ -103,4 +68,100 @@ class TJS2NativeScripts {
     void _load_tjs_lib();
 };
 
+class TJS2Script : public my::Resource {
+  public:
+    size_t used_mem() override { return this->_script.size() * 2; }
+
+    static std::shared_ptr<TJS2Script> make(const std::string &script) {
+        return std::make_shared<TJS2Script>(script);
+    }
+    static std::shared_ptr<TJS2Script> make(std::u16string script) {
+        return std::make_shared<TJS2Script>(std::move(script));
+    }
+
+    static void exec_storage(const std::u16string &uri,
+                             iTJSDispatch2 *context = nullptr,
+                             tTJSVariant *result = nullptr,
+                             const tjs_char *modestr = nullptr) {
+        auto tjs2_script = TJS2NativeStorages::get()->get_storage<TJS2Script>(
+            codecvt::utf_to_utf<char>(uri));
+        tjs2_script->exec(result, context, uri);
+    }
+
+    static void eval_storage(const std::u16string &uri,
+                             iTJSDispatch2 *context = nullptr,
+                             tTJSVariant *result = nullptr,
+                             const tjs_char *modestr = nullptr) {
+        auto tjs2_script = TJS2NativeStorages::get()->get_storage<TJS2Script>(
+            codecvt::utf_to_utf<char>(uri));
+        tjs2_script->eval(result, context, uri);
+    }
+
+    void eval(tTJSVariant *result = nullptr, iTJSDispatch2 *context = nullptr,
+              const std::u16string &name = u"", int lineofs = 0) {
+        ttstr short_name = name;
+        TJS2Script::_engine()->EvalExpression(this->_script, result, context,
+                                              &short_name, lineofs);
+    }
+
+    void exec(tTJSVariant *result = nullptr, iTJSDispatch2 *context = nullptr,
+              const std::u16string &name = u"", int lineofs = 0) {
+        ttstr short_name = name;
+        TJS2Script::_engine()->ExecScript(this->_script, result, context,
+                                          &short_name, lineofs);
+    }
+
+    std::u16string script() {
+        return this->_script;
+    }
+
+    TJS2Script(const std::string &script)
+        : _script(codecvt::utf_to_utf<char16_t>(script)) {}
+
+    TJS2Script(std::u16string script) : _script(std::move(script)) {}
+
+  private:
+    std::u16string _script;
+
+    static tTJS *_engine() {
+        auto v = TJS2NativeScripts::get()->engine();
+        assert(v);
+        return v;
+    }
+};
+
 } // namespace krkrz
+
+template <> class my::ResourceProvider<krkrz::TJS2Script> {
+public:
+    /**
+     * @brief      load from fs
+     */
+    static std::shared_ptr<krkrz::TJS2Script> load(const fs::path &path) {
+        return ResourceProvider<krkrz::TJS2Script>::load(
+            ResourceStreamInfo::make(path));
+    }
+
+    /**
+     * @brief      load from stream
+     */
+    static std::shared_ptr<krkrz::TJS2Script>
+    load(const ResourceStreamInfo &info) {
+        auto blob = my::Blob::make(info);
+        static std::vector<std::string> encodes{"UTF-8", "SHIFT_JIS",
+                                                "GB18030"};
+        auto code = blob->string_view();
+
+        for (const auto &encode : encodes) {
+            std::string script{};
+            try {
+                script = codecvt::to_utf<char>(code.begin(), code.end(), encode,
+                                               codecvt::method_type::stop);
+            } catch (codecvt::conversion_error &) {
+                continue;
+            }
+            return krkrz::TJS2Script::make(script);
+        }
+        throw std::runtime_error("tjs2 script codecvt failure");
+    }
+};
