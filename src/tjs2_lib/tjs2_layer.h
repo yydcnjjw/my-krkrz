@@ -121,31 +121,43 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void assign_images(TJS2NativeLayer *layer) { this->_image = layer->_image; }
 
+    std::shared_ptr<my::Image> image() { return this->_image; }
+
     void set_image_modified(bool v) { this->_image_modified = v; }
 
     bool is_image_modified() { return this->_image_modified; }
 
     void operate_rect(const my::IPoint2D &d_off, TJS2NativeLayer *layer,
                       const my::IPoint2D &s_off, const my::ISize2D &s_size,
-                      TJS2BlendOperationMode mode) {
-        GLOG_D("operate rect: d_off:%d,%d s_off:%d,%d s_size:%d,%d mode:%d "
-               "layer:%p",
-               d_off.x(), d_off.y(), s_off.x(), s_off.y(), s_size.width(),
-               s_size.height(), mode, layer->this_obj());
-        set_image_modified(true);
-    }
+                      TJS2BlendOperationMode mode);
 
     SkCanvas *canvas() {
+        this->build_surface();
+        return this->_surface->getCanvas();
+    }
+
+    void build_surface() {
+        // this->_surface = SkSurface::MakeRaster(
+        //     SkImageInfo::MakeN32(this->_size.width(), this->_size.height(),
+        //                          SkAlphaType::kUnpremul_SkAlphaType));
+
+        auto [w, h] = this->size();
         if (!this->_surface) {
-            this->_surface = SkSurface::MakeRasterN32Premul(
-                this->_size.width(), this->_size.height());
+            this->_surface = SkSurface::MakeRasterN32Premul(w, h);
+            return;
         }
 
-        return this->_surface ? this->_surface->getCanvas() : nullptr;
+        auto surface_size = my::ISize2D::Make(this->_surface->width(),
+                                              this->_surface->height());
+        if (surface_size != this->size()) {
+            this->_surface = SkSurface::MakeRasterN32Premul(w, h);
+        }
     }
 
     sk_sp<SkImage> image_snapshot() {
-        assert(this->_surface);
+        if (!this->_surface) {
+            return nullptr;
+        }
         this->_surface->flush();
         return this->_surface->makeImageSnapshot();
     }
@@ -155,24 +167,83 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                                    this->size().width(), this->size().height());
     }
 
-    void update() {
-        this->call_on_paint = true;
-    }
+    void update() { this->call_on_paint = true; }
 
     void set_visible(bool v) {
         if (this->_visible != v) {
             this->_visible = v;
-
-            if (!this->_surface) {
-                this->_surface = SkSurface::MakeRasterN32Premul(
-                    this->_size.width(), this->_size.height());
-            }
 
             this->update();
         }
     }
 
     bool is_visible() { return this->_visible; }
+
+    TJS2BlendOperationMode blend_mode() {
+
+        // returns corresponding blend operation mode from layer type
+
+        switch (this->type) {
+            //	case ltBinder:
+        case ltOpaque:
+            return omOpaque;
+        case ltAlpha:
+            return omAlpha;
+        case ltAdditive:
+            return omAdditive;
+        case ltSubtractive:
+            return omSubtractive;
+        case ltMultiplicative:
+            return omMultiplicative;
+            //	case ltEffect:
+            //	case ltFilter:
+        case ltDodge:
+            return omDodge;
+        case ltDarken:
+            return omDarken;
+        case ltLighten:
+            return omLighten;
+        case ltScreen:
+            return omScreen;
+        case ltAddAlpha:
+            return omAddAlpha;
+        case ltPsNormal:
+            return omPsNormal;
+        case ltPsAdditive:
+            return omPsAdditive;
+        case ltPsSubtractive:
+            return omPsSubtractive;
+        case ltPsMultiplicative:
+            return omPsMultiplicative;
+        case ltPsScreen:
+            return omPsScreen;
+        case ltPsOverlay:
+            return omPsOverlay;
+        case ltPsHardLight:
+            return omPsHardLight;
+        case ltPsSoftLight:
+            return omPsSoftLight;
+        case ltPsColorDodge:
+            return omPsColorDodge;
+        case ltPsColorDodge5:
+            return omPsColorDodge5;
+        case ltPsColorBurn:
+            return omPsColorBurn;
+        case ltPsLighten:
+            return omPsLighten;
+        case ltPsDarken:
+            return omPsDarken;
+        case ltPsDifference:
+            return omPsDifference;
+        case ltPsDifference5:
+            return omPsDifference5;
+        case ltPsExclusion:
+            return omPsExclusion;
+
+        default:
+            return omOpaque;
+        }
+    }
 
     iTJSDispatch2 *this_obj() {
         assert(this->_this_obj);
@@ -214,20 +285,11 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     bool is_primary_layer() { return this->_win->get_primary_layer() == this; }
 
-    void set_size(const my::ISize2D &size) {
-        this->_size = size;
-
-        if (this->_surface) {
-            this->_surface =
-                SkSurface::MakeRasterN32Premul(size.width(), size.height());
-        }
-    }
+    void set_size(const my::ISize2D &size) { this->_size = size; }
 
     my::ISize2D size() { return this->_size; }
 
-    void set_pos(const my::IPoint2D &pos) {
-        this->_pos = pos;
-    }
+    void set_pos(const my::IPoint2D &pos) { this->_pos = pos; }
 
     my::IPoint2D pos() { return this->_pos; }
     void set_image_size(const my::ISize2D &size) { this->_image_size = size; }
@@ -277,9 +339,9 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     bool _visible{false};
     bool _image_modified{false};
 
-    my::ISize2D _size{};
+    my::ISize2D _size{32, 32};
     my::IPoint2D _pos{};
-    my::ISize2D _image_size{};
+    my::ISize2D _image_size{32, 32};
     my::IPoint2D _image_pos{};
 
     void add_children(TJS2NativeLayer *layer) {
@@ -333,5 +395,9 @@ class TJS2Layer : public tTJSNativeClass {
   protected:
     tTJSNativeInstance *CreateNativeInstance() { return new TJS2NativeLayer; }
 };
+
+std::string format_point(const my::IPoint2D &point);
+
+std::string format_rect(const my::IRect &rect);
 
 } // namespace krkrz

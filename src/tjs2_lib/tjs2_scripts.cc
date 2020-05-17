@@ -282,11 +282,13 @@ void TJS2NativeScripts::boot_start() {
                 }
 
                 if (is_debug) {
-                    TJS2Script::exec_storage(u"debug.tjs");
+                    Logger::get()->set_level(Logger::Level::DEBUG);
                 } else {
-                    TJS2Script::exec_storage(u"SysInitScript.tjs");
-                    TJS2Script::exec_storage(u"startup.tjs");
+                    Logger::get()->set_level(Logger::Level::INFO);
                 }
+
+                TJS2Script::exec_storage(u"SysInitScript.tjs");
+                TJS2Script::exec_storage(u"startup.tjs");
 
             } catch (eTJSError &e) {
                 GLOG_D(utf16_codecvt()

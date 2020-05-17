@@ -65,7 +65,7 @@ class TJS2Debug : public tTJSNativeClass {
             }
 
             static utf16_codecvt code_convert;
-            GLOG_D(code_convert.to_bytes(args.AsStdString()).c_str());
+            GLOG_I(code_convert.to_bytes(args.AsStdString()).c_str());
 
             return TJS_S_OK;
         }

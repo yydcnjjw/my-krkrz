@@ -2,7 +2,10 @@
 
 #include <tjsArray.h>
 
-namespace {
+namespace {} // namespace
+
+namespace krkrz {
+
 std::string format_point(const my::IPoint2D &point) {
     return (boost::format("(%1%,%2%)") % point.x() % point.y()).str();
 }
@@ -12,9 +15,6 @@ std::string format_rect(const my::IRect &rect) {
             rect.width() % rect.height())
         .str();
 }
-} // namespace
-
-namespace krkrz {
 
 TJS2DrawFace convert_draw_face(TJS2LayerType type) {
     TJS2DrawFace face;
@@ -159,30 +159,28 @@ void TJS2NativeLayer::color_rect(const my::IRect &rect, uint32_t color,
 
     if (face == TJS2DrawFace::dfAlpha) {
         if (opa <= 0) {
-            color = 0x000000;
+            color = 0xffffff;
             opa = -opa;
         }
     } else {
-        if (opa == 0) {
-            return;
-        }
+        // if (opa == 0) {
+        //     return;
+        // }
     }
-
+    auto col = this->color_convert(color, opa);
+    GLOG_D("color rect face=%d, %s %s color %d %d %d %d", face,
+           format_rect(rect).c_str(), format_point(this->pos()).c_str(),
+           SkColorGetA(col), SkColorGetR(col), SkColorGetG(col),
+           SkColorGetB(col));
     this->set_image_modified(true);
     if (face == TJS2DrawFace::dfProvince || face == TJS2DrawFace::dfMask) {
         return;
     }
-    auto col = this->color_convert(color, opa);
+
     SkPaint paint{};
     paint.setColor(col);
-    auto canvas = this->canvas();
-    if (canvas) {
-        canvas->drawIRect(rect, paint);
-    }
 
-    GLOG_D("color rect face=%d, %s color %d %d %d %d", face,
-           format_rect(rect).c_str(), SkColorGetA(col), SkColorGetR(col),
-           SkColorGetG(col), SkColorGetB(col));
+    this->canvas()->drawIRect(rect, paint);
 }
 
 void TJS2NativeLayer::fill_rect(const my::IRect &rect, uint32_t color) {
@@ -191,20 +189,18 @@ void TJS2NativeLayer::fill_rect(const my::IRect &rect, uint32_t color) {
         face = convert_draw_face(this->type);
     }
 
+    GLOG_D("fill rect face=%d, %s %s color(ARGB) %#x", face,
+           format_rect(rect).c_str(), format_point(this->pos()).c_str(), color);
+
     this->set_image_modified(true);
     if (face == TJS2DrawFace::dfProvince || face == TJS2DrawFace::dfMask) {
         return;
     }
 
     SkPaint paint{};
+    paint.setColor(color);
     paint.setBlendMode(SkBlendMode::kSrc);
-    auto canvas = this->canvas();
-    if (canvas) {
-        canvas->drawIRect(rect, paint);
-    }
-
-    GLOG_D("fill rect face=%d, %s color(ARGB) %#x", face,
-           format_rect(rect).c_str(), color);
+    this->canvas()->drawIRect(rect, paint);
 }
 
 void TJS2NativeLayer::draw_text(const my::IPoint2D &pos,
@@ -215,18 +211,50 @@ void TJS2NativeLayer::draw_text(const my::IPoint2D &pos,
     color = krkrz::TJSToActualColor(color);
     auto col = this->color_convert(color, opa);
     auto text = codecvt::utf_to_utf<char>(_text);
+
     GLOG_D("draw text height %d, %d,%d %s, color(ARGB)%#x",
            this->_font->get_height(), pos.x(), pos.y(), text.c_str(), col);
-    SkPaint paint{};
-    paint.setColor(col);
-    auto [x, y] = pos;
-    y += this->_font->get_height();
-    auto canvas = this->canvas();
-    if (canvas) {
-        canvas->drawString(text.c_str(), x, y, this->_font->sk_font(), paint);
+
+    {
+        SkPaint paint{};
+        paint.setColor(col);
+        auto [x, y] = pos;
+        y += this->_font->get_height();
+        this->canvas()->drawString(text.c_str(), x, y, this->_font->sk_font(),
+                                   paint);
     }
 
     this->set_image_modified(true);
+}
+
+void TJS2NativeLayer::operate_rect(const my::IPoint2D &d_off,
+                                   TJS2NativeLayer *layer,
+                                   const my::IPoint2D &s_off,
+                                   const my::ISize2D &s_size,
+                                   TJS2BlendOperationMode _mode) {
+    auto mode = TJS2BlendOperationMode::omAlpha;
+    if (_mode == TJS2BlendOperationMode::omAuto) {
+        mode = layer->blend_mode();
+    }
+
+    GLOG_D("operate rect: d_off:%d,%d s_off:%d,%d s_size:%d,%d mode:%d "
+           "%s",
+           d_off.x(), d_off.y(), s_off.x(), s_off.y(), s_size.width(),
+           s_size.height(), mode, format_point(this->pos()).c_str());
+    SkBitmap src{};
+    src.allocN32Pixels(s_size.width(), s_size.height());
+    layer->_surface->readPixels(src, s_off.x(), s_off.y());
+
+    auto [x, y] = d_off;
+    switch (mode) {
+    case TJS2BlendOperationMode::omAlpha:
+        this->canvas()->drawBitmap(src, x, y);
+        break;
+    default:
+        assert(true);
+        break;
+    }
+    set_image_modified(true);
 }
 
 void TJS2NativeLayer::load_image(const std::u16string &_path) {
@@ -253,8 +281,14 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
     if (!this->_image) {
         throw std::runtime_error(
             (boost::format("load image failure %1%") % path).str());
-    } else {
     }
+
+    auto image_size = this->_image->size();
+    this->set_size(image_size);
+    this->set_image_size(image_size);
+
+    auto [x, y] = this->image_pos();
+    this->canvas()->drawImage(this->_image->sk_image(), x, y);
 }
 
 iTJSDispatch2 *TJS2NativeLayer::get_children_obj() const {

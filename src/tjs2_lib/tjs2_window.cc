@@ -308,8 +308,9 @@ void TJS2NativeWindow::_render_task_stop() {
 }
 
 void TJS2NativeWindow::_draw_layer() {
-    auto func =
-        my::y_combinator([this](const auto &self, TJS2NativeLayer *layer) {
+    int level = 0;
+    auto func = my::y_combinator(
+        [this, &level](const auto &self, TJS2NativeLayer *layer) {
             if (!layer) {
                 return;
             }
@@ -324,11 +325,29 @@ void TJS2NativeWindow::_draw_layer() {
             }
 
             auto [x, y] = layer->pos();
-            this->_canvas()->drawImage(layer->image_snapshot(), x, y);
 
+            {
+                auto image = layer->image_snapshot();
+                if (image) {
+                    this->_canvas()->drawImage(image, x, y);
+                }
+
+                auto w = image->width();
+                auto h = image->height();
+                std::string indent(level, ' ');
+
+                GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
+                       format_rect(layer->layer_rect()).c_str(), w, h);
+            }
+
+            ++level;
+            this->_canvas()->save();
+            this->_canvas()->translate(x, y);
             for (const auto child : layer->get_children()) {
                 self(child);
             }
+            this->_canvas()->restore();
+            --level;
         });
 
     func(this->_primary_layer);

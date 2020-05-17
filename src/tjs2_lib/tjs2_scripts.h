@@ -13,11 +13,11 @@ struct TJSIdleEvent {};
 class TJSConsoleOutput : public iTJSConsoleOutput {
   public:
     void ExceptionPrint(const tjs_char *msg) override {
-        GLOG_D(codecvt::utf_to_utf<char>(msg).c_str());
+        GLOG_I(codecvt::utf_to_utf<char>(msg).c_str());
     }
 
     void Print(const tjs_char *msg) override {
-        GLOG_D(codecvt::utf_to_utf<char>(msg).c_str());
+        GLOG_I(codecvt::utf_to_utf<char>(msg).c_str());
     }
 };
 
