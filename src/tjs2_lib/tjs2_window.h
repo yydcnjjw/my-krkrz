@@ -191,6 +191,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     my::Window *_window{};
     std::vector<tTJSVariantClosure> _objects{};
     TJS2NativeLayer *_primary_layer{};
+    TJS2NativeLayer *_current_motion_layer{};
     sk_sp<SkSurface> _surfacee{};
 
     typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
@@ -224,9 +225,15 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     void _event_disptach(const std::string &event_name,
                          const std::vector<tTJSVariant> &args);
     void _paint_event_disptach();
-    void _mouse_event_disptach(const std::string &event_name,
+    void _layer_mouse_event_disptach(const std::string &event_name,
+                               const my::IPoint2D &mouse_pos,
+                               my::Keymod,
+                               TJSMouseButton);
+
+    void _mouse_motion_event_disptach(const std::string &event_name,
                                const std::vector<tTJSVariant> &args,
                                const my::IPoint2D &mouse_pos);
+    
     void _render_task_start();
     void _render_task_stop();
     void _draw_layer();

@@ -87,6 +87,37 @@ enum TJS2BlendOperationMode {
     omAuto = 128 // operation mode is guessed from the source layer type
 };
 
+enum TJS2StretchType {
+    stNearest = 0, // primal method; nearest neighbor method
+    stFastLinear =
+        1,        // fast linear interpolation (does not have so much precision)
+    stLinear = 2, // (strict) linear interpolation
+    stCubic = 3,  // cubic interpolation
+    stSemiFastLinear = 4,
+    stFastCubic = 5,
+    stLanczos2 = 6, // Lanczos 2 interpolation
+    stFastLanczos2 = 7,
+    stLanczos3 = 8, // Lanczos 3 interpolation
+    stFastLanczos3 = 9,
+    stSpline16 = 10, // Spline16 interpolation
+    stFastSpline16 = 11,
+    stSpline36 = 12, // Spline36 interpolation
+    stFastSpline36 = 13,
+    stAreaAvg = 14, // Area average interpolation
+    stFastAreaAvg = 15,
+    stGaussian = 16,
+    stFastGaussian = 17,
+    stBlackmanSinc = 18,
+    stFastBlackmanSinc = 19,
+
+    stTypeMask = 0x0000ffff, // stretch type mask
+    stFlagMask = 0xffff0000, // flag mask
+
+    stRefNoClip =
+        0x10000 // referencing source is not limited by the given rectangle
+                // (may allow to see the border pixel to interpolate)
+};
+
 enum class LayerEventType { LAYER_RESIZE, LAYER_POS_CHANGE };
 
 struct LayerEvent {
@@ -119,7 +150,10 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void load_image(const std::u16string &_path);
 
-    void assign_images(TJS2NativeLayer *layer) { this->_image = layer->_image; }
+    void assign_images(TJS2NativeLayer *layer) {
+        this->_surface = layer->_surface;
+        this->_image = layer->_image;
+    }
 
     std::shared_ptr<my::Image> image() { return this->_image; }
 
@@ -131,20 +165,20 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                       const my::IPoint2D &s_off, const my::ISize2D &s_size,
                       TJS2BlendOperationMode mode);
 
-    SkCanvas *canvas() {
-        this->build_surface();
-        return this->_surface->getCanvas();
-    }
+    void stretch_copy(const my::IRect &dst, const my::IRect &src,
+                      TJS2NativeLayer *src_layer, TJS2StretchType type);
 
-    void build_surface() {
-        // this->_surface = SkSurface::MakeRaster(
-        //     SkImageInfo::MakeN32(this->_size.width(), this->_size.height(),
-        //                          SkAlphaType::kUnpremul_SkAlphaType));
+    void start_trans(const std::u16string &name, bool withchildren,
+                     TJS2NativeLayer *trans_src, tTJSVariantClosure options);
+    void stop_trans();
 
+    SkCanvas *canvas() { return this->surface()->getCanvas(); }
+
+    sk_sp<SkSurface> surface() {
         auto [w, h] = this->size();
         if (!this->_surface) {
             this->_surface = SkSurface::MakeRasterN32Premul(w, h);
-            return;
+            return this->_surface;
         }
 
         auto surface_size = my::ISize2D::Make(this->_surface->width(),
@@ -152,14 +186,13 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         if (surface_size != this->size()) {
             this->_surface = SkSurface::MakeRasterN32Premul(w, h);
         }
+
+        this->_surface->flush();
+        return this->_surface;
     }
 
     sk_sp<SkImage> image_snapshot() {
-        if (!this->_surface) {
-            return nullptr;
-        }
-        this->_surface->flush();
-        return this->_surface->makeImageSnapshot();
+        return this->surface()->makeImageSnapshot();
     }
 
     my::IRect layer_rect() {
@@ -263,25 +296,18 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     my::WindowMgr *get_window_mgr() { return this->_win_mgr; }
 
-    void set_parent(TJS2NativeLayer *parent) {
-        if (this->_parent) {
-            this->_parent->remove_children(this);
-        }
+    void set_parent(TJS2NativeLayer *parent);
 
-        if (parent) {
-            parent->add_children(this);
-        }
-
-        this->_parent = parent;
-    }
-
-    iTJSDispatch2 *get_parent() { return this->_parent->this_obj(); }
+    iTJSDispatch2 *get_parent_obj() { return this->parent()->this_obj(); }
 
     iTJSDispatch2 *get_children_obj() const;
 
-    const std::list<TJS2NativeLayer *> &get_children() const {
+    TJS2NativeLayer *parent() const { return this->_parent; }
+    const std::list<TJS2NativeLayer *> &children() const {
         return this->_children;
     }
+
+    TJS2NativeLayer *get_ancestor_child(TJS2NativeLayer *);
 
     bool is_primary_layer() { return this->_win->get_primary_layer() == this; }
 
@@ -365,6 +391,13 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void remove_children(TJS2NativeLayer *layer) {
         this->_children.remove(layer);
     }
+
+    void remove_parent() {
+        if (this->parent()) {
+            this->parent()->remove_children(this);
+            this->_parent = nullptr;
+        }
+    }
 };
 
 class TJS2Layer : public tTJSNativeClass {
@@ -399,5 +432,7 @@ class TJS2Layer : public tTJSNativeClass {
 std::string format_point(const my::IPoint2D &point);
 
 std::string format_rect(const my::IRect &rect);
+
+void draw_layer(SkCanvas *, TJS2NativeLayer *, bool check_visible = true);
 
 } // namespace krkrz

@@ -96,8 +96,6 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
 
                     switch (button->state) {
                     case SDL_PRESSED: {
-                        this->_mouse_event_disptach("onMouseDown", args,
-                                                    button->pos);
                         switch (button->clicks) {
                         case 1: // single click
                             this->_mouse_event_disptach(
@@ -109,6 +107,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                                 "onDoubleClick",
                                 {button->pos.x(), button->pos.y()},
                                 button->pos);
+                            break;
+                        default:
+                            this->_mouse_event_disptach("onMouseDown", args,
+                                                        button->pos);
                             break;
                         }
                         break;
@@ -139,7 +141,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     std::vector<tTJSVariant> args{
                         e->data->pos.x(), e->data->pos.y(),
                         (int)to_shift(keymod, btn_state)};
-                    TJS::func_call(obj, "onMouseMove", args);
+                    this->_mouse_motion_event_disptach("onMouseMove", args,
+                                                       e->data->pos);
                 },
                 error_handle);
 
@@ -251,13 +254,20 @@ void TJS2NativeWindow::_unsubscribe_event() {
     this->_paint_cs.unsubscribe();
 }
 
-bool is_point_at(TJS2NativeLayer *layer, const my::IPoint2D &mouse_pos) {
-    return layer->layer_rect().contains(mouse_pos.x(), mouse_pos.y());
+bool is_point_at(TJS2NativeLayer *layer, const my::IPoint2D &mouse_pos,
+                 const my::IPoint2D &translate) {
+
+    auto rect = layer->layer_rect();
+    rect.offset(translate);
+    return rect.contains(mouse_pos.x(), mouse_pos.y());
 }
 
 void TJS2NativeWindow::_mouse_event_disptach(
     const std::string &event_name, const std::vector<tTJSVariant> &args,
     const my::IPoint2D &mouse_pos) {
+
+    auto translate = my::IPoint2D::Make(0, 0);
+
     TJS::func_call(this->this_obj(), event_name, args);
     auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
         if (!layer) {
@@ -268,14 +278,59 @@ void TJS2NativeWindow::_mouse_event_disptach(
             return;
         }
 
-        if (!is_point_at(layer, mouse_pos)) {
+        if (!is_point_at(layer, mouse_pos, translate)) {
             return;
         }
 
         TJS::func_call(layer->this_obj(), event_name, args);
-        for (const auto child : layer->get_children()) {
+
+        translate += layer->pos();
+
+        for (const auto child : layer->children()) {
             self(child);
         }
+
+        translate -= layer->pos();
+    });
+    func(this->_primary_layer);
+}
+
+void TJS2NativeWindow::_mouse_motion_event_disptach(
+    const std::string &event_name, const std::vector<tTJSVariant> &args,
+    const my::IPoint2D &mouse_pos) {
+    auto translate = my::IPoint2D::Make(0, 0);
+
+    TJS::func_call(this->this_obj(), event_name, args);
+
+    auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
+        if (!layer) {
+            return;
+        }
+
+        if (!layer->is_visible()) {
+            return;
+        }
+
+        if (!is_point_at(layer, mouse_pos, translate)) {
+            return;
+        }
+
+        if (this->_current_motion_layer != layer) {
+            if (this->_current_motion_layer) {
+                TJS::func_call(this->_current_motion_layer->this_obj(),
+                               event_name, args);
+            }
+        }
+
+        TJS::func_call(layer->this_obj(), event_name, args);
+
+        translate += layer->pos();
+
+        for (const auto child : layer->children()) {
+            self(child);
+        }
+
+        translate -= layer->pos();
     });
     func(this->_primary_layer);
 }
@@ -308,49 +363,7 @@ void TJS2NativeWindow::_render_task_stop() {
 }
 
 void TJS2NativeWindow::_draw_layer() {
-    int level = 0;
-    auto func = my::y_combinator(
-        [this, &level](const auto &self, TJS2NativeLayer *layer) {
-            if (!layer) {
-                return;
-            }
-
-            if (!layer->is_visible()) {
-                return;
-            }
-
-            if (layer->call_on_paint) {
-                layer->call_on_paint = false;
-                TJS::func_call(layer->this_obj(), "onPaint");
-            }
-
-            auto [x, y] = layer->pos();
-
-            {
-                auto image = layer->image_snapshot();
-                if (image) {
-                    this->_canvas()->drawImage(image, x, y);
-                }
-
-                auto w = image->width();
-                auto h = image->height();
-                std::string indent(level, ' ');
-
-                GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
-                       format_rect(layer->layer_rect()).c_str(), w, h);
-            }
-
-            ++level;
-            this->_canvas()->save();
-            this->_canvas()->translate(x, y);
-            for (const auto child : layer->get_children()) {
-                self(child);
-            }
-            this->_canvas()->restore();
-            --level;
-        });
-
-    func(this->_primary_layer);
+    draw_layer(this->_canvas(), this->_primary_layer);
 }
 void TJS2NativeWindow::_render() {
     this->_canvas()->flush();
@@ -974,6 +987,20 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onClick)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseMove) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+
+        TVP_ACTION_INVOKE_BEGIN(3, "onMouseMove", objthis);
+        TVP_ACTION_INVOKE_MEMBER("x");
+        TVP_ACTION_INVOKE_MEMBER("y");
+        TVP_ACTION_INVOKE_MEMBER("shift");
+        TVP_ACTION_INVOKE_END(tTJSVariantClosure(objthis, objthis));
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseMove)
     TJS_END_NATIVE_MEMBERS
 }
 
