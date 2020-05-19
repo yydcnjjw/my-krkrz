@@ -151,7 +151,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void load_image(const std::u16string &_path);
 
     void assign_images(TJS2NativeLayer *layer) {
-        this->_surface = layer->_surface;
+        this->_main_surface = layer->_main_surface;
+        this->_province_surface = layer->_province_surface;
         this->_image = layer->_image;
     }
 
@@ -172,27 +173,50 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                      TJS2NativeLayer *trans_src, tTJSVariantClosure options);
     void stop_trans();
 
-    SkCanvas *canvas() { return this->surface()->getCanvas(); }
-
-    sk_sp<SkSurface> surface() {
-        auto [w, h] = this->size();
-        if (!this->_surface) {
-            this->_surface = SkSurface::MakeRasterN32Premul(w, h);
-            return this->_surface;
-        }
-
-        auto surface_size = my::ISize2D::Make(this->_surface->width(),
-                                              this->_surface->height());
-        if (surface_size != this->size()) {
-            this->_surface = SkSurface::MakeRasterN32Premul(w, h);
-        }
-
-        this->_surface->flush();
-        return this->_surface;
+    SkCanvas *canvas() { return this->main_surface()->getCanvas(); }
+    SkCanvas *province_canvas() {
+        return this->province_surface()->getCanvas();
     }
 
+    sk_sp<SkSurface> province_surface() {
+        build_surface(&this->_province_surface, [](const my::ISize2D &size) {
+            return SkSurface::MakeRaster(
+                SkImageInfo::MakeA8(size.width(), size.height()));
+        });
+        return this->_province_surface;
+    }
+
+    template<typename T>
+    T get_surface_pixel(sk_sp<SkSurface> surface,
+                               const my::IPoint2D &pos) {
+        SkBitmap bitmap;
+        bitmap.allocPixels(surface->imageInfo().makeWH(1, 1));
+        surface->readPixels(bitmap, pos.x(), pos.y());
+        return *(T *)bitmap.getAddr(0, 0);
+    }
+    
+    template<typename T>
+    void set_surface_pixel(sk_sp<SkSurface> surface, const my::IPoint2D &pos,
+                           T v) {
+        SkBitmap bitmap;
+        bitmap.allocPixels(surface->imageInfo().makeWH(1, 1));
+        auto addr = bitmap.getAddr(0, 0);
+        *(T *)addr = v;
+        surface->writePixels(bitmap, pos.x(), pos.y());
+    }
+
+    sk_sp<SkSurface> main_surface() {
+        build_surface(&this->_main_surface, [](const my::ISize2D &size) {
+            return SkSurface::MakeRasterN32Premul(size.width(), size.height());
+        });
+        return this->_main_surface;
+    }
+
+    void build_surface(sk_sp<SkSurface> *surface,
+                       std::function<sk_sp<SkSurface>(const my::ISize2D &)> &&);
+
     sk_sp<SkImage> image_snapshot() {
-        return this->surface()->makeImageSnapshot();
+        return this->main_surface()->makeImageSnapshot();
     }
 
     my::IRect layer_rect() {
@@ -344,9 +368,12 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     std::u16string name;
 
     bool focusable{false};
+    bool focused{false};
+    bool enabled{false};
     bool absolute_order_mode{false};
     bool hold_alpha{false};
     bool call_on_paint{false};
+    bool show_parent_hint{false};
 
   private:
     iTJSDispatch2 *_this_obj{};
@@ -360,7 +387,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     rxcpp::subjects::subject<LayerEvent> _event_suject{};
 
     std::shared_ptr<my::Image> _image{};
-    sk_sp<SkSurface> _surface{};
+    sk_sp<SkSurface> _province_surface{};
+    sk_sp<SkSurface> _main_surface{};
 
     bool _visible{false};
     bool _image_modified{false};
