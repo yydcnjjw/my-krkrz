@@ -290,6 +290,7 @@ class TJS2System : public tTJSNativeClass {
             /*func. name*/ setArgument)
 
         TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getKeyState) {
+            // TODO:
             if (numparams < 1)
                 return TJS_E_BADPARAMCOUNT;
 
@@ -299,8 +300,8 @@ class TJS2System : public tTJSNativeClass {
             if (numparams >= 2)
                 getcurrent = 0 != (tjs_int)*param[1];
 
-            // if(result) *result = (tjs_int)res;
-            return TJS_E_NOTIMPL;
+            if(result) *result = (tjs_int)false;
+            return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(
             /*func. name*/ getKeyState)
@@ -396,6 +397,7 @@ class TJS2System : public tTJSNativeClass {
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ toActualColor)
 
         TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ touchImages) {
+            // TODO:
             // try to cache graphics
 
             if (numparams < 1)

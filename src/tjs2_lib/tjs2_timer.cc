@@ -28,14 +28,14 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                     .AsStdString(); // action function to be called
 
         this->action = param[0]->AsObjectClosure();
-        auto bus = krkrz::Application::get()->base_app()->ev_bus();
+        this->ev_bus = krkrz::Application::get()->base_app()->ev_bus();
         auto cs =
-            bus->on_event<TJSTimerEvent>()
+            this->ev_bus->on_event<TJSTimerEvent>()
                 .filter(
                     [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
                         return *e->data == this->_timer;
                     })
-                .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                // .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .subscribe(
                     [tjs_obj,
@@ -54,14 +54,15 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                         }
                     });
 
-        this->_timer = krkrz::Application::get()
-                           ->base_app()
-                           ->async_task()
-                           ->create_timer_interval(
-                               std::function<void(void)>([bus, this]() -> void {
-                                   bus->post<TJSTimerEvent>(this->_timer);
-                               }),
-                               std::chrono::milliseconds(this->_interval));
+        this->_timer =
+            krkrz::Application::get()
+                ->base_app()
+                ->async_task()
+                ->create_timer_interval(
+                    std::function<void(void)>([this]() -> void {
+                        this->ev_bus->post<TJSTimerEvent>(this->_timer);
+                    }),
+                    std::chrono::milliseconds(this->_interval));
         return TJS_S_OK;
     }
 
@@ -73,27 +74,29 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     bool is_enable() { return !this->_timer->is_cancel(); }
 
     void disable() {
-        // GLOG_D("direct disable timer");
+        GLOG_D("direct disable timer");
         this->_timer->cancel();
     }
 
     void enable() {
-        // GLOG_D("direct enable timer %d", this->get_interval());
-        this->_timer->start();
+        GLOG_D("direct enable timer %d", this->get_interval());
+        if (this->get_interval() == 0) {
+            this->ev_bus->post<TJSTimerEvent>(this->_timer);
+        } else {
+            this->_timer->start();
+        }
     }
 
     void set_interval(int64_t mil) {
-        // GLOG_D("interval %d", mil);
+        GLOG_D("interval %d", mil);
+        this->_interval = mil;
         if (mil == 0) {
-            // GLOG_D("disable timer");
-            this->_timer->cancel();
+            this->disable();
             return;
         }
 
-        this->_interval = mil;
         this->_timer->set_interval(std::chrono::milliseconds(mil));
         if (!this->is_enable()) {
-            // GLOG_D("enable timer");
             this->enable();
         }
     }
@@ -105,6 +108,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
         TJSTimerEvent;
     std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>> _timer;
     int64_t _interval{};
+    my::EventBus *ev_bus{};
 };
 
 class TJS2Timer : public tTJSNativeClass {
@@ -236,7 +240,9 @@ class TJS2Timer : public tTJSNativeClass {
     static tjs_uint32 ClassID;
 
   protected:
-    tTJSNativeInstance *CreateNativeInstance() override { return new TJS2NativeTimer; }
+    tTJSNativeInstance *CreateNativeInstance() override {
+        return new TJS2NativeTimer;
+    }
 };
 
 tjs_uint32 TJS2Timer::ClassID = (tjs_uint32)-1;

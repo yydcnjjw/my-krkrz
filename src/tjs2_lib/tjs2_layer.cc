@@ -46,8 +46,8 @@ void draw_layer(SkCanvas *canvas, TJS2NativeLayer *root, bool check_visible) {
             auto h = image->height();
             std::string indent(level, ' ');
 
-            GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
-                   format_rect(layer->layer_rect()).c_str(), w, h);
+            // GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
+            //        format_rect(layer->layer_rect()).c_str(), w, h);
         }
 
         ++level;
@@ -1329,7 +1329,12 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         TJS_DENY_NATIVE_PROP_SETTER
     }
     TJS_END_NATIVE_PROP_DECL(focused)
-    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ focus) { return TJS_S_OK; }
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ focus) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        _this->focused = true;
+        return TJS_S_OK;
+    }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ focus)
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getProvincePixel) {
@@ -1751,6 +1756,44 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onMouseLeave)
 
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onBeforeFocus) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        tTJSVariantClosure obj = _this->this_action_obj();
+        if (obj.Object) {
+            TVP_ACTION_INVOKE_BEGIN(3, "onBeforeFocus", objthis);
+            TVP_ACTION_INVOKE_MEMBER("layer");
+            TVP_ACTION_INVOKE_MEMBER("blurred");
+            TVP_ACTION_INVOKE_MEMBER("direction");
+            TVP_ACTION_INVOKE_END(obj);
+        }
+
+        // set focusable layer back
+        // if (param[0]->Type() != tvtVoid) {
+        //     tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
+        //     if (clo.Object) {
+        //         tTJSNI_BaseLayer *src;
+        //         if (clo.Object) {
+        //             if (TJS_FAILED(clo.Object->NativeInstanceSupport(
+        //                     TJS_NIS_GETINSTANCE, tTJSNC_Layer::ClassID,
+        //                     (iTJSNativeInstance **)&src)))
+        //                 TVPThrowExceptionMessage(TVPSpecifyLayer);
+        //         }
+        //         if (!src)
+        //             TVPThrowExceptionMessage(TVPSpecifyLayer);
+        //         _this->SetFocusWork(src);
+        //     } else {
+        //         _this->SetFocusWork(NULL);
+        //     }
+        // } else {
+        //     _this->SetFocusWork(NULL);
+        // }
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onBeforeFocus)
+
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onFocus) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
@@ -1767,6 +1810,45 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onFocus)
 
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onBlur) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        tTJSVariantClosure obj = _this->this_action_obj();
+        if (obj.Object) {
+            TVP_ACTION_INVOKE_BEGIN(1, "onBlur", objthis);
+            TVP_ACTION_INVOKE_MEMBER("focused");
+            TVP_ACTION_INVOKE_END(obj);
+        }
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onBlur)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onHitTest) {
+        // TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var.
+        // type*/tTJSNI_Layer);
+
+        // tTJSVariantClosure obj = _this->GetActionOwnerNoAddRef();
+        /*
+                this event does not call "action" method
+        if(obj.Object)
+        {
+                TVP_ACTION_INVOKE_BEGIN(3, "onHitTest", objthis);
+                TVP_ACTION_INVOKE_MEMBER("x");
+                TVP_ACTION_INVOKE_MEMBER("y");
+                TVP_ACTION_INVOKE_MEMBER("hit");
+                TVP_ACTION_INVOKE_END(obj);
+        }
+        */
+        if (numparams < 3)
+            return TJS_E_BADPARAMCOUNT;
+        bool b = param[2]->operator bool();
+
+        // _this->SetHitTestWork(b);
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onHitTest)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onPaint) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);

@@ -99,6 +99,8 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
 
                     switch (button->state) {
                     case SDL_PRESSED: {
+                        this->_mouse_button_event_disptach(
+                            "onMouseDown", button->pos, keymod, btn);
                         switch (button->clicks) {
                         case 1: // single click
                             this->_mouse_button_event_disptach(
@@ -109,8 +111,6 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                                 "onDoubleClick", button->pos, keymod, btn);
                             break;
                         default:
-                            this->_mouse_button_event_disptach(
-                                "onMouseDown", button->pos, keymod, btn);
                             break;
                         }
                         break;
@@ -275,12 +275,12 @@ void TJS2NativeWindow::_mouse_button_event_disptach(
             return;
         }
 
+        translate += layer->pos();
+
         auto pos = mouse_pos - translate;
         std::vector<tTJSVariant> args{pos.x(), pos.y(), keymod, btn};
         // layer
         TJS::func_call(layer->this_obj(), event_name, args);
-
-        translate += layer->pos();
 
         for (const auto child : layer->children()) {
             self(child);
@@ -317,26 +317,59 @@ void TJS2NativeWindow::_mouse_motion_event_disptach(
                                  this->_current_motion_translate)) {
                     TJS::func_call(this->_current_motion_layer->this_obj(),
                                    "onMouseLeave");
+
                     this->_current_motion_layer->focused = false;
+                    if (this->_current_motion_layer->focusable) {
+                        TJS::func_call(this->_current_motion_layer->this_obj(),
+                                       "onBlur",
+                                       {tTJSVariant(layer->this_obj(),
+                                                    layer->this_obj())});
+                    }
                 }
             }
-            this->_current_motion_layer = layer;
-            this->_current_motion_translate = translate;
-            this->_current_motion_layer->focused = true;
+
+            if (layer->focusable) {
+                TJS::func_call(
+                    layer->this_obj(), "onBeforeFocus",
+                    {tTJSVariant(layer->this_obj(), layer->this_obj()),
+                     tTJSVariant(this->_current_motion_layer->this_obj(),
+                                 this->_current_motion_layer->this_obj()),
+                     true});
+            }
+
             TJS::func_call(layer->this_obj(), "onMouseEnter");
 
-            if (this->_current_motion_layer->focusable) {
-                this->_current_motion_layer->focused = true;
-                TJS::func_call(layer->this_obj(), "onFocus",
-                               {this->_current_motion_layer, true});
+            if (layer->focusable) {
+                layer->focused = true;
+                TJS::func_call(
+                    layer->this_obj(), "onFocus",
+                    {tTJSVariant(this->_current_motion_layer->this_obj(),
+                                 this->_current_motion_layer->this_obj()),
+                     true});
             }
+
+            this->_current_motion_layer = layer;
+            this->_current_motion_translate = translate;
         }
 
-        auto pos = mouse_pos - translate - layer->pos();
-        std::vector<tTJSVariant> args{pos.x(), pos.y(), shift};
-        TJS::func_call(layer->this_obj(), "onMouseMove", args);
-
         translate += layer->pos();
+
+        auto pos = mouse_pos - translate - layer->pos();
+        {
+            std::vector<tTJSVariant> args{pos.x(), pos.y(), shift};
+            TJS::func_call(layer->this_obj(), "onMouseMove", args);
+        }
+
+        {
+            auto col =
+                layer->get_surface_pixel<uint32_t>(layer->main_surface(), pos);
+            bool hit{false};
+            if (SkColorGetA(col)) {
+                hit = true;
+            }
+            std::vector<tTJSVariant> args{pos.x(), pos.y(), hit};
+            TJS::func_call(layer->this_obj(), "onHitTest", args);
+        }
 
         for (const auto child : layer->children()) {
             self(child);
@@ -357,6 +390,19 @@ void TJS2NativeWindow::_paint_event_disptach() {
 
 void TJS2NativeWindow::_event_disptach(const std::string &event_name,
                                        const std::vector<tTJSVariant> &args) {}
+
+void TJS2NativeWindow::on_close_query(bool query) {
+    if (!query) {
+        return;
+    }
+
+    this->Invalidate();
+}
+
+void TJS2NativeWindow::close() {
+    this->base_window()->hide();
+    // this->on_close_query(true);
+}
 
 void TJS2NativeWindow::_render_task_start() {
     this->_render_task =
@@ -433,8 +479,7 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ close) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeWindow)
-        _this->base_window()->hide();
-        TJS::func_call(_this->this_obj(), "onCloseQuery");
+        _this->close();
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ close)
@@ -971,6 +1016,9 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ showModal)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onCloseQuery) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow)
+        _this->on_close_query(0 != (tjs_int)*param[0]);
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onCloseQuery)

@@ -114,6 +114,10 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         }
     }
 
+    void on_close_query(bool query);
+
+    void close();
+
     bool get_full_screen() { return this->_is_full_screen; }
 
     void set_full_screen(bool full_screen) {

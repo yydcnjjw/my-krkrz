@@ -252,14 +252,18 @@ void TJS2NativeScripts::boot_start() {
             }
         });
 
-    std::promise<rxcpp::observe_on_one_worker *> promise;
-    auto future = promise.get_future();
+    // std::promise<rxcpp::observe_on_one_worker *> promise;
+    // auto future = promise.get_future();
 
-    this->_tjs_thread = std::thread(
-        [this, app](std::promise<rxcpp::observe_on_one_worker *> promise) {
+    this->_tjs_thread =
+        std::thread([this, app]( // std::promise<rxcpp::observe_on_one_worker
+                                 // *> promise
+                    ) {
             rxcpp::schedulers::run_loop rlp;
             auto rlp_worker = rxcpp::observe_on_run_loop(rlp);
-            promise.set_value(&rlp_worker);
+            
+            this->_tjs_worker = &rlp_worker;
+            // promise.set_value(&rlp_worker);
             pthread_setname_np(pthread_self(), "TJS");
 
             TVPLoadMessage();
@@ -296,7 +300,7 @@ void TJS2NativeScripts::boot_start() {
                            .c_str());
                 app->quit(true);
             }
-
+            GLOG_D("tjs loop start");
             for (;;) {
                 while (!rlp.empty() && rlp.peek().when < rlp.now()) {
                     auto source = std::make_shared<my::coro_t::pull_type>(
@@ -347,12 +351,11 @@ void TJS2NativeScripts::boot_start() {
                     // }
                 }
             }
-
+            GLOG_D("tjs loop end");
             GLOG_D("tjs script exec finished");
-        },
-        std::move(promise));
-
-    this->_tjs_worker = future.get();
+        } // ,
+          // std::move(promise)
+        );
 }
 
 void TJS2NativeScripts::stop() { this->_tjs_engine->Shutdown(); }

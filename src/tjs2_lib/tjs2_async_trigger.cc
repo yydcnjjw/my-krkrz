@@ -38,11 +38,11 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
 
     void trigger() {
         if (this->_cs.is_subscribed()) {
-            return;
+            this->_cs.unsubscribe();
         }
         this->_cs =
             this->_ev_bus->on_event<krkrz::TJSIdleEvent>()
-                .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                // .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .subscribe([this](const auto &) {
                     try {
@@ -66,7 +66,7 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
   private:
     iTJSDispatch2 *_this;
     my::EventBus *_ev_bus;
-    rxcpp::composite_subscription _cs;
+    rxcpp::composite_subscription _cs{};
 };
 
 class TJS2AsyncTrigger : public tTJSNativeClass {
