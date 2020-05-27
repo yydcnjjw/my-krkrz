@@ -159,7 +159,26 @@ class TJS2NativeSystem {
         return false;
     }
 
+    void add_continuous_handler(tTJSVariantClosure clo) {
+        auto it = std::find(this->_continuous_handlers.begin(),
+                            this->_continuous_handlers.end(), clo);
+        if (it == this->_continuous_handlers.end()) {
+            clo.AddRef();
+            this->_continuous_handlers.push_back(clo);
+        }
+    }
+    void remove_continuous_handler(tTJSVariantClosure clo) {
+        auto it = std::find(this->_continuous_handlers.begin(),
+                            this->_continuous_handlers.end(), clo);
+        if (it != this->_continuous_handlers.end()) {
+            it->Release();
+            it->Object = it->ObjThis = nullptr;
+            this->_continuous_handlers.remove(*it);
+        }
+    }
+
   private:
+    std::list<tTJSVariantClosure> _continuous_handlers;
     TJS2NativeSystem() {}
 };
 
@@ -184,8 +203,9 @@ class TJS2System : public tTJSNativeClass {
 
             if (numparams < 1)
                 return TJS_E_BADPARAMCOUNT;
-            // TODO: impl System.addContinuousHandler
-            return TJS_E_NOTIMPL;
+
+            tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
+            return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ addContinuousHandler)
         TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ removeContinuousHandler) {
@@ -193,8 +213,9 @@ class TJS2System : public tTJSNativeClass {
 
             if (numparams < 1)
                 return TJS_E_BADPARAMCOUNT;
-            // TODO: impl System.removeContinuousHandler
-            return TJS_E_NOTIMPL;
+            tTJSVariantClosure clo = param[0]->AsObjectClosureNoAddRef();
+
+            return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(
             /*func. name*/ removeContinuousHandler)
@@ -300,7 +321,8 @@ class TJS2System : public tTJSNativeClass {
             if (numparams >= 2)
                 getcurrent = 0 != (tjs_int)*param[1];
 
-            if(result) *result = (tjs_int)false;
+            if (result)
+                *result = (tjs_int) false;
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(

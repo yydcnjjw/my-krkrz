@@ -82,6 +82,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
         GLOG_D("direct enable timer %d", this->get_interval());
         if (this->get_interval() == 0) {
             this->ev_bus->post<TJSTimerEvent>(this->_timer);
+            this->disable();
         } else {
             this->_timer->start();
         }
@@ -89,7 +90,9 @@ class TJS2NativeTimer : public tTJSNativeInstance {
 
     void set_interval(int64_t mil) {
         GLOG_D("interval %d", mil);
+        
         this->_interval = mil;
+
         if (mil == 0) {
             this->disable();
             return;
@@ -110,6 +113,8 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     int64_t _interval{};
     my::EventBus *ev_bus{};
 };
+
+constexpr auto TJS_SUBMILLI_FRAC_BITS = 16;
 
 class TJS2Timer : public tTJSNativeClass {
     typedef tTJSNativeClass inherited;

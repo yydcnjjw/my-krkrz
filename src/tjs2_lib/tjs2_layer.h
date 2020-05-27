@@ -322,7 +322,13 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void set_parent(TJS2NativeLayer *parent);
 
-    iTJSDispatch2 *get_parent_obj() { return this->parent()->this_obj(); }
+    iTJSDispatch2 *get_parent_obj() {
+        if (this->parent()) {
+            return this->parent()->this_obj();
+        } else {
+            return nullptr;
+        }
+    }
 
     iTJSDispatch2 *get_children_obj() const;
 

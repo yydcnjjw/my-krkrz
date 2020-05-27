@@ -2259,7 +2259,6 @@ tTJSNC_KAGParser::tTJSNC_KAGParser() : inherited(TJS_W("KAGParser")) {
                 *result = tTJSVariant(dsp, dsp);
             dsp->Release();
         }
-
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ getNextTag)

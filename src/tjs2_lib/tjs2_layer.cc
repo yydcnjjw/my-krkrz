@@ -430,6 +430,10 @@ void TJS2NativeLayer::start_trans(const std::u16string &name, bool withchildren,
     trans_src->set_pos(this_pos);
     this->set_visible(src_visible);
     trans_src->set_visible(this_visible);
+
+    TJS::func_call(this->this_obj(), "onTransitionCompleted",
+                   {tTJSVariant(this->this_obj(), this->this_obj()),
+                    tTJSVariant(trans_src->this_obj(), trans_src->this_obj())});
 }
 
 void TJS2NativeLayer::stop_trans() {}
@@ -486,8 +490,6 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
 }
 
 void TJS2NativeLayer::set_parent(TJS2NativeLayer *parent) {
-    assert(!this->_parent);
-
     this->_parent = parent;
 
     if (parent) {
@@ -1863,6 +1865,22 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onPaint)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onTransitionCompleted) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        tTJSVariantClosure obj = _this->this_action_obj();
+        if (obj.Object) {
+            TVP_ACTION_INVOKE_BEGIN(2, "onTransitionCompleted", objthis);
+            TVP_ACTION_INVOKE_MEMBER("dest"); // destination (before exchanging)
+            TVP_ACTION_INVOKE_MEMBER(
+                "src"); // source (also before exchanging;can be a null)
+            TVP_ACTION_INVOKE_END(obj);
+        }
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onTransitionCompleted)
     TJS_END_NATIVE_MEMBERS
 } // namespace krkrz
 
