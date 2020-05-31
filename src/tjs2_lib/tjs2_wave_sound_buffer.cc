@@ -32,6 +32,7 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
             GLOG_W("audio is not opened");
             return;
         }
+        GLOG_W("audio play %p", this);
         this->_audio->play();
     }
     void stop() {
@@ -39,6 +40,7 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
             GLOG_W("audio is not opened");
             return;
         }
+        GLOG_W("audio stop %p", this);
         this->_audio->pause();
     }
 
@@ -49,6 +51,7 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
             GLOG_W("audio is not opened");
             return;
         }
+        GLOG_W("audio fade %p", this);
         this->_audio->play_fade(this->_fade_time);
     }
 
@@ -57,6 +60,7 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
             GLOG_W("audio is not opened");
             return;
         }
+        GLOG_W("audio stop fade %p", this);
         this->_audio->stop_fade(this->_fade_time);
     }
 
@@ -76,8 +80,11 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
         if (paused == this->is_paused()) {
             return;
         }
+
+        GLOG_W("audio pause %d %p", paused, this);
+        
         if (paused) {
-            pause();
+            this->_audio->pause();
         } else {
             this->_audio->resume();
         }

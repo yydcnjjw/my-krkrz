@@ -20,6 +20,8 @@ std::string format_rect(const my::IRect &rect) {
 }
 
 void draw_layer(SkCanvas *canvas, TJS2NativeLayer *root, bool check_visible) {
+    GLOG_D("render layer %p", root->this_obj());
+    canvas->clear(SkColors::kWhite.toSkColor());
     int level = 0;
     auto func = my::y_combinator([canvas, &level, check_visible](
                                      const auto &self, TJS2NativeLayer *layer) {
@@ -46,8 +48,8 @@ void draw_layer(SkCanvas *canvas, TJS2NativeLayer *root, bool check_visible) {
             auto h = image->height();
             std::string indent(level, ' ');
 
-            // GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
-            //        format_rect(layer->layer_rect()).c_str(), w, h);
+            GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
+                   format_rect(layer->layer_rect()).c_str(), w, h);
         }
 
         ++level;
@@ -197,10 +199,7 @@ void TJS_INTF_METHOD TJS2NativeLayer::Invalidate() {
 
 void TJS2NativeLayer::color_rect(const my::IRect &rect, uint32_t color,
                                  int opa) {
-    auto face = this->face;
-    if (face == TJS2DrawFace::dfAuto) {
-        face = convert_draw_face(this->type);
-    }
+    auto face = this->face();
 
     switch (face) {
     case TJS2DrawFace::dfAlpha:
@@ -244,10 +243,7 @@ void TJS2NativeLayer::color_rect(const my::IRect &rect, uint32_t color,
 }
 
 void TJS2NativeLayer::fill_rect(const my::IRect &rect, uint32_t color) {
-    auto face = this->face;
-    if (face == TJS2DrawFace::dfAuto) {
-        face = convert_draw_face(this->type);
-    }
+    auto face = this->face();
 
     switch (face) {
     case TJS2DrawFace::dfAlpha:
@@ -346,6 +342,41 @@ void TJS2NativeLayer::operate_rect(const my::IPoint2D &d_off,
     set_image_modified(true);
 }
 
+void TJS2NativeLayer::copy_rect(const my::IPoint2D &d_off,
+                                TJS2NativeLayer *layer,
+                                const my::IPoint2D &s_off,
+                                const my::ISize2D &s_size) {
+    auto face = this->face();
+
+    sk_sp<SkSurface> dst_surface{};
+    sk_sp<SkSurface> src_surface{};
+
+    switch (face) {
+    case TJS2DrawFace::dfAlpha:
+    case TJS2DrawFace::dfAddAlpha:
+    case TJS2DrawFace::dfOpaque: {
+        dst_surface = this->main_surface();
+        src_surface = layer->main_surface();
+        break;
+    }
+    case TJS2DrawFace::dfProvince: {
+        dst_surface = this->province_surface();
+        src_surface = layer->province_surface();
+        break;
+    }
+    case TJS2DrawFace::dfMask:
+        break;
+    default:
+        break;
+    }
+
+    SkBitmap src{};
+    src.allocN32Pixels(s_size.width(), s_size.height());
+    src_surface->readPixels(src, s_off.x(), s_off.y());
+    dst_surface->writePixels(src, d_off.x(), d_off.y());
+    this->set_image_modified(true);
+}
+
 void TJS2NativeLayer::stretch_copy(const my::IRect &dst_rect,
                                    const my::IRect &src_rect,
                                    TJS2NativeLayer *src_layer,
@@ -364,9 +395,19 @@ void TJS2NativeLayer::stretch_copy(const my::IRect &dst_rect,
 void TJS2NativeLayer::start_trans(const std::u16string &name, bool withchildren,
                                   TJS2NativeLayer *trans_src,
                                   tTJSVariantClosure options) {
+    if (this->is_primary_layer()) {
+        GLOG_W("start trans target is primary %p", this->this_obj());
+    }
 
     GLOG_D("%p:start_trans: %p with children %d", this->this_obj(),
            trans_src->this_obj(), withchildren);
+
+    if (this == trans_src) {
+        return;
+    }
+
+    auto this_primary = this->is_primary_layer();
+    auto src_primary = trans_src->is_primary_layer();
 
     auto src_parent = trans_src->parent();
     auto this_parent = this->parent();
@@ -378,6 +419,14 @@ void TJS2NativeLayer::start_trans(const std::u16string &name, bool withchildren,
 
     auto *this_ancestor_child = this->get_ancestor_child(trans_src);
     auto *src_ancestor_child = trans_src->get_ancestor_child(this);
+
+    if (this_primary) {
+        this->_win->set_primary_layer(nullptr);
+    }
+
+    if (src_primary) {
+        trans_src->_win->set_primary_layer(nullptr);
+    }
 
     this->remove_parent();
     trans_src->remove_parent();
@@ -431,12 +480,68 @@ void TJS2NativeLayer::start_trans(const std::u16string &name, bool withchildren,
     this->set_visible(src_visible);
     trans_src->set_visible(this_visible);
 
+    if (this_primary) {
+        this->_win->set_primary_layer(trans_src);
+    }
+
+    if (src_primary) {
+        trans_src->_win->set_primary_layer(this);
+    }
+
+    GLOG_D("trans completed target visible %d %s src visible %d %s",
+           this->is_visible(), format_point(this->pos()).c_str(),
+           trans_src->is_visible(), format_point(trans_src->pos()).c_str());
+
     TJS::func_call(this->this_obj(), "onTransitionCompleted",
                    {tTJSVariant(this->this_obj(), this->this_obj()),
                     tTJSVariant(trans_src->this_obj(), trans_src->this_obj())});
 }
 
 void TJS2NativeLayer::stop_trans() {}
+
+void TJS2NativeLayer::bind_to_front() {
+    auto parent = this->parent();
+    if (!parent) {
+        return;
+    }
+    auto &children = parent->_children;
+
+    auto it = std::find(children.begin(), children.end(), this);
+    if (it != children.end()) {
+        children.remove(*it);
+        children.push_front(*it);
+        // children.splice(children.begin(), children, it, std::next(it));
+    }
+}
+void TJS2NativeLayer::bind_to_back() {
+    auto parent = this->parent();
+    if (!parent) {
+        return;
+    }
+    auto &children = parent->_children;
+
+    auto it = std::find(children.begin(), children.end(), this);
+    if (it != children.end()) {
+        children.remove(*it);
+        children.push_back(*it);
+        // children.splice(children.end(), children, it, std::next(it));
+    }
+}
+
+bool TJS2NativeLayer::is_parent_visible() const {
+    auto par = this->parent();
+    while (par) {
+        if (!par->is_visible()) {
+            return false;
+        }
+        par = par->parent();
+    }
+    return true;
+}
+
+bool TJS2NativeLayer::is_node_visible() const {
+    return this->is_parent_visible() && this->is_visible();
+}
 
 void TJS2NativeLayer::build_surface(
     sk_sp<SkSurface> *surface,
@@ -489,7 +594,18 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
     this->canvas()->drawImage(this->_image->sk_image(), x, y);
 }
 
+void TJS2NativeLayer::set_face(TJS2DrawFace face) {
+    if (face == TJS2DrawFace::dfAuto) {
+        this->_face = convert_draw_face(this->type);
+    } else {
+        this->_face = face;
+    }
+}
+
 void TJS2NativeLayer::set_parent(TJS2NativeLayer *parent) {
+
+    this->remove_parent();
+
     this->_parent = parent;
 
     if (parent) {
@@ -893,7 +1009,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        *result = (int)_this->face;
+        *result = (int)_this->face();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER
@@ -902,7 +1018,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        _this->face = ((krkrz::TJS2DrawFace)(int)*param);
+        _this->set_face(((krkrz::TJS2DrawFace)(int)*param));
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -1255,6 +1371,27 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ drawText)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ bringToBack) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        _this->bind_to_back();
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ bringToBack)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ bringToFront) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        _this->bind_to_front();
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ bringToFront)
+
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ update) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
@@ -1331,6 +1468,21 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         TJS_DENY_NATIVE_PROP_SETTER
     }
     TJS_END_NATIVE_PROP_DECL(focused)
+
+    TJS_BEGIN_NATIVE_PROP_DECL(nodeVisible) {
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = _this->is_node_visible();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_DENY_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(nodeVisible)
+
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ focus) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
@@ -1648,6 +1800,30 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ operateRect)
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ copyRect) {
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        if (numparams < 7)
+            return TJS_E_BADPARAMCOUNT;
+
+        if (numparams < 7)
+            return TJS_E_BADPARAMCOUNT;
+        TJS2NativeLayer *srclayer{};
+        tTJSVariantClosure clo = param[2]->AsObjectClosureNoAddRef();
+        if (clo.Object) {
+            clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
+                                              TJS2Layer::ClassID,
+                                              (iTJSNativeInstance **)&srclayer);
+        }
+        if (!srclayer)
+            TVPThrowExceptionMessage(TVPSpecifyLayerOrBitmap);
+
+        _this->copy_rect({*param[0], *param[1]}, srclayer,
+                         {*param[3], *param[4]}, {*param[5], *param[6]});
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ copyRect)
 
     // event
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onMouseDown) {

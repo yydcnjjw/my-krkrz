@@ -48,16 +48,21 @@ class TJS2NativeStorages {
     }
 
     template <typename T>
-    std::shared_ptr<T> get_storage(const std::string &uri) {
-        auto search_path = this->search_storage(
-            my::fs::path(my::uri(uri).encoded_path().to_string())
-                .lexically_normal());
-        if (search_path.has_value()) {
-            return this->_resource_mgr->load<T>(search_path.value()->search_uri).get();
-        } else {
-            throw std::runtime_error(
-                (boost::format("%1% is not exist") % uri).str());
+    std::shared_ptr<T> get_storage(const std::string &search) {
+        my::uri full_uri{search};
+        if (!this->_resource_mgr->exist(full_uri)) {
+            auto search_path = this->search_storage(
+                my::fs::path(full_uri.encoded_path().to_string())
+                    .lexically_normal());
+            if (search_path.has_value()) {
+                full_uri.set_encoded_url(
+                    search_path.value()->search_uri.encoded_url());
+            } else {
+                throw std::runtime_error(
+                    (boost::format("%1% is not exist") % search).str());
+            }
         }
+        return this->_resource_mgr->load<T>(full_uri).get();
     }
 
     bool is_exist_storage(const std::u16string &utf16_uri) {

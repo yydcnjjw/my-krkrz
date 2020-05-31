@@ -166,12 +166,21 @@ class TJS2NativeLayer : public tTJSNativeInstance {
                       const my::IPoint2D &s_off, const my::ISize2D &s_size,
                       TJS2BlendOperationMode mode);
 
+    void copy_rect(const my::IPoint2D &d_off, TJS2NativeLayer *layer,
+                   const my::IPoint2D &s_off, const my::ISize2D &s_size);
+
     void stretch_copy(const my::IRect &dst, const my::IRect &src,
                       TJS2NativeLayer *src_layer, TJS2StretchType type);
 
     void start_trans(const std::u16string &name, bool withchildren,
                      TJS2NativeLayer *trans_src, tTJSVariantClosure options);
     void stop_trans();
+
+    void bind_to_front();
+    void bind_to_back();
+
+    bool is_parent_visible() const;
+    bool is_node_visible() const;
 
     SkCanvas *canvas() { return this->main_surface()->getCanvas(); }
     SkCanvas *province_canvas() {
@@ -186,16 +195,15 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         return this->_province_surface;
     }
 
-    template<typename T>
-    T get_surface_pixel(sk_sp<SkSurface> surface,
-                               const my::IPoint2D &pos) {
+    template <typename T>
+    T get_surface_pixel(sk_sp<SkSurface> surface, const my::IPoint2D &pos) {
         SkBitmap bitmap;
         bitmap.allocPixels(surface->imageInfo().makeWH(1, 1));
         surface->readPixels(bitmap, pos.x(), pos.y());
         return *(T *)bitmap.getAddr(0, 0);
     }
-    
-    template<typename T>
+
+    template <typename T>
     void set_surface_pixel(sk_sp<SkSurface> surface, const my::IPoint2D &pos,
                            T v) {
         SkBitmap bitmap;
@@ -234,7 +242,13 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         }
     }
 
-    bool is_visible() { return this->_visible; }
+    bool is_visible() const { return this->_visible; }
+
+    void set_face(TJS2DrawFace face);
+
+    TJS2DrawFace face() {
+        return this->_face;
+    }
 
     TJS2BlendOperationMode blend_mode() {
 
@@ -368,7 +382,6 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     TJS2LayerType type{};
     int hit_type{};
     int hit_threshold{};
-    TJS2DrawFace face{};
 
     int cursor;
     std::u16string name;
@@ -398,7 +411,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     bool _visible{false};
     bool _image_modified{false};
-
+    TJS2DrawFace _face{};
+    
     my::ISize2D _size{32, 32};
     my::IPoint2D _pos{};
     my::ISize2D _image_size{32, 32};

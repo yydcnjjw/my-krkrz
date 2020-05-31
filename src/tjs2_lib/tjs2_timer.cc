@@ -12,7 +12,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     typedef tTJSNativeInstance inherited;
 
   public:
-    int capacity;
+    int capacity{6};
     TJS2AsyncTriggerMode mode;
     std::u16string action_name;
     tTJSVariantClosure action;
@@ -29,7 +29,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
 
         this->action = param[0]->AsObjectClosure();
         this->ev_bus = krkrz::Application::get()->base_app()->ev_bus();
-        auto cs =
+        this->_timer_cs =
             this->ev_bus->on_event<TJSTimerEvent>()
                 .filter(
                     [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
@@ -40,35 +40,49 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                 .subscribe(
                     [tjs_obj,
                      this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
-                        if (krkrz::TJS2NativeScripts::get()->is_stopping()) {
-                            return;
+                        if (!krkrz::TJS2NativeScripts::get()->is_stopping()) {
+                            try {
+                                krkrz::TJS::func_call(tjs_obj, "onTimer");
+                            } catch (eTJSError &e) {
+                                GLOG_D(
+                                    utf16_codecvt()
+                                        .to_bytes(e.GetMessage().AsStdString())
+                                        .c_str());
+                                this->disable();
+                                krkrz::Application::get()->base_app()->quit(
+                                    true);
+                            }
+                            // this->_notify_finish();
                         }
-                        try {
-                            krkrz::TJS::func_call(tjs_obj, "onTimer");
-                        } catch (eTJSError &e) {
-                            GLOG_D(utf16_codecvt()
-                                       .to_bytes(e.GetMessage().AsStdString())
-                                       .c_str());
-                            this->disable();
-                            krkrz::Application::get()->base_app()->quit(true);
-                        }
+                        --this->_wait_events;
                     });
 
-        this->_timer =
-            krkrz::Application::get()
-                ->base_app()
-                ->async_task()
-                ->create_timer_interval(
-                    std::function<void(void)>([this]() -> void {
-                        this->ev_bus->post<TJSTimerEvent>(this->_timer);
-                    }),
-                    std::chrono::milliseconds(this->_interval));
+        this->_timer = krkrz::Application::get()
+                           ->base_app()
+                           ->async_task()
+                           ->create_timer_interval(
+                               std::function<void(void)>([this]() -> void {
+                                   // this->_reset_finish();
+                                   if (this->_wait_events > this->capacity) {
+                                       return;
+                                   }
+                                   this->_post();
+                                   // this->_wait_finish();
+                                   this->log();
+                               }),
+                               std::chrono::milliseconds(this->_interval));
         return TJS_S_OK;
     }
 
     void TJS_INTF_METHOD Invalidate() {
+        this->_timer_cs.unsubscribe();
         this->disable();
         this->action.Release();
+    }
+
+    void log() {
+        GLOG_D("timer callback: %p, cap %d interval %d, %Li", this, this->capacity,
+               this->get_interval(), std::chrono::system_clock::now().time_since_epoch().count());
     }
 
     bool is_enable() { return !this->_timer->is_cancel(); }
@@ -81,7 +95,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     void enable() {
         GLOG_D("direct enable timer %d", this->get_interval());
         if (this->get_interval() == 0) {
-            this->ev_bus->post<TJSTimerEvent>(this->_timer);
+            this->_post();
             this->disable();
         } else {
             this->_timer->start();
@@ -90,7 +104,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
 
     void set_interval(int64_t mil) {
         GLOG_D("interval %d", mil);
-        
+
         this->_interval = mil;
 
         if (mil == 0) {
@@ -112,6 +126,35 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>> _timer;
     int64_t _interval{};
     my::EventBus *ev_bus{};
+
+    rxcpp::composite_subscription _timer_cs{};
+
+    std::mutex _lock{};
+    std::condition_variable _cv{};
+    bool _is_finish{false};
+
+    std::atomic_int _wait_events{0};
+
+    void _reset_finish() {
+        std::unique_lock<std::mutex> l_lock(this->_lock);
+        this->_is_finish = false;
+    }
+
+    void _notify_finish() {
+        std::unique_lock<std::mutex> l_lock(this->_lock);
+        this->_is_finish = true;
+        this->_cv.notify_one();
+    }
+
+    void _wait_finish() {
+        std::unique_lock<std::mutex> l_lock(this->_lock);
+        this->_cv.wait(l_lock, [this]() { return this->_is_finish; });
+    }
+
+    void _post() {
+        ++this->_wait_events;
+        this->ev_bus->post<TJSTimerEvent>(this->_timer);
+    }
 };
 
 constexpr auto TJS_SUBMILLI_FRAC_BITS = 16;

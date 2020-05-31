@@ -230,7 +230,7 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
 std::u16string
 TJS2NativeStorages::get_placed_path(const std::u16string &utf16_uri) {
     auto uri = my::uri(codecvt::utf_to_utf<char>(utf16_uri));
-
+        
     auto cache = this->search_storage(
         my::fs::path(uri.encoded_path().to_string()).lexically_normal());
     if (cache.has_value()) {
