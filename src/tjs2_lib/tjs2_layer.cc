@@ -48,8 +48,10 @@ void draw_layer(SkCanvas *canvas, TJS2NativeLayer *root, bool check_visible) {
             auto h = image->height();
             std::string indent(level, ' ');
 
-            GLOG_D("%s%p:%s (%d,%d)", indent.c_str(), layer->this_obj(),
-                   format_rect(layer->layer_rect()).c_str(), w, h);
+            GLOG_D("%s:%s:%p:%s (%d,%d)", indent.c_str(),
+                   codecvt::utf_to_utf<char>(layer->name).c_str(),
+                   layer->this_obj(), format_rect(layer->layer_rect()).c_str(),
+                   w, h);
         }
 
         ++level;
@@ -528,6 +530,21 @@ void TJS2NativeLayer::bind_to_back() {
     }
 }
 
+bool TJS2NativeLayer::is_parent_enable() const {
+    auto par = this->parent();
+    while (par) {
+        if (!par->enabled) {
+            return false;
+        }
+        par = par->parent();
+    }
+    return true;
+}
+
+bool TJS2NativeLayer::is_node_enable() const {
+    return this->is_parent_enable() && this->enabled;
+}
+
 bool TJS2NativeLayer::is_parent_visible() const {
     auto par = this->parent();
     while (par) {
@@ -639,6 +656,29 @@ TJS2NativeLayer::get_ancestor_child(TJS2NativeLayer *ancestor) {
         p = p->parent();
     }
     return nullptr;
+}
+
+bool TJS2NativeLayer::hit_test(const my::IPoint2D &pos) {
+    bool result{true};
+    uint32_t alpha{0};
+    switch (this->hit_type) {
+    case TJS2HitType::htMask: {
+        alpha = SkColorGetA(
+            this->get_surface_pixel<SkColor>(this->main_surface(), pos));
+        if (alpha < this->hit_threshold) {
+            result = false;
+        }
+        break;
+    }
+    case TJS2HitType::htProvince: {
+        alpha = this->get_surface_pixel<uint8_t>(this->province_surface(), pos);
+        if (alpha == 0) {
+            result = false;
+        }
+        break;
+    }
+    }
+    return result;
 }
 
 tjs_uint32 TJS2Layer::ClassID = (tjs_uint32)-1;
@@ -961,7 +1001,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         TJS_BEGIN_NATIVE_PROP_SETTER
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        _this->hit_type = (tjs_int)*param;
+        _this->hit_type = (TJS2HitType)(tjs_int)*param;
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_SETTER
@@ -1446,7 +1486,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
-        *result = true;
+        *result = _this->is_node_enable();
         return TJS_S_OK;
 
         TJS_END_NATIVE_PROP_GETTER

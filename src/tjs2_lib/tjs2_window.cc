@@ -12,8 +12,8 @@ struct PaintEvent {
     explicit PaintEvent(my::WindowID id) : win_id(id) {}
 };
 
-bool is_point_at(krkrz::TJS2NativeLayer *layer, const my::IPoint2D &mouse_pos,
-                 const my::IPoint2D &translate) {
+bool is_point_at(const krkrz::TJS2NativeLayer *layer,
+                 const my::IPoint2D &mouse_pos, const my::IPoint2D &translate) {
 
     auto rect = layer->layer_rect();
     rect.offset(translate);
@@ -26,7 +26,7 @@ namespace krkrz {
 
 tTJSNativeClass *create_tjs2_window() { return new TJS2Window(); }
 
-TJSMouseButton from_sdl(uint32_t button) {
+TJSMouseButton mouse_btn_from_sdl(uint32_t button) {
     switch (button) {
     case BUTTON_LEFT:
         return TJSMouseButton::mbLeft;
@@ -95,7 +95,7 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     auto button = e->data;
                     auto keymod = (int)to_shift(
                         this->_base_app->win_mgr()->get_key_mode(), 0);
-                    auto btn = from_sdl(button->button);
+                    auto btn = mouse_btn_from_sdl(button->button);
 
                     switch (button->state) {
                     case SDL_PRESSED: {
@@ -255,39 +255,60 @@ void TJS2NativeWindow::_mouse_button_event_disptach(
     const std::string &event_name, const my::IPoint2D &mouse_pos, int keymod,
     TJSMouseButton btn) {
 
-    std::vector<tTJSVariant> args{mouse_pos.x(), mouse_pos.y(), keymod, btn};
-
-    auto translate = my::IPoint2D::Make(0, 0);
+    GLOG_D("%s %s", event_name.c_str(), format_point(mouse_pos).c_str());
+    std::vector<tTJSVariant> args{mouse_pos.x(), mouse_pos.y(), btn, keymod};
 
     // window
     TJS::func_call(this->this_obj(), event_name, args);
 
-    auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
+    auto translate = my::IPoint2D::Make(0, 0);
+
+    auto func = my::y_combinator([&](const auto &self,
+                                     const TJS2NativeLayer *layer) -> bool {
         if (!layer) {
-            return;
+            return false;
         }
 
         if (!layer->is_visible()) {
-            return;
+            return false;
         }
 
         if (!is_point_at(layer, mouse_pos, translate)) {
-            return;
+            return false;
         }
+
+        bool is_child_handled{false};
 
         translate += layer->pos();
 
-        auto pos = mouse_pos - translate;
-        std::vector<tTJSVariant> args{pos.x(), pos.y(), keymod, btn};
-        // layer
-        TJS::func_call(layer->this_obj(), event_name, args);
-
-        for (const auto child : layer->children()) {
-            self(child);
+        const auto &children = layer->children();
+        for (auto it = children.crbegin(); it != children.crend(); ++it) {
+            if (self(*it)) {
+                is_child_handled = true;
+                break;
+            }
         }
 
+        auto pos = mouse_pos - translate;
+        
         translate -= layer->pos();
+        
+        if (const_cast<TJS2NativeLayer *>(layer)->hit_test(pos)) {
+            if (layer->is_node_enable() && !is_child_handled) {
+                std::vector<tTJSVariant> args{pos.x(), pos.y(), btn, keymod};
+                // layer
+                TJS::func_call(layer->this_obj(), event_name, args);
+                GLOG_D("%p: %s %s %s", layer->this_obj(), event_name.c_str(),
+                       format_point(pos).c_str(),
+                       format_point(translate).c_str());
+            }
+        } else {
+            return false;
+        }
+
+        return true;
     });
+
     func(this->_primary_layer);
 }
 
@@ -315,11 +336,13 @@ void TJS2NativeWindow::_mouse_motion_event_disptach(
             if (this->_current_motion_layer) {
                 if (!is_point_at(this->_current_motion_layer, mouse_pos,
                                  this->_current_motion_translate)) {
+                    this->_current_motion_layer->focused = false;
+
                     TJS::func_call(this->_current_motion_layer->this_obj(),
                                    "onMouseLeave");
 
-                    this->_current_motion_layer->focused = false;
-                    if (this->_current_motion_layer->focusable) {
+                    if (this->_current_motion_layer->focusable &&
+                        this->_current_motion_layer->enabled) {
                         TJS::func_call(this->_current_motion_layer->this_obj(),
                                        "onBlur",
                                        {tTJSVariant(layer->this_obj(),
@@ -328,7 +351,7 @@ void TJS2NativeWindow::_mouse_motion_event_disptach(
                 }
             }
 
-            if (layer->focusable) {
+            if (layer->focusable && layer->enabled) {
                 TJS::func_call(
                     layer->this_obj(), "onBeforeFocus",
                     {tTJSVariant(layer->this_obj(), layer->this_obj()),
@@ -339,8 +362,8 @@ void TJS2NativeWindow::_mouse_motion_event_disptach(
 
             TJS::func_call(layer->this_obj(), "onMouseEnter");
 
-            if (layer->focusable) {
-                layer->focused = true;
+            layer->focused = true;
+            if (layer->focusable && layer->enabled) {
                 TJS::func_call(
                     layer->this_obj(), "onFocus",
                     {tTJSVariant(this->_current_motion_layer->this_obj(),

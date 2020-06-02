@@ -82,7 +82,7 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
         }
 
         GLOG_W("audio pause %d %p", paused, this);
-        
+
         if (paused) {
             this->_audio->pause();
         } else {
@@ -99,6 +99,8 @@ class TJS2NativeWaveSoundBuffer : public tTJSNativeInstance {
     }
 
     int get_panning() { return this->_pan; }
+
+    bool looping;
 
   private:
     std::shared_ptr<my::Audio> _audio;
@@ -283,8 +285,31 @@ class TJS2WaveSoundBuffer : public tTJSNativeClass {
         }
         TJS_END_NATIVE_PROP_DECL(volume2)
 
+        TJS_BEGIN_NATIVE_PROP_DECL(looping) {
+            TJS_BEGIN_NATIVE_PROP_GETTER
+            TJS_GET_NATIVE_INSTANCE(
+                /*var. name*/ _this, /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            *result = _this->looping;
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_GETTER
+
+            TJS_BEGIN_NATIVE_PROP_SETTER
+            TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                    /*var. type*/ TJS2NativeWaveSoundBuffer);
+
+            _this->looping = *param;
+
+            return TJS_S_OK;
+
+            TJS_END_NATIVE_PROP_SETTER
+        }
+        TJS_END_NATIVE_PROP_DECL(looping)
+
         TJS_END_NATIVE_MEMBERS
-    }
+    } // namespace
     static tjs_uint32 ClassID;
 
   protected:

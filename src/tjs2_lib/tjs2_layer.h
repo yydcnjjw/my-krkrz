@@ -118,6 +118,8 @@ enum TJS2StretchType {
                 // (may allow to see the border pixel to interpolate)
 };
 
+enum TJS2HitType { htMask, htProvince };
+
 enum class LayerEventType { LAYER_RESIZE, LAYER_POS_CHANGE };
 
 struct LayerEvent {
@@ -156,7 +158,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         this->_image = layer->_image;
     }
 
-    std::shared_ptr<my::Image> image() { return this->_image; }
+    std::shared_ptr<my::Image> image() const { return this->_image; }
 
     void set_image_modified(bool v) { this->_image_modified = v; }
 
@@ -181,6 +183,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     bool is_parent_visible() const;
     bool is_node_visible() const;
+    bool is_parent_enable() const;
+    bool is_node_enable() const;
 
     SkCanvas *canvas() { return this->main_surface()->getCanvas(); }
     SkCanvas *province_canvas() {
@@ -227,7 +231,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         return this->main_surface()->makeImageSnapshot();
     }
 
-    my::IRect layer_rect() {
+    my::IRect layer_rect() const {
         return my::IRect::MakeXYWH(this->pos().x(), this->pos().y(),
                                    this->size().width(), this->size().height());
     }
@@ -246,9 +250,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void set_face(TJS2DrawFace face);
 
-    TJS2DrawFace face() {
-        return this->_face;
-    }
+    TJS2DrawFace face() { return this->_face; }
 
     TJS2BlendOperationMode blend_mode() {
 
@@ -316,7 +318,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         }
     }
 
-    iTJSDispatch2 *this_obj() {
+    iTJSDispatch2 *this_obj() const {
         assert(this->_this_obj);
         return this->_this_obj;
     }
@@ -357,18 +359,18 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void set_size(const my::ISize2D &size) { this->_size = size; }
 
-    my::ISize2D size() { return this->_size; }
+    my::ISize2D size() const { return this->_size; }
 
     void set_pos(const my::IPoint2D &pos) { this->_pos = pos; }
 
-    my::IPoint2D pos() { return this->_pos; }
+    my::IPoint2D pos() const { return this->_pos; }
     void set_image_size(const my::ISize2D &size) { this->_image_size = size; }
 
-    my::ISize2D image_size() { return this->_image_size; }
+    my::ISize2D image_size() const { return this->_image_size; }
 
     void set_image_pos(const my::IPoint2D &pos) { this->_image_pos = pos; }
 
-    my::IPoint2D image_pos() { return this->_image_pos; }
+    my::IPoint2D image_pos() const { return this->_image_pos; }
 
     rxcpp::observable<LayerEvent> on_event() {
         return this->_event_suject.get_observable();
@@ -378,17 +380,19 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         this->_event_suject.get_subscriber().on_next(LayerEvent{type, this});
     };
 
+    bool hit_test(const my::IPoint2D &pos);
+
     // TODO:
     TJS2LayerType type{};
-    int hit_type{};
-    int hit_threshold{};
+    TJS2HitType hit_type{TJS2HitType::htMask};
+    int hit_threshold{16};
 
     int cursor;
     std::u16string name;
 
     bool focusable{false};
     bool focused{false};
-    bool enabled{false};
+    bool enabled{true};
     bool absolute_order_mode{false};
     bool hold_alpha{false};
     bool call_on_paint{false};
@@ -412,7 +416,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     bool _visible{false};
     bool _image_modified{false};
     TJS2DrawFace _face{};
-    
+
     my::ISize2D _size{32, 32};
     my::IPoint2D _pos{};
     my::ISize2D _image_size{32, 32};
