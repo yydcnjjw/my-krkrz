@@ -261,7 +261,7 @@ void TJS2NativeScripts::boot_start() {
                     ) {
             rxcpp::schedulers::run_loop rlp;
             auto rlp_worker = rxcpp::observe_on_run_loop(rlp);
-            
+
             this->_tjs_worker = &rlp_worker;
             // promise.set_value(&rlp_worker);
             pthread_setname_np(pthread_self(), "TJS");
@@ -295,7 +295,7 @@ void TJS2NativeScripts::boot_start() {
                 TJS2Script::exec_storage(u"startup.tjs");
 
             } catch (eTJSError &e) {
-                GLOG_D(utf16_codecvt()
+                GLOG_E(utf16_codecvt()
                            .to_bytes(e.GetMessage().AsStdString())
                            .c_str());
                 app->quit(true);

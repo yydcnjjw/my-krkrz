@@ -44,7 +44,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
                             try {
                                 krkrz::TJS::func_call(tjs_obj, "onTimer");
                             } catch (eTJSError &e) {
-                                GLOG_D(
+                                GLOG_E(
                                     utf16_codecvt()
                                         .to_bytes(e.GetMessage().AsStdString())
                                         .c_str());

@@ -48,7 +48,7 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
                     try {
                         krkrz::TJS::func_call(this->_this, "onFire");
                     } catch (eTJSError &e) {
-                        GLOG_D(utf16_codecvt()
+                        GLOG_E(utf16_codecvt()
                                    .to_bytes(e.GetMessage().AsStdString())
                                    .c_str());
                         krkrz::Application::get()->base_app()->quit(true);

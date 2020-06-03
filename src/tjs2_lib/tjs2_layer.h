@@ -192,7 +192,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     }
 
     sk_sp<SkSurface> province_surface() {
-        build_surface(&this->_province_surface, [](const my::ISize2D &size) {
+        build_surface(this->_province_surface, [](const my::ISize2D &size) {
             return SkSurface::MakeRaster(
                 SkImageInfo::MakeA8(size.width(), size.height()));
         });
@@ -218,13 +218,13 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     }
 
     sk_sp<SkSurface> main_surface() {
-        build_surface(&this->_main_surface, [](const my::ISize2D &size) {
+        build_surface(this->_main_surface, [](const my::ISize2D &size) {
             return SkSurface::MakeRasterN32Premul(size.width(), size.height());
         });
         return this->_main_surface;
     }
 
-    void build_surface(sk_sp<SkSurface> *surface,
+    void build_surface(sk_sp<SkSurface> &surface,
                        std::function<sk_sp<SkSurface>(const my::ISize2D &)> &&);
 
     sk_sp<SkImage> image_snapshot() {
@@ -368,7 +368,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     my::ISize2D image_size() const { return this->_image_size; }
 
-    void set_image_pos(const my::IPoint2D &pos) { this->_image_pos = pos; }
+    void set_image_pos(const my::IPoint2D &pos);
 
     my::IPoint2D image_pos() const { return this->_image_pos; }
 
@@ -397,6 +397,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     bool hold_alpha{false};
     bool call_on_paint{false};
     bool show_parent_hint{false};
+    bool hit_test_work {true};
 
   private:
     iTJSDispatch2 *_this_obj{};
@@ -410,8 +411,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     rxcpp::subjects::subject<LayerEvent> _event_suject{};
 
     std::shared_ptr<my::Image> _image{};
-    sk_sp<SkSurface> _province_surface{};
-    sk_sp<SkSurface> _main_surface{};
+    sk_sp<SkSurface> _province_surface{nullptr};
+    sk_sp<SkSurface> _main_surface{nullptr};
 
     bool _visible{false};
     bool _image_modified{false};

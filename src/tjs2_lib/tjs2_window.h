@@ -4,6 +4,7 @@
 
 #include "krkrz_application.h"
 #include "tjs2_lib.h"
+#include <tjs2_lib/tjs2_basic_drawdevice.h>
 #include <tjs2_lib/tjs2_scripts.h>
 
 namespace krkrz {
@@ -70,33 +71,12 @@ struct TJSEvent {
 class TJS2NativeLayer;
 class TJS2NativeWindow : public tTJSNativeInstance {
   public:
-    TJS2NativeWindow() : _base_app(Application::get()->base_app()) {}
+    TJS2NativeWindow();
 
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
-                                        iTJSDispatch2 *tjs_obj) {
-        if (!this->_main_window) {
-            this->_main_window = this;
-        }
-        this->_this_obj = tjs_obj;
+                                        iTJSDispatch2 *tjs_obj);
 
-        this->_window = this->_base_app->win_mgr()->create_window("", 0, 0);
-
-        this->_subscribe_event(tjs_obj);
-        this->_render_task_start();
-
-        return TJS_S_OK;
-    }
-
-    void TJS_INTF_METHOD Invalidate() {
-        this->_base_app->win_mgr()->remove_window(this->_window);
-        this->_unsubscribe_event();
-        this->_render_task_stop();
-
-        for (auto &obj : this->_objects) {
-            obj.Invalidate(0, nullptr, nullptr, nullptr);
-            obj.Release();
-        }
-    }
+    void TJS_INTF_METHOD Invalidate();
 
     void add(tTJSVariantClosure clo) {
         if (this->_objects.end() ==
@@ -188,9 +168,15 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         GLOG_D("show modal end");
     }
 
+    iTJSDispatch2 *draw_device_obj() {
+        return this->_draw_device->this_obj();
+    }
+
   private:
     static TJS2NativeWindow *_main_window;
     iTJSDispatch2 *_this_obj{};
+    TJS2NativeBasicDrawDevice *_draw_device;
+
     my::Application *_base_app{};
     my::Window *_window{};
     std::vector<tTJSVariantClosure> _objects{};

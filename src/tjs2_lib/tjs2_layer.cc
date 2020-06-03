@@ -43,6 +43,14 @@ void draw_layer(SkCanvas *canvas, TJS2NativeLayer *root, bool check_visible) {
         {
             auto image = layer->image_snapshot();
             canvas->drawImage(image, x, y);
+            // SkPaint paint{};
+            // paint.setColor(SkColors::kBlue);
+            // paint.setAlpha(128);
+            // paint.setStyle(SkPaint::Style::kStroke_Style);
+            // paint.setStrokeWidth(SkScalar(4));
+            // canvas->drawIRect(
+            //     my::IRect::MakeXYWH(x, y, image->width(), image->height()),
+            //     paint);
 
             auto w = image->width();
             auto h = image->height();
@@ -561,26 +569,27 @@ bool TJS2NativeLayer::is_node_visible() const {
 }
 
 void TJS2NativeLayer::build_surface(
-    sk_sp<SkSurface> *surface,
+    sk_sp<SkSurface> &surface,
     std::function<sk_sp<SkSurface>(const my::ISize2D &)> &&make_surface) {
-    if (!*surface) {
-        *surface = make_surface(this->size());
+    if (!surface) {
+        surface = make_surface(this->size());
         return;
     }
 
     auto surface_size =
-        my::ISize2D::Make((*surface)->width(), (*surface)->height());
+        my::ISize2D::Make(surface->width(), surface->height());
     if (surface_size != this->size()) {
-        *surface = make_surface(this->size());
+        surface = make_surface(this->size());
     }
 
-    (*surface)->flush();
+    surface->flush();
 }
 
 void TJS2NativeLayer::load_image(const std::u16string &_path) {
     auto path = my::fs::path(codecvt::utf_to_utf<char>(_path));
 
-    GLOG_D("%p:load image: %s", this->this_obj(), path.c_str());
+    GLOG_D("%p:%s:load image: %s", this->this_obj(),
+           codecvt::utf_to_utf<char>(this->name).c_str(), path.c_str());
 
     if (path.has_extension()) {
         this->_image = TJS2NativeStorages::get()->get_storage<my::Image>(path);
@@ -608,7 +617,20 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
     this->set_image_size(image_size);
 
     auto [x, y] = this->image_pos();
-    this->canvas()->drawImage(this->_image->sk_image(), x, y);
+    SkPaint paint{};
+    paint.setBlendMode(SkBlendMode::kSrc);
+    this->canvas()->drawImage(this->_image->sk_image(), x, y, &paint);
+}
+
+void TJS2NativeLayer::set_image_pos(const my::IPoint2D &pos) {
+    this->_image_pos = pos;
+
+    if (this->_image) {
+        auto [x, y] = this->image_pos();
+        SkPaint paint{};
+        paint.setBlendMode(SkBlendMode::kSrc);
+        this->canvas()->drawImage(this->_image->sk_image(), x, y, &paint);
+    }
 }
 
 void TJS2NativeLayer::set_face(TJS2DrawFace face) {
@@ -678,6 +700,14 @@ bool TJS2NativeLayer::hit_test(const my::IPoint2D &pos) {
         break;
     }
     }
+
+    this->hit_test_work = true;
+
+    if (result) {
+        TJS::func_call(this->this_obj(), "onHitTest", {pos.x(), pos.y(), true});
+        result = this->hit_test_work;
+    }
+
     return result;
 }
 
@@ -2043,8 +2073,8 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ onBlur)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ onHitTest) {
-        // TJS_GET_NATIVE_INSTANCE(/*var. name*/_this, /*var.
-        // type*/tTJSNI_Layer);
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
 
         // tTJSVariantClosure obj = _this->GetActionOwnerNoAddRef();
         /*
@@ -2062,7 +2092,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
             return TJS_E_BADPARAMCOUNT;
         bool b = param[2]->operator bool();
 
-        // _this->SetHitTestWork(b);
+        _this->hit_test_work = b;
 
         return TJS_S_OK;
     }

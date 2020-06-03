@@ -64,6 +64,41 @@ uint32_t to_shift(const my::Keymod &keymod, uint32_t btn_state) {
     return shift;
 }
 
+TJS2NativeWindow::TJS2NativeWindow()
+    : _draw_device(TJS2BasicDrawDevice::create()),
+      _base_app(Application::get()->base_app()) {}
+
+tjs_error TJS_INTF_METHOD TJS2NativeWindow::Construct(tjs_int numparams,
+                                                      tTJSVariant **param,
+                                                      iTJSDispatch2 *tjs_obj) {
+    if (!this->_main_window) {
+        this->_main_window = this;
+    }
+    this->_this_obj = tjs_obj;
+
+    this->_window = this->_base_app->win_mgr()->create_window("", 0, 0);
+
+    this->_subscribe_event(tjs_obj);
+    this->_render_task_start();
+
+    return TJS_S_OK;
+}
+
+void TJS_INTF_METHOD TJS2NativeWindow::Invalidate() {
+    this->_base_app->win_mgr()->remove_window(this->_window);
+    this->_unsubscribe_event();
+    this->_render_task_stop();
+
+    for (auto &obj : this->_objects) {
+        obj.Invalidate(0, nullptr, nullptr, nullptr);
+        obj.Release();
+    }
+
+    auto draw_device_obj = this->_draw_device->this_obj();
+    draw_device_obj->Invalidate(0, nullptr, nullptr, draw_device_obj);
+    draw_device_obj->Release();
+}
+
 void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
     auto bus = this->_base_app->ev_bus();
     auto win_mgr = this->_base_app->win_mgr();
@@ -290,9 +325,9 @@ void TJS2NativeWindow::_mouse_button_event_disptach(
         }
 
         auto pos = mouse_pos - translate;
-        
+
         translate -= layer->pos();
-        
+
         if (const_cast<TJS2NativeLayer *>(layer)->hit_test(pos)) {
             if (layer->is_node_enable() && !is_child_handled) {
                 std::vector<tTJSVariant> args{pos.x(), pos.y(), btn, keymod};
@@ -1030,6 +1065,49 @@ TJS2Window::TJS2Window() : inherited(TJS_W("Window")) {
         TJS_END_NATIVE_PROP_SETTER
     }
     TJS_END_NATIVE_PROP_DECL(zoomDenom)
+
+    TJS_BEGIN_NATIVE_PROP_DECL(drawDevice) {
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+        *result = _this->draw_device_obj();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+        // _this->SetDrawDeviceObject(*param);
+        return TJS_E_NOTIMPL;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(drawDevice)
+
+    TJS_BEGIN_NATIVE_PROP_DECL(PassThroughDrawDevice) {
+        // compatible for old version kr2
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+        *result = _this->draw_device_obj();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeWindow);
+        // _this->SetDrawDeviceObject(*param);
+        return TJS_E_NOTIMPL;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(PassThroughDrawDevice)
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ showModal) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
