@@ -5,7 +5,8 @@
 
 #include <tjsArray.h>
 
-namespace {} // namespace
+    namespace {
+} // namespace
 
 namespace krkrz {
 
@@ -196,15 +197,20 @@ tjs_error TJS_INTF_METHOD TJS2NativeLayer::Construct(tjs_int numparams,
 }
 
 void TJS_INTF_METHOD TJS2NativeLayer::Invalidate() {
-    this->_event_suject.get_subscriber().on_completed();
-    this->_event_suject.get_subscriber().unsubscribe();
-
+    this->remove_parent();
+    this->_this_obj = nullptr;
     this->_this_action_obj.Release();
     this->_this_action_obj = {nullptr, nullptr};
+
+    this->_event_suject.get_subscriber().on_completed();
+    this->_event_suject.get_subscriber().unsubscribe();
 
     auto font_obj = this->_font->this_obj();
     font_obj->Invalidate(0, nullptr, nullptr, font_obj);
     font_obj->Release();
+
+    this->_main_surface = nullptr;
+    this->_province_surface = nullptr;
 }
 
 void TJS2NativeLayer::color_rect(const my::IRect &rect, uint32_t color,
@@ -385,6 +391,21 @@ void TJS2NativeLayer::copy_rect(const my::IPoint2D &d_off,
     src_surface->readPixels(src, s_off.x(), s_off.y());
     dst_surface->writePixels(src, d_off.x(), d_off.y());
     this->set_image_modified(true);
+}
+
+void TJS2NativeLayer::piled_copy(const my::IPoint2D dpos,
+                                 const my::IRect &src_rect,
+                                 TJS2NativeLayer *src_layer) {
+    GLOG_D("%p:%s:piled copy: dst: %s src: %s %p:%s", this->this_obj(),
+           codecvt::utf_to_utf<char>(this->name).c_str(),
+           format_point(dpos).c_str(), format_rect(src_rect).c_str(),
+           src_layer->this_obj(), codecvt::utf_to_utf<char>(src_layer->name).c_str());
+
+    SkBitmap src{};
+    src.allocN32Pixels(src_rect.width(), src_rect.height());
+    src_layer->main_surface()->readPixels(src, src_rect.x(), src_rect.y());
+
+    this->canvas()->drawBitmap(src, dpos.x(), dpos.y());
 }
 
 void TJS2NativeLayer::stretch_copy(const my::IRect &dst_rect,
@@ -576,8 +597,7 @@ void TJS2NativeLayer::build_surface(
         return;
     }
 
-    auto surface_size =
-        my::ISize2D::Make(surface->width(), surface->height());
+    auto surface_size = my::ISize2D::Make(surface->width(), surface->height());
     if (surface_size != this->size()) {
         surface = make_surface(this->size());
     }
@@ -620,6 +640,21 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
     SkPaint paint{};
     paint.setBlendMode(SkBlendMode::kSrc);
     this->canvas()->drawImage(this->_image->sk_image(), x, y, &paint);
+}
+
+void TJS2NativeLayer::save_layer_image(const std::u16string &name,
+                                       const std::u16string &type) {
+    auto path = my::fs::path(
+        my::uri(codecvt::utf_to_utf<char>(name)).encoded_path().to_string());
+
+    auto image = my::Image::make(this->image_snapshot());
+    image->export_bmp24(path);
+
+    GLOG_D("save layer image:%p:%s:%s:%s:%s", this,
+           codecvt::utf_to_utf<char>(this->name).c_str(),
+           codecvt::utf_to_utf<char>(name).c_str(),
+           codecvt::utf_to_utf<char>(type).c_str(),
+           format_rect(this->layer_rect()).c_str());
 }
 
 void TJS2NativeLayer::set_image_pos(const my::IPoint2D &pos) {
@@ -1511,7 +1546,6 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     }
     TJS_END_NATIVE_PROP_DECL(enabled)
     TJS_BEGIN_NATIVE_PROP_DECL(nodeEnabled) {
-        // TODO: Layer.nodeEnabled
         TJS_BEGIN_NATIVE_PROP_GETTER
 
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
@@ -1760,34 +1794,30 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ stopTransition)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ piledCopy) {
-        // TODO: Layer.piledCopy
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
         if (numparams < 7)
             return TJS_E_BADPARAMCOUNT;
 
-        // tTJSNI_BaseLayer * src = NULL;
-        // tTJSVariantClosure clo = param[2]->AsObjectClosureNoAddRef();
-        // if(clo.Object)
-        // {
-        // 	if(TJS_FAILED(clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
-        // 		tTJSNC_Layer::ClassID, (iTJSNativeInstance**)&src)))
-        // 		TVPThrowExceptionMessage(TVPSpecifyLayer);
-        // }
-        // if(!src) TVPThrowExceptionMessage(TVPSpecifyLayer);
+        TJS2NativeLayer *src{nullptr};
+        tTJSVariantClosure clo = param[2]->AsObjectClosureNoAddRef();
+        if (clo.Object) {
+            clo.Object->NativeInstanceSupport(TJS_NIS_GETINSTANCE,
+                                              TJS2Layer::ClassID,
+                                              (iTJSNativeInstance **)&src);
+        }
+        if (!src)
+            TVPThrowExceptionMessage(TVPSpecifyLayer);
 
-        // tTVPRect rect(*param[3], *param[4], *param[5], *param[6]);
-        // rect.right += rect.left;
-        // rect.bottom += rect.top;
-
-        // _this->PiledCopy(*param[0], *param[1], src, rect);
-        GLOG_D("call Layer.PiledCopy");
+        _this->piled_copy(
+            my::IPoint2D::Make(*param[0], *param[1]),
+            my::IRect::MakeXYWH(*param[3], *param[4], *param[5], *param[6]),
+            src);
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ piledCopy)
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ stretchCopy) {
-        // TODO: Layer.stretchCopy
         // dx, dy, dw, dh, src, sx, sy, sw, sh, type=0
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
@@ -1826,6 +1856,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ stretchCopy)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ saveLayerImage) {
+        // TODO: Layer.saveLayerImage
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
         if (numparams < 1)
@@ -1834,7 +1865,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         ttstr type(TJS_W("bmp"));
         if (numparams >= 2 && param[1]->Type() != tvtVoid)
             type = *param[1];
-        // _this->SaveLayerImage(name, type);
+        _this->save_layer_image(name.AsStdString(), type.AsStdString());
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ saveLayerImage)

@@ -15,13 +15,33 @@ namespace {
 
 class TJS2TextReadStream : public iTJSTextReadStream {
   public:
-    TJS2TextReadStream(const std::u16string &name, const std::u16string &mode) {
+    TJS2TextReadStream(const std::u16string &name,
+                       const std::u16string &_mode) {
+        int off{0};
+
+        auto mode = codecvt::utf_to_utf<char>(_mode);
+        if (!mode.empty()) {
+
+            auto ch = mode.at(0);
+
+            switch (ch) {
+            case 'o': {
+                off = std::stoi(mode.substr(1));
+                break;
+            }
+            default:
+                assert(true);
+                break;
+            }
+        }
+
         my::uri uri(codecvt::utf_to_utf<char>(name).c_str());
         auto path =
             my::fs::path(uri.encoded_path().to_string()).lexically_normal();
         GLOG_D("read stream %s", path.c_str());
         this->_ifs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         this->_ifs.open(path);
+        this->_ifs.seekg(off, std::ios_base::beg);
     }
     tjs_uint TJS_INTF_METHOD Read(tTJSString &targ, tjs_uint size) override {
         tjs_char *buf = targ.AppendBuffer(size);
@@ -38,22 +58,47 @@ class TJS2TextReadStream : public iTJSTextReadStream {
 class TJS2TextWriteStream : public iTJSTextWriteStream {
   public:
     TJS2TextWriteStream(const std::u16string &name,
-                        const std::u16string &mode) {
+                        const std::u16string &_mode) {
+
+        int off{0};
+
+        auto mode = codecvt::utf_to_utf<char>(_mode);
+        if (!mode.empty()) {
+
+            auto ch = mode.at(0);
+
+            switch (ch) {
+            case 'o': {
+                off = std::stoi(mode.substr(1));
+                break;
+            }
+            default:
+                assert(true);
+                break;
+            }
+        }
+
         my::uri uri(codecvt::utf_to_utf<char>(name).c_str());
         auto path =
             my::fs::path(uri.encoded_path().to_string()).lexically_normal();
-        GLOG_D("write stream %s", path.c_str());
+        GLOG_D("write stream %s mode %s", path.c_str(), mode.c_str());
 
         if (!my::fs::exists(path.parent_path())) {
             my::fs::create_directory(path.parent_path());
         }
 
         this->_ofs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        this->_ofs.open(path, std::ios::binary);
+        if (off != 0) {
+            this->_ofs.open(path, std::ios::binary | std::ios::app);
+        } else {
+            this->_ofs.open(path, std::ios::binary);            
+        }
+
+        this->_ofs.seekp(off, std::ios_base::beg);
     }
     void TJS_INTF_METHOD Write(const tTJSString &targ) override {
         auto data = codecvt::utf_to_utf<char>(targ.AsStdString());
-        this->_ofs << data;
+        this->_ofs.write(data.data(), data.size());
     }
     void TJS_INTF_METHOD Destruct() override {}
 
@@ -165,7 +210,7 @@ class TJS2Scripts : public tTJSNativeClass {
                     : nullptr;
 
             krkrz::TJS2Script::exec_storage(name.AsStdString(), context, result,
-                                            modestr.c_str());
+                                            modestr.AsStdString());
 
             return TJS_S_OK;
         }
@@ -187,7 +232,7 @@ class TJS2Scripts : public tTJSNativeClass {
                     : NULL;
 
             krkrz::TJS2Script::eval_storage(name.AsStdString(), context, result,
-                                            modestr.c_str());
+                                            modestr.AsStdString());
 
             return TJS_S_OK;
         }

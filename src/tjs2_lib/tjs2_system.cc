@@ -354,7 +354,11 @@ class TJS2System : public tTJSNativeClass {
             if (result)
                 result->Clear();
 
-            return TJS_E_NOTIMPL;
+            GLOG_E("%s:%s",
+                   codecvt::utf_to_utf<char>(caption.AsStdString()).c_str(),
+                   codecvt::utf_to_utf<char>(text.AsStdString()).c_str());
+
+            return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(
             /*func. name*/ inform)

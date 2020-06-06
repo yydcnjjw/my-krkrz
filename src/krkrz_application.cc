@@ -34,7 +34,7 @@ void Application::_init_basic_path(const char *_exec_path) {
     this->app_path.set_encoded_url(uri.encoded_url());
     GLOG_D("app path %s", this->app_path.encoded_url().to_string().data());
 
-    uri.set_encoded_path((app_path / "datapath" / "").string());
+    uri.set_encoded_path((app_path / "savedata" / "").string());
     this->data_path.set_encoded_url(uri.encoded_url());
     GLOG_D("data path %s", this->data_path.encoded_url().to_string().data());
 

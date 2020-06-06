@@ -174,6 +174,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void stretch_copy(const my::IRect &dst, const my::IRect &src,
                       TJS2NativeLayer *src_layer, TJS2StretchType type);
 
+    void piled_copy(const my::IPoint2D dpos, const my::IRect &src, TJS2NativeLayer *src_layer);
+
     void start_trans(const std::u16string &name, bool withchildren,
                      TJS2NativeLayer *trans_src, tTJSVariantClosure options);
     void stop_trans();
@@ -364,7 +366,10 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void set_pos(const my::IPoint2D &pos) { this->_pos = pos; }
 
     my::IPoint2D pos() const { return this->_pos; }
-    void set_image_size(const my::ISize2D &size) { this->_image_size = size; }
+    void set_image_size(const my::ISize2D &size) {
+        this->_image_size = size;
+        this->set_size(size);
+    }
 
     my::ISize2D image_size() const { return this->_image_size; }
 
@@ -381,6 +386,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     };
 
     bool hit_test(const my::IPoint2D &pos);
+
+    void save_layer_image(const std::u16string &name, const std::u16string &type);
 
     // TODO:
     TJS2LayerType type{};

@@ -79,41 +79,43 @@ class TJS2Script : public my::Resource {
         return std::make_shared<TJS2Script>(std::move(script));
     }
 
+    static std::shared_ptr<TJS2Script>
+    get_tjs2_script_from_storage(const std::u16string &uri,
+                                 const std::u16string &modestr) {
+        auto tjs2_script = TJS2NativeStorages::get()->get_storage<TJS2Script>(
+            codecvt::utf_to_utf<char>(uri), codecvt::utf_to_utf<char>(modestr));
+        return tjs2_script;
+    }
+
     static void exec_storage(const std::u16string &uri,
                              iTJSDispatch2 *context = nullptr,
                              tTJSVariant *result = nullptr,
-                             const tjs_char *modestr = nullptr) {
-        auto tjs2_script = TJS2NativeStorages::get()->get_storage<TJS2Script>(
-            codecvt::utf_to_utf<char>(uri));
-        tjs2_script->exec(result, context, uri);
+                             const std::u16string modestr = u"") {
+        get_tjs2_script_from_storage(uri, modestr)->exec(result, context, uri);
     }
 
     static void eval_storage(const std::u16string &uri,
                              iTJSDispatch2 *context = nullptr,
                              tTJSVariant *result = nullptr,
-                             const tjs_char *modestr = nullptr) {
-        auto tjs2_script = TJS2NativeStorages::get()->get_storage<TJS2Script>(
-            codecvt::utf_to_utf<char>(uri));
-        tjs2_script->eval(result, context, uri);
+                             const std::u16string modestr = u"") {
+        get_tjs2_script_from_storage(uri, modestr)->eval(result, context, uri);
     }
 
     void eval(tTJSVariant *result = nullptr, iTJSDispatch2 *context = nullptr,
               const std::u16string &name = u"", int lineofs = 0) {
         ttstr short_name = name;
-        TJS2Script::_engine()->EvalExpression(this->_script, result, context,
+        TJS2Script::_engine()->EvalExpression(this->script(), result, context,
                                               &short_name, lineofs);
     }
 
     void exec(tTJSVariant *result = nullptr, iTJSDispatch2 *context = nullptr,
               const std::u16string &name = u"", int lineofs = 0) {
         ttstr short_name = name;
-        TJS2Script::_engine()->ExecScript(this->_script, result, context,
+        TJS2Script::_engine()->ExecScript(this->script(), result, context,
                                           &short_name, lineofs);
     }
 
-    std::u16string script() {
-        return this->_script;
-    }
+    std::u16string script() { return this->_script; }
 
     TJS2Script(const std::string &script)
         : _script(codecvt::utf_to_utf<char16_t>(script)) {}
@@ -133,13 +135,14 @@ class TJS2Script : public my::Resource {
 } // namespace krkrz
 
 template <> class my::ResourceProvider<krkrz::TJS2Script> {
-public:
+  public:
     /**
      * @brief      load from fs
      */
-    static std::shared_ptr<krkrz::TJS2Script> load(const fs::path &path) {
+    static std::shared_ptr<krkrz::TJS2Script>
+    load(const ResourcePathInfo &info) {
         return ResourceProvider<krkrz::TJS2Script>::load(
-            ResourceStreamInfo::make(path));
+            ResourceStreamInfo::make(info));
     }
 
     /**

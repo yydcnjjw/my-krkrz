@@ -48,7 +48,8 @@ class TJS2NativeStorages {
     }
 
     template <typename T>
-    std::shared_ptr<T> get_storage(const std::string &search) {
+    std::shared_ptr<T> get_storage(const std::string &search,
+                                   const std::string &mode = "") {
         my::uri full_uri{search};
         if (!this->_resource_mgr->exist(full_uri)) {
             auto search_path = this->search_storage(
@@ -62,7 +63,35 @@ class TJS2NativeStorages {
                     (boost::format("%1% is not exist") % search).str());
             }
         }
-        return this->_resource_mgr->load<T>(full_uri).get();
+
+        size_t offset{0};
+        if (!mode.empty()) {
+            auto ch = mode.at(0);
+            switch (ch) {
+            case 'o': {
+                offset = std::stoi(mode.substr(1));
+                break;
+            }
+            }
+        }
+
+        const auto &params = full_uri.params();
+
+        // TODO: use search storage struct
+        my::uri fix_uri{};
+        if (params.find("path") != params.end()) {
+            fix_uri.set_encoded_url(
+                my::make_archive_search_uri(full_uri.encoded_path().to_string(),
+                                            params.at("path"), offset)
+                    .encoded_url());
+        } else {
+            fix_uri.set_encoded_url(
+                my::make_path_search_uri(full_uri.encoded_path().to_string(),
+                                         offset)
+                    .encoded_url());
+        }
+
+        return this->_resource_mgr->load<T>(fix_uri).get();
     }
 
     bool is_exist_storage(const std::u16string &utf16_uri) {
