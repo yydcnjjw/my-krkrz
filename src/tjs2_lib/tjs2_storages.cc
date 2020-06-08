@@ -139,6 +139,11 @@ TJS2NativeStorages::TJS2NativeStorages()
 
 std::optional<std::shared_ptr<TJS2NativeStorages::SearchPathCache>>
 TJS2NativeStorages::search_storage(const my::fs::path &path) {
+    auto filename = path.filename().generic_string();
+
+    auto low_path = my::fs::path(path).replace_filename(
+        boost::algorithm::to_lower_copy(filename));
+
     // search cache
     auto it = this->_search_path_cache.find(path);
     if (it != this->_search_path_cache.end()) {
@@ -147,8 +152,10 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
 
     // search fs system
     std::vector<my::fs::path> fs_paths{
-        this->_app_path / path,                 // app path/
-        this->_default_storage_data_path / path // data/
+        this->_app_path / path,                     // app path/
+        this->_default_storage_data_path / path,    // data/
+        this->_app_path / low_path,                 // app path/
+        this->_default_storage_data_path / low_path // data/
     };
 
     for (const auto &fs_path : fs_paths) {
@@ -166,13 +173,17 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
             continue;
         }
 
-        auto fs_path =
-            this->_default_storage_data_path / auto_path->path / path;
-        if (my::ResourceMgr::exist(fs_path)) {
-            auto search_path = std::make_shared<SearchPathCache>(
-                my::make_path_search_uri(fs_path), nullptr, auto_path);
-            this->_search_path_cache.insert({path, search_path});
-            return search_path;
+        std::vector<my::fs::path> fs_paths{
+            this->_default_storage_data_path / auto_path->path / path,
+            this->_default_storage_data_path / auto_path->path / low_path};
+
+        for (const auto &fs_path : fs_paths) {
+            if (my::ResourceMgr::exist(fs_path)) {
+                auto search_path = std::make_shared<SearchPathCache>(
+                    my::make_path_search_uri(fs_path), nullptr, auto_path);
+                this->_search_path_cache.insert({path, search_path});
+                return search_path;
+            }
         }
     }
 
@@ -181,8 +192,6 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
         if (archive_auto_path->type != AutoPathType::ARCHIVE) {
             continue;
         }
-
-        auto filename = path.filename().generic_string();
 
         auto archive_path_uris = {
             my::make_archive_search_uri(archive_auto_path->path, path),
@@ -230,7 +239,7 @@ TJS2NativeStorages::search_storage(const my::fs::path &path) {
 std::u16string
 TJS2NativeStorages::get_placed_path(const std::u16string &utf16_uri) {
     auto uri = my::uri(codecvt::utf_to_utf<char>(utf16_uri));
-        
+
     auto cache = this->search_storage(
         my::fs::path(uri.encoded_path().to_string()).lexically_normal());
     if (cache.has_value()) {

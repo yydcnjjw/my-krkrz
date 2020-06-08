@@ -37,15 +37,18 @@ class TJS2NativeAsyncTrigger : public tTJSNativeInstance {
     }
 
     void trigger() {
-        if (this->_cs.is_subscribed()) {
-            this->_cs.unsubscribe();
-        }
+        GLOG_I("call async trigger");
+        this->cancel();
         this->_cs =
             this->_ev_bus->on_event<krkrz::TJSIdleEvent>()
-                // .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                .map([](const auto &e) {
+                    krkrz::TJS2NativeScripts::get()->wake();
+                    return e;
+                })
                 .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .subscribe([this](const auto &) {
                     try {
+                        GLOG_I("async trigger call");
                         krkrz::TJS::func_call(this->_this, "onFire");
                     } catch (eTJSError &e) {
                         GLOG_E(utf16_codecvt()

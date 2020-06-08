@@ -6,11 +6,28 @@
 
 namespace {
 
-enum TJS2AsyncTriggerMode { atmNormal, atmExclusive, atmAtIdle };
-
-class TJS2NativeTimer : public tTJSNativeInstance {
+class TJS2NativeInstance : public tTJSNativeInstance {
     typedef tTJSNativeInstance inherited;
 
+  public:
+    virtual tjs_error TJS_INTF_METHOD
+    Construct(tjs_int numparams, tTJSVariant **param,
+              iTJSDispatch2 *tjs_obj) override {
+        this->_this_obj = tjs_obj;
+        return TJS_S_OK;
+    }
+    iTJSDispatch2 *this_obj() {
+        assert(this->_this_obj);
+        return this->_this_obj;
+    }
+
+  private:
+    iTJSDispatch2 *_this_obj;
+};
+
+enum TJS2AsyncTriggerMode { atmNormal, atmExclusive, atmAtIdle };
+
+class TJS2NativeTimer : public TJS2NativeInstance {
   public:
     int capacity{6};
     TJS2AsyncTriggerMode mode;
@@ -19,6 +36,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
 
     tjs_error TJS_INTF_METHOD Construct(tjs_int numparams, tTJSVariant **param,
                                         iTJSDispatch2 *tjs_obj) {
+        TJS2NativeInstance::Construct(numparams, param, tjs_obj);
         if (numparams < 1)
             return TJS_E_BADPARAMCOUNT;
 
@@ -29,34 +47,8 @@ class TJS2NativeTimer : public tTJSNativeInstance {
 
         this->action = param[0]->AsObjectClosure();
         this->ev_bus = krkrz::Application::get()->base_app()->ev_bus();
-        this->_timer_cs =
-            this->ev_bus->on_event<TJSTimerEvent>()
-                .filter(
-                    [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
-                        return *e->data == this->_timer;
-                    })
-                // .subscribe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
-                .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
-                .subscribe(
-                    [tjs_obj,
-                     this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
-                        if (!krkrz::TJS2NativeScripts::get()->is_stopping()) {
-                            try {
-                                krkrz::TJS::func_call(tjs_obj, "onTimer");
-                            } catch (eTJSError &e) {
-                                GLOG_E(
-                                    utf16_codecvt()
-                                        .to_bytes(e.GetMessage().AsStdString())
-                                        .c_str());
-                                this->disable();
-                                krkrz::Application::get()->base_app()->quit(
-                                    true);
-                            }
-                            // this->_notify_finish();
-                        }
-                        --this->_wait_events;
-                    });
 
+        this->_subscribe_timer();
         this->_timer = krkrz::Application::get()
                            ->base_app()
                            ->async_task()
@@ -75,14 +67,15 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     }
 
     void TJS_INTF_METHOD Invalidate() {
-        this->_timer_cs.unsubscribe();
+        this->_unsubscribe_timer();
         this->disable();
         this->action.Release();
     }
 
     void log() {
-        GLOG_D("timer callback: %p, cap %d interval %d, %Li", this, this->capacity,
-               this->get_interval(), std::chrono::system_clock::now().time_since_epoch().count());
+        GLOG_D("timer callback: %p, cap %d interval %d, %Li", this,
+               this->capacity, this->get_interval(),
+               std::chrono::system_clock::now().time_since_epoch().count());
     }
 
     bool is_enable() { return !this->_timer->is_cancel(); }
@@ -94,6 +87,7 @@ class TJS2NativeTimer : public tTJSNativeInstance {
 
     void enable() {
         GLOG_D("direct enable timer %d", this->get_interval());
+        // this->_subscribe_timer();
         if (this->get_interval() == 0) {
             this->_post();
             this->disable();
@@ -154,6 +148,51 @@ class TJS2NativeTimer : public tTJSNativeInstance {
     void _post() {
         ++this->_wait_events;
         this->ev_bus->post<TJSTimerEvent>(this->_timer);
+    }
+
+    void _subscribe_timer() {
+        // this->_unsubscribe_timer();
+
+        this->_timer_cs =
+            this->ev_bus->on_event<TJSTimerEvent>()
+                .filter(
+                    [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
+                        return *e->data == this->_timer;
+                    })
+                .map([](const auto &e) {
+                    krkrz::TJS2NativeScripts::get()->wake();
+                    return e;
+                })
+                .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
+                .subscribe(
+                    [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
+                        if (!krkrz::TJS2NativeScripts::get()
+                                 ->is_stopping() // &&
+                                                 // !this->is_enable()
+                        ) {
+                            GLOG_I("call timecallback %p", this);
+                            try {
+                                krkrz::TJS::func_call(this->this_obj(),
+                                                      "onTimer");
+                            } catch (eTJSError &e) {
+                                GLOG_E(
+                                    utf16_codecvt()
+                                        .to_bytes(e.GetMessage().AsStdString())
+                                        .c_str());
+                                this->disable();
+                                krkrz::Application::get()->base_app()->quit(
+                                    true);
+                            }
+                            // this->_notify_finish();
+                        }
+                        --this->_wait_events;
+                    });
+    }
+
+    void _unsubscribe_timer() {
+        if (this->_timer_cs.is_subscribed()) {
+            this->_timer_cs.unsubscribe();
+        }
     }
 };
 

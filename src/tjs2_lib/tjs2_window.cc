@@ -122,7 +122,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::MouseButtonEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .subscribe_on(tjs_worker)
+            .map([](const auto &e) {
+                krkrz::TJS2NativeScripts::get()->wake();
+                return e;
+            })
             .observe_on(tjs_worker)
             .subscribe(
                 [this](
@@ -166,7 +169,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::MouseMotionEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .subscribe_on(tjs_worker)
+            .map([](const auto &e) {
+                krkrz::TJS2NativeScripts::get()->wake();
+                return e;
+            })
             .observe_on(tjs_worker)
             .subscribe(
                 [this, obj](
@@ -185,7 +191,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::MoushWheelEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .subscribe_on(tjs_worker)
+            .map([](const auto &e) {
+                krkrz::TJS2NativeScripts::get()->wake();
+                return e;
+            })
             .observe_on(tjs_worker)
             .subscribe(
                 [this, obj](
@@ -207,7 +216,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                 [win_id](const std::shared_ptr<my::Event<my::WindowEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .subscribe_on(tjs_worker)
+            .map([](const auto &e) {
+                krkrz::TJS2NativeScripts::get()->wake();
+                return e;
+            })
             .observe_on(tjs_worker)
             .subscribe(
                 [this,
@@ -239,7 +251,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
                     const std::shared_ptr<my::Event<my::KeyboardEvent>> &e) {
                     return e->data->win_id == win_id;
                 })
-            .subscribe_on(tjs_worker)
+            .map([](const auto &e) {
+                krkrz::TJS2NativeScripts::get()->wake();
+                return e;
+            })
             .observe_on(tjs_worker)
             .subscribe(
                 [this,
@@ -263,7 +278,10 @@ void TJS2NativeWindow::_subscribe_event(iTJSDispatch2 *obj) {
             .filter([win_id](const std::shared_ptr<my::Event<PaintEvent>> &e) {
                 return e->data->win_id == win_id;
             })
-            .subscribe_on(tjs_worker)
+            .map([](const auto &e) {
+                krkrz::TJS2NativeScripts::get()->wake();
+                return e;
+            })
             .observe_on(tjs_worker)
             .subscribe(
                 [this,

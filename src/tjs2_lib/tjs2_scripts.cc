@@ -91,7 +91,7 @@ class TJS2TextWriteStream : public iTJSTextWriteStream {
         if (off != 0) {
             this->_ofs.open(path, std::ios::binary | std::ios::app);
         } else {
-            this->_ofs.open(path, std::ios::binary);            
+            this->_ofs.open(path, std::ios::binary);
         }
 
         this->_ofs.seekp(off, std::ios_base::beg);
@@ -359,19 +359,8 @@ void TJS2NativeScripts::boot_start() {
                             {this->_current_sink, source});
                     }
                 }
+
                 app->ev_bus()->post<TJSIdleEvent>();
-                while (!rlp.empty() && rlp.peek().when < rlp.now()) {
-                    auto source = std::make_shared<my::coro_t::pull_type>(
-                        [&](my::coro_t::push_type &sink) {
-                            this->_current_sink = &sink;
-                            rlp.dispatch();
-                        });
-                    if (*source) {
-                        GLOG_D("-------------------reschedule----------------");
-                        this->_coroutines.push_back(
-                            {this->_current_sink, source});
-                    }
-                }
 
                 auto it = this->_coroutines.begin();
                 while (it != this->_coroutines.end()) {
@@ -388,12 +377,13 @@ void TJS2NativeScripts::boot_start() {
                     if (this->is_stopping()) {
                         break;
                     }
-                    std::this_thread::yield();
-                    // if (rlp.empty()) {
-                    //     this->_cv.wait(l_lock, [this, &rlp] {
-                    //         return !rlp.empty() || this->_is_stopping;
-                    //     });
-                    // }
+                    // std::this_thread::yield();
+                    std::unique_lock<std::mutex> l_lock(this->_lock);
+                    if (rlp.empty()) {
+                        this->_cv.wait(l_lock, [this, &rlp] {
+                            return !rlp.empty() || this->_is_stopping;
+                        });
+                    }
                 }
             }
             GLOG_D("tjs loop end");

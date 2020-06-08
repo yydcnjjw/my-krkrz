@@ -5,8 +5,7 @@
 
 #include <tjsArray.h>
 
-    namespace {
-} // namespace
+namespace {} // namespace
 
 namespace krkrz {
 
@@ -399,7 +398,8 @@ void TJS2NativeLayer::piled_copy(const my::IPoint2D dpos,
     GLOG_D("%p:%s:piled copy: dst: %s src: %s %p:%s", this->this_obj(),
            codecvt::utf_to_utf<char>(this->name).c_str(),
            format_point(dpos).c_str(), format_rect(src_rect).c_str(),
-           src_layer->this_obj(), codecvt::utf_to_utf<char>(src_layer->name).c_str());
+           src_layer->this_obj(),
+           codecvt::utf_to_utf<char>(src_layer->name).c_str());
 
     SkBitmap src{};
     src.allocN32Pixels(src_rect.width(), src_rect.height());
@@ -1476,6 +1476,17 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ drawText)
+
+    TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ doGrayScale) {
+        // TODO: Layer.doGrayScale
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+
+        // _this->DoGrayScale();
+
+        return TJS_S_OK;
+    }
+    TJS_END_NATIVE_METHOD_DECL(/*func. name*/ doGrayScale)
 
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ bringToBack) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,

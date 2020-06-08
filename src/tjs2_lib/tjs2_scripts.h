@@ -36,6 +36,10 @@ class TJS2NativeScripts {
 
     rxcpp::observe_on_one_worker &tjs_worker() { return *this->_tjs_worker; }
 
+    void wake() {
+        this->_cv.notify_one();
+    }
+
     void yield() {
         if (!this->_current_sink) {
             throw std::runtime_error("yield error");
@@ -52,8 +56,8 @@ class TJS2NativeScripts {
     tTJS *_tjs_engine{};
     std::shared_ptr<TJSConsoleOutput> _tjs_console_output{};
     std::atomic_bool _is_stopping{false};
-    std::shared_mutex _lock{};
-    std::condition_variable_any _cv{};
+    std::mutex _lock{};
+    std::condition_variable _cv{};
     struct CoroCtx {
         my::coro_t::push_type *sink{};
         std::shared_ptr<my::coro_t::pull_type> source{};
