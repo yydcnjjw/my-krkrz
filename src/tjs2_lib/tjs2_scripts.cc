@@ -308,6 +308,7 @@ void TJS2NativeScripts::boot_start() {
             auto rlp_worker = rxcpp::observe_on_run_loop(rlp);
 
             this->_tjs_worker = &rlp_worker;
+
             // promise.set_value(&rlp_worker);
             pthread_setname_np(pthread_self(), "TJS");
 
@@ -347,7 +348,26 @@ void TJS2NativeScripts::boot_start() {
             }
             GLOG_D("tjs loop start");
             for (;;) {
+
+                while (!this->_immediate_events.empty()) {
+                    auto immediate_func = this->_immediate_events.front();
+
+                    auto source = std::make_shared<my::coro_t::pull_type>(
+                        [&](my::coro_t::push_type &sink) {
+                            this->_current_sink = &sink;
+                            immediate_func();
+                        });
+                    if (*source) {
+                        GLOG_D("------------------reschedule----------------");
+                        this->_coroutines.push_back(
+                            {this->_current_sink, source});
+                    }
+
+                    this->_immediate_events.pop();
+                }
+
                 while (!rlp.empty() && rlp.peek().when < rlp.now()) {
+
                     auto source = std::make_shared<my::coro_t::pull_type>(
                         [&](my::coro_t::push_type &sink) {
                             this->_current_sink = &sink;
@@ -357,6 +377,24 @@ void TJS2NativeScripts::boot_start() {
                         GLOG_D("------------------reschedule----------------");
                         this->_coroutines.push_back(
                             {this->_current_sink, source});
+                    }
+
+                    while (!this->_immediate_events.empty()) {
+                        auto immediate_func = this->_immediate_events.front();
+
+                        auto source = std::make_shared<my::coro_t::pull_type>(
+                            [&](my::coro_t::push_type &sink) {
+                                this->_current_sink = &sink;
+                                immediate_func();
+                            });
+                        if (*source) {
+                            GLOG_D(
+                                "------------------reschedule----------------");
+                            this->_coroutines.push_back(
+                                {this->_current_sink, source});
+                        }
+
+                        this->_immediate_events.pop();
                     }
                 }
 
@@ -379,9 +417,11 @@ void TJS2NativeScripts::boot_start() {
                     }
                     // std::this_thread::yield();
                     std::unique_lock<std::mutex> l_lock(this->_lock);
-                    if (rlp.empty()) {
+                    if (rlp.empty() && this->_immediate_events.empty()) {
                         this->_cv.wait(l_lock, [this, &rlp] {
-                            return !rlp.empty() || this->_is_stopping;
+                            return !rlp.empty() ||
+                                   !this->_immediate_events.empty() ||
+                                   this->_is_stopping;
                         });
                     }
                 }

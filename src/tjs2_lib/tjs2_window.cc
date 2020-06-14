@@ -85,8 +85,8 @@ tjs_error TJS_INTF_METHOD TJS2NativeWindow::Construct(tjs_int numparams,
 }
 
 void TJS_INTF_METHOD TJS2NativeWindow::Invalidate() {
-    this->_base_app->win_mgr()->remove_window(this->_window);
     this->_unsubscribe_event();
+    this->_base_app->win_mgr()->remove_window(this->_window);
     this->_render_task_stop();
 
     for (auto &obj : this->_objects) {

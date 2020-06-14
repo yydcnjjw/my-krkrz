@@ -55,12 +55,8 @@ class TJS2NativeTimer : public TJS2NativeInstance {
                            ->create_timer_interval(
                                std::function<void(void)>([this]() -> void {
                                    // this->_reset_finish();
-                                   if (this->_wait_events > this->capacity) {
-                                       return;
-                                   }
                                    this->_post();
                                    // this->_wait_finish();
-                                   this->log();
                                }),
                                std::chrono::milliseconds(this->_interval));
         return TJS_S_OK;
@@ -73,15 +69,19 @@ class TJS2NativeTimer : public TJS2NativeInstance {
     }
 
     void log() {
-        GLOG_D("timer callback: %p, cap %d interval %d, %Li", this,
+        GLOG_I("timer callback: %p, cap %d interval %d, %Li %d", this,
                this->capacity, this->get_interval(),
-               std::chrono::system_clock::now().time_since_epoch().count());
+               std::chrono::duration_cast<std::chrono::milliseconds>(
+                   std::chrono::system_clock::now().time_since_epoch())
+                   .count(),
+               this->_wait_events.operator int());
     }
 
     bool is_enable() { return !this->_timer->is_cancel(); }
 
     void disable() {
         GLOG_D("direct disable timer");
+        this->_wait_events = 0;
         this->_timer->cancel();
     }
 
@@ -90,7 +90,6 @@ class TJS2NativeTimer : public TJS2NativeInstance {
         // this->_subscribe_timer();
         if (this->get_interval() == 0) {
             this->_post();
-            this->disable();
         } else {
             this->_timer->start();
         }
@@ -146,8 +145,12 @@ class TJS2NativeTimer : public TJS2NativeInstance {
     }
 
     void _post() {
+        if (this->_wait_events > this->capacity) {
+            return;
+        }
         ++this->_wait_events;
         this->ev_bus->post<TJSTimerEvent>(this->_timer);
+        this->log();
     }
 
     void _subscribe_timer() {
@@ -166,11 +169,12 @@ class TJS2NativeTimer : public TJS2NativeInstance {
                 .observe_on(krkrz::TJS2NativeScripts::get()->tjs_worker())
                 .subscribe(
                     [this](const std::shared_ptr<my::Event<TJSTimerEvent>> &e) {
-                        if (!krkrz::TJS2NativeScripts::get()
-                                 ->is_stopping() // &&
-                                                 // !this->is_enable()
-                        ) {
-                            GLOG_I("call timecallback %p", this);
+                        GLOG_I("call timecallback %p %d", this,
+                               this->_wait_events.operator int());
+
+                        assert(this->_wait_events >= 0);
+                        if (!krkrz::TJS2NativeScripts::get()->is_stopping() &&
+                            this->_wait_events > 0) {
                             try {
                                 krkrz::TJS::func_call(this->this_obj(),
                                                       "onTimer");
@@ -184,12 +188,18 @@ class TJS2NativeTimer : public TJS2NativeInstance {
                                     true);
                             }
                             // this->_notify_finish();
+
+                            // TODO: use this->is_enable
+                            if (this->_wait_events > 0) {
+                                --this->_wait_events;                                
+                            }
+
                         }
-                        --this->_wait_events;
                     });
     }
 
     void _unsubscribe_timer() {
+        this->_wait_events = 0;
         if (this->_timer_cs.is_subscribed()) {
             this->_timer_cs.unsubscribe();
         }

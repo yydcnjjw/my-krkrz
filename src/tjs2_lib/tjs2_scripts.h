@@ -36,15 +36,20 @@ class TJS2NativeScripts {
 
     rxcpp::observe_on_one_worker &tjs_worker() { return *this->_tjs_worker; }
 
-    void wake() {
-        this->_cv.notify_one();
-    }
+    void wake() { this->_cv.notify_one(); }
 
     void yield() {
         if (!this->_current_sink) {
             throw std::runtime_error("yield error");
         }
         (*this->_current_sink)();
+    }
+
+    template <typename Func,
+              typename = std::enable_if_t<std::is_invocable_v<Func>>>
+    void push_immediate(Func func) {
+        this->_cv.notify_one();
+        this->_immediate_events.push(func);
     }
 
     tTJS *engine() { return this->_tjs_engine; }
@@ -65,6 +70,8 @@ class TJS2NativeScripts {
     std::list<CoroCtx> _coroutines{};
 
     my::coro_t::push_type *_current_sink{};
+
+    std::queue<std::function<void()>> _immediate_events{};
 
     TJS2NativeScripts();
 
