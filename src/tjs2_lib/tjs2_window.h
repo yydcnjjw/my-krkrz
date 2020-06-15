@@ -105,30 +105,22 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         this->_window->set_full_screen(full_screen);
     }
 
-    void update_surface() { this->_surfacee = this->_window->get_sk_surface(); }
-
     void set_visible(bool v) {
         if (v != this->is_visible()) {
             this->base_window()->set_visible(v);
-            if (!this->_surfacee) {
-                this->update_surface();
-            }
         }
     }
 
     void set_size(const my::ISize2D &size) {
         this->base_window()->set_size(size);
-        this->update_surface();
     }
 
     void set_min_size(const my::ISize2D &size) {
         this->base_window()->set_min_size(size);
-        this->update_surface();
     }
 
     void set_max_size(const my::ISize2D &size) {
         this->base_window()->set_max_size(size);
-        this->update_surface();
     }
 
     bool is_visible() { return this->base_window()->is_visible(); }
@@ -183,7 +175,6 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     TJS2NativeLayer *_primary_layer{};
     TJS2NativeLayer *_current_motion_layer{};
     my::IPoint2D _current_motion_translate{};
-    sk_sp<SkSurface> _surfacee{};
 
     typedef std::shared_ptr<my::AsyncTask::Timer<std::function<void(void)>>>
         RenderTask;
@@ -205,10 +196,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
     std::mutex _lock;
 
     SkCanvas *_canvas() {
-        if (!this->_surfacee) {
-            this->_surfacee = this->_window->get_sk_surface();
-        }
-        return this->_surfacee->getCanvas();
+        return this->_window->get_sk_surface()->getCanvas();
     }
 
     void _subscribe_event(iTJSDispatch2 *obj);

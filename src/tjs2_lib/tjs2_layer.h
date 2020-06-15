@@ -320,10 +320,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
         }
     }
 
-    iTJSDispatch2 *this_obj() const {
-        assert(this->_this_obj);
-        return this->_this_obj;
-    }
+    iTJSDispatch2 *this_obj() const;
 
     tTJSVariantClosure this_action_obj() const {
         return this->_this_action_obj;

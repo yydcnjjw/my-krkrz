@@ -372,6 +372,29 @@ void TJS2NativeWindow::_mouse_motion_event_disptach(
     // window
     TJS::func_call(this->this_obj(), "onMouseMove", args);
 
+    auto layer_visit =
+        my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) -> bool {
+            if (!layer) {
+                return false;
+            }
+
+            if (this->_current_motion_layer == layer) {
+                return true;
+            }
+
+            for (const auto child : layer->children()) {
+                if (self(child)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+    if (!layer_visit(this->_primary_layer)) {
+        this->_current_motion_layer = nullptr;
+        return;
+    }
+
     auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {
         if (!layer) {
             return;

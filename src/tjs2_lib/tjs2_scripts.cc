@@ -38,7 +38,7 @@ class TJS2TextReadStream : public iTJSTextReadStream {
         my::uri uri(codecvt::utf_to_utf<char>(name).c_str());
         auto path =
             my::fs::path(uri.encoded_path().to_string()).lexically_normal();
-        GLOG_D("read stream %s", path.c_str());
+        GLOG_I("read stream %s", path.c_str());
         this->_ifs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         this->_ifs.open(path);
         this->_ifs.seekg(off, std::ios_base::beg);
@@ -81,14 +81,14 @@ class TJS2TextWriteStream : public iTJSTextWriteStream {
         my::uri uri(codecvt::utf_to_utf<char>(name).c_str());
         auto path =
             my::fs::path(uri.encoded_path().to_string()).lexically_normal();
-        GLOG_D("write stream %s mode %s", path.c_str(), mode.c_str());
+        GLOG_I("write stream %s mode %s", path.c_str(), mode.c_str());
 
         if (!my::fs::exists(path.parent_path())) {
             my::fs::create_directory(path.parent_path());
         }
 
         this->_ofs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        if (off != 0) {
+        if (off > 0) {
             this->_ofs.open(path, std::ios::binary | std::ios::app);
         } else {
             this->_ofs.open(path, std::ios::binary);
@@ -98,7 +98,9 @@ class TJS2TextWriteStream : public iTJSTextWriteStream {
     }
     void TJS_INTF_METHOD Write(const tTJSString &targ) override {
         auto data = codecvt::utf_to_utf<char>(targ.AsStdString());
-        this->_ofs.write(data.data(), data.size());
+        this->_ofs
+            .write(data.data(), data.size())
+            .flush();
     }
     void TJS_INTF_METHOD Destruct() override {}
 

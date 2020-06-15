@@ -196,6 +196,8 @@ tjs_error TJS_INTF_METHOD TJS2NativeLayer::Construct(tjs_int numparams,
 }
 
 void TJS_INTF_METHOD TJS2NativeLayer::Invalidate() {
+    GLOG_D("invalidate %p:%p:%s", this, this->_this_obj,
+           codecvt::utf_to_utf<char>(this->name).c_str());
     this->remove_parent();
     this->_this_obj = nullptr;
     this->_this_action_obj.Release();
@@ -336,11 +338,11 @@ void TJS2NativeLayer::operate_rect(const my::IPoint2D &d_off,
         mode = layer->blend_mode();
     }
 
-    GLOG_D("%p:operate rect: d_off:%d,%d s_off:%d,%d s_size:%d,%d mode:%d "
-           "%s",
-           this->this_obj(), d_off.x(), d_off.y(), s_off.x(), s_off.y(),
-           s_size.width(), s_size.height(), mode,
-           format_point(this->pos()).c_str());
+    // GLOG_D("%p:operate rect: d_off:%d,%d s_off:%d,%d s_size:%d,%d mode:%d "
+    //        "%s",
+    //        this->this_obj(), d_off.x(), d_off.y(), s_off.x(), s_off.y(),
+    //        s_size.width(), s_size.height(), mode,
+    //        format_point(this->pos()).c_str());
     SkBitmap src{};
     src.allocN32Pixels(s_size.width(), s_size.height());
     layer->main_surface()->readPixels(src, s_off.x(), s_off.y());
@@ -614,7 +616,7 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
     if (path.has_extension()) {
         this->_image = TJS2NativeStorages::get()->get_storage<my::Image>(path);
     } else {
-        for (auto extension : {".png", ".jpg"}) {
+        for (auto extension : {".png", ".jpg", ".bmp"}) {
             path.replace_extension(extension);
             try {
                 this->_image =
@@ -631,6 +633,10 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
         throw std::runtime_error(
             (boost::format("load image failure %1%") % path).str());
     }
+
+    GLOG_D("%p:%s:load image finish: %s %d=%d", this->this_obj(),
+           codecvt::utf_to_utf<char>(this->name).c_str(), path.c_str(),
+           this->_image->size().width(), this->_image->size().height());
 
     auto image_size = this->_image->size();
     this->set_size(image_size);
@@ -685,6 +691,15 @@ void TJS2NativeLayer::set_parent(TJS2NativeLayer *parent) {
     if (parent) {
         parent->add_children(this);
     }
+}
+
+iTJSDispatch2 *TJS2NativeLayer::this_obj() const {
+    if (!this->_this_obj) {
+        printf("%p:%s\n", this,
+        codecvt::utf_to_utf<char>(this->name).c_str()); fflush(stdout);
+    }
+    assert(this->_this_obj);
+    return this->_this_obj;
 }
 
 iTJSDispatch2 *TJS2NativeLayer::get_children_obj() const {
