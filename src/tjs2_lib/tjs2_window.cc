@@ -390,9 +390,9 @@ void TJS2NativeWindow::_mouse_motion_event_disptach(
             return false;
         });
 
-    if (!layer_visit(this->_primary_layer)) {
+    if (this->_current_motion_layer == nullptr ||
+        !layer_visit(this->_primary_layer)) {
         this->_current_motion_layer = nullptr;
-        return;
     }
 
     auto func = my::y_combinator([&](const auto &self, TJS2NativeLayer *layer) {

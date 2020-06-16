@@ -174,7 +174,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void stretch_copy(const my::IRect &dst, const my::IRect &src,
                       TJS2NativeLayer *src_layer, TJS2StretchType type);
 
-    void piled_copy(const my::IPoint2D dpos, const my::IRect &src, TJS2NativeLayer *src_layer);
+    void piled_copy(const my::IPoint2D dpos, const my::IRect &src,
+                    TJS2NativeLayer *src_layer);
 
     void start_trans(const std::u16string &name, bool withchildren,
                      TJS2NativeLayer *trans_src, tTJSVariantClosure options);
@@ -229,9 +230,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     void build_surface(sk_sp<SkSurface> &surface,
                        std::function<sk_sp<SkSurface>(const my::ISize2D &)> &&);
 
-    sk_sp<SkImage> image_snapshot() {
-        return this->main_surface()->makeImageSnapshot();
-    }
+    sk_sp<SkImage> image_snapshot();
 
     my::IRect layer_rect() const {
         return my::IRect::MakeXYWH(this->pos().x(), this->pos().y(),
@@ -384,7 +383,8 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     bool hit_test(const my::IPoint2D &pos);
 
-    void save_layer_image(const std::u16string &name, const std::u16string &type);
+    void save_layer_image(const std::u16string &name,
+                          const std::u16string &type);
 
     // TODO:
     TJS2LayerType type{};
@@ -401,7 +401,7 @@ class TJS2NativeLayer : public tTJSNativeInstance {
     bool hold_alpha{false};
     bool call_on_paint{false};
     bool show_parent_hint{false};
-    bool hit_test_work {true};
+    bool hit_test_work{true};
 
   private:
     iTJSDispatch2 *_this_obj{};

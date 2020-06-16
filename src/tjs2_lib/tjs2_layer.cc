@@ -594,17 +594,41 @@ bool TJS2NativeLayer::is_node_visible() const {
 void TJS2NativeLayer::build_surface(
     sk_sp<SkSurface> &surface,
     std::function<sk_sp<SkSurface>(const my::ISize2D &)> &&make_surface) {
+
+    auto size = this->size();
+    auto image_size = this->image_size();
+    my::ISize2D surface_size = image_size;
+
+    if (image_size.width() < size.width() ||
+        image_size.height() < size.height()) {
+        surface_size = size;
+    }
+
     if (!surface) {
-        surface = make_surface(this->size());
+        surface = make_surface(surface_size);
         return;
     }
 
-    auto surface_size = my::ISize2D::Make(surface->width(), surface->height());
-    if (surface_size != this->size()) {
-        surface = make_surface(this->size());
+    auto current_surface_size =
+        my::ISize2D::Make(surface->width(), surface->height());
+    if (current_surface_size != surface_size) {
+        surface = make_surface(surface_size);
     }
 
     surface->flush();
+}
+
+sk_sp<SkImage> TJS2NativeLayer::image_snapshot() {
+    auto surface = this->main_surface();
+    auto bound =
+        my::IRect::MakeXYWH(-this->image_pos().x(), -this->image_pos().y(),
+                            this->size().width(), this->size().height());
+
+    auto surface_bound = my::IRect::MakeWH(surface->width(), surface->height());
+    auto image_snapshot = this->main_surface()->makeImageSnapshot(bound);
+
+    assert(image_snapshot);
+    return image_snapshot;
 }
 
 void TJS2NativeLayer::load_image(const std::u16string &_path) {
@@ -642,10 +666,10 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
     this->set_size(image_size);
     this->set_image_size(image_size);
 
-    auto [x, y] = this->image_pos();
+    // auto [x, y] = this->image_pos();
     SkPaint paint{};
     paint.setBlendMode(SkBlendMode::kSrc);
-    this->canvas()->drawImage(this->_image->sk_image(), x, y, &paint);
+    this->canvas()->drawImage(this->_image->sk_image(), 0, 0, &paint);
 }
 
 void TJS2NativeLayer::save_layer_image(const std::u16string &name,
@@ -666,12 +690,12 @@ void TJS2NativeLayer::save_layer_image(const std::u16string &name,
 void TJS2NativeLayer::set_image_pos(const my::IPoint2D &pos) {
     this->_image_pos = pos;
 
-    if (this->_image) {
-        auto [x, y] = this->image_pos();
-        SkPaint paint{};
-        paint.setBlendMode(SkBlendMode::kSrc);
-        this->canvas()->drawImage(this->_image->sk_image(), x, y, &paint);
-    }
+    // if (this->_image) {
+    //     auto [x, y] = this->image_pos();
+    //     SkPaint paint{};
+    //     paint.setBlendMode(SkBlendMode::kSrc);
+    //     this->canvas()->drawImage(this->_image->sk_image(), x, y, &paint);
+    // }
 }
 
 void TJS2NativeLayer::set_face(TJS2DrawFace face) {
@@ -695,8 +719,8 @@ void TJS2NativeLayer::set_parent(TJS2NativeLayer *parent) {
 
 iTJSDispatch2 *TJS2NativeLayer::this_obj() const {
     if (!this->_this_obj) {
-        printf("%p:%s\n", this,
-        codecvt::utf_to_utf<char>(this->name).c_str()); fflush(stdout);
+        printf("%p:%s\n", this, codecvt::utf_to_utf<char>(this->name).c_str());
+        fflush(stdout);
     }
     assert(this->_this_obj);
     return this->_this_obj;
