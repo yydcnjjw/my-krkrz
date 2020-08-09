@@ -677,7 +677,10 @@ void TJS2NativeLayer::save_layer_image(const std::u16string &name,
     auto path = my::fs::path(
         my::uri(codecvt::utf_to_utf<char>(name)).encoded_path().to_string());
 
-    auto image = my::Image::make(this->image_snapshot());
+    auto data = this->image_snapshot()->encodeToData();
+    auto blob = my::Blob::make(data->data(), data->size());
+    auto image = my::Image::make(blob);
+    
     image->export_bmp24(path);
 
     GLOG_D("save layer image:%p:%s:%s:%s:%s", this,

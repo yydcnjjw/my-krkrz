@@ -171,6 +171,14 @@ template <> class my::ResourceProvider<krkrz::TJS2Script> {
             try {
                 script = codecvt::to_utf<char>(code.begin(), code.end(), encode,
                                                codecvt::method_type::stop);
+                if (encode == "SHIFT_JIS") {
+                    auto u16_script = codecvt::utf_to_utf<char16_t>(script);
+                    std::replace(u16_script.begin(), u16_script.end(), u'¥',
+                                 u'\\');
+                    std::replace(u16_script.begin(), u16_script.end(), u'‾',
+                                 u'~');
+                    script = codecvt::utf_to_utf<char>(u16_script);
+                }
             } catch (codecvt::conversion_error &) {
                 continue;
             }

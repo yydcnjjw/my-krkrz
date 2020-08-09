@@ -14,7 +14,8 @@ Application::Application(int argc, char *argv[]) {
 
     my::program_options::options_description desc("my krkrz");
 
-    desc.add_options()("debug", my::program_options::value<bool>(), "");
+    desc.add_options()("debug", my::program_options::value<bool>(), "")(
+        "path", my::program_options::value<my::fs::path>(), "");
 
     this->_base_app = my::new_application(argc, argv, desc);
     this->_init_basic_path(argv[0]);
@@ -29,7 +30,14 @@ void Application::_init_basic_path(const char *_exec_path) {
     this->exec_path.set_encoded_url(uri.encoded_url());
     GLOG_D("exec path %s", this->exec_path.encoded_url().to_string().data());
 
-    auto app_path = exec_path.parent_path();
+    my::program_options::variable_value value;
+    my::fs::path app_path;
+    if (this->base_app()->get_program_option("path", value)) {
+        app_path = my::fs::absolute(value.as<my::fs::path>());
+    } else {
+        app_path = exec_path.parent_path();
+    }
+
     uri.set_encoded_path((app_path / "").string());
     this->app_path.set_encoded_url(uri.encoded_url());
     GLOG_D("app path %s", this->app_path.encoded_url().to_string().data());

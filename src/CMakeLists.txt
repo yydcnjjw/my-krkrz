@@ -1,5 +1,4 @@
 set(my-krkrz_SRC
-  main.cc
   krkrz_application.cc)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g3")
@@ -30,10 +29,15 @@ aux_source_directory(tjs2_plugin my-krkrz_SRC)
 
 find_package(Onig REQUIRED)
 
-add_executable(my-krkrz ${my-krkrz_SRC})
-target_link_libraries(my-krkrz
+add_library(my-krkrz_lib ${my-krkrz_SRC})
+target_link_libraries(my-krkrz_lib
   ${ONIGURUMA_LIBRARIES}
   my-gui_lib)
+
+add_executable(my-krkrz main.cc)
+target_link_libraries(my-krkrz
+  my-krkrz_lib
+  )
 
 add_custom_target(i18n)
 add_custom_command(
