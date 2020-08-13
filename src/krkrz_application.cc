@@ -22,44 +22,30 @@ Application::Application(int argc, char *argv[]) {
 }
 
 void Application::_init_basic_path(const char *_exec_path) {
-    auto exec_path = my::fs::absolute(_exec_path).make_preferred();
-    my::uri uri;
-    uri.set_scheme("file");
-
-    uri.set_encoded_path((exec_path).string());
-    this->exec_path.set_encoded_url(uri.encoded_url());
-    GLOG_D("exec path %s", this->exec_path.encoded_url().to_string().data());
+    this->exec_path = my::fs::absolute(_exec_path).make_preferred();
+    GLOG_D("exec path %s", this->exec_path.c_str());
 
     my::program_options::variable_value value;
     my::fs::path app_path;
     if (this->base_app()->get_program_option("path", value)) {
-        app_path = my::fs::absolute(value.as<my::fs::path>());
+        this->app_path = my::fs::absolute(value.as<my::fs::path>());
     } else {
-        app_path = exec_path.parent_path();
+        this->app_path = exec_path.parent_path();
     }
 
-    uri.set_encoded_path((app_path / "").string());
-    this->app_path.set_encoded_url(uri.encoded_url());
-    GLOG_D("app path %s", this->app_path.encoded_url().to_string().data());
+    GLOG_D("app path %s", this->app_path.c_str());
 
-    uri.set_encoded_path((app_path / "savedata" / "").string());
-    this->data_path.set_encoded_url(uri.encoded_url());
-    GLOG_D("data path %s", this->data_path.encoded_url().to_string().data());
+    this->data_path = this->app_path / "savedata" / "";
+    GLOG_D("data path %s", this->data_path.c_str());
 
-    uri.set_encoded_path((app_path / "appdata" / "").string());
-    this->app_data_path.set_encoded_url(uri.encoded_url());
-    GLOG_D("app data path %s",
-           this->app_data_path.encoded_url().to_string().data());
+    this->app_data_path = this->app_path / "appdata" / "";
+    GLOG_D("app data path %s", this->app_data_path.c_str());
 
-    uri.set_encoded_path((app_path / "user_data" / "").string());
-    this->personal_path.set_encoded_url(uri.encoded_url());
-    GLOG_D("personal path %s",
-           this->personal_path.encoded_url().to_string().data());
+    this->personal_path = this->app_path / "user_data" / "";
+    GLOG_D("personal path %s", this->personal_path.c_str());
 
-    uri.set_encoded_path((app_path / "save_game" / "").string());
-    this->save_game_path.set_encoded_url(uri.encoded_url());
-    GLOG_D("save game path %s",
-           this->save_game_path.encoded_url().to_string().data());
+    this->save_game_path = this->app_path / "save_game" / "";
+    GLOG_D("save game path %s", this->save_game_path.c_str());
 }
 
 void Application::run() {

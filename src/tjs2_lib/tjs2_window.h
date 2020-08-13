@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <my_render.hpp>
 
 #include "krkrz_application.h"
@@ -160,9 +162,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
         GLOG_D("show modal end");
     }
 
-    iTJSDispatch2 *draw_device_obj() {
-        return this->_draw_device->this_obj();
-    }
+    iTJSDispatch2 *draw_device_obj() { return this->_draw_device->this_obj(); }
 
   private:
     static TJS2NativeWindow *_main_window;
@@ -195,9 +195,7 @@ class TJS2NativeWindow : public tTJSNativeInstance {
 
     std::mutex _lock;
 
-    SkCanvas *_canvas() {
-        return this->_window->get_sk_surface()->getCanvas();
-    }
+    SkCanvas *_canvas() { return this->_window->get_sk_surface()->getCanvas(); }
 
     void _subscribe_event(iTJSDispatch2 *obj);
     void _unsubscribe_event();

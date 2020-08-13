@@ -22,15 +22,14 @@ class TJS2NativeStorages {
     };
 
     struct SearchPathCache {
-        my::uri search_uri;
+        std::shared_ptr<my::ResourceLocator> locator;
         std::shared_ptr<AutoPath> archive_auto_path;
         std::shared_ptr<AutoPath> dir_auto_path;
         explicit SearchPathCache(
-            const my::uri &search_uri,
+            std::shared_ptr<my::ResourceLocator> locator,
             std::shared_ptr<AutoPath> archive_auto_path = nullptr,
             std::shared_ptr<AutoPath> dir_auto_path = nullptr)
-            : search_uri(search_uri.encoded_url().to_string()),
-              archive_auto_path(archive_auto_path),
+            : locator(locator), archive_auto_path(archive_auto_path),
               dir_auto_path(dir_auto_path) {}
     };
 
@@ -50,18 +49,16 @@ class TJS2NativeStorages {
     template <typename T>
     std::shared_ptr<T> get_storage(const std::string &search,
                                    const std::string &mode = "") {
-        my::uri full_uri{search};
-        if (!this->_resource_mgr->exist(full_uri)) {
-            auto search_path = this->search_storage(
-                my::fs::path(full_uri.encoded_path().to_string())
-                    .lexically_normal());
-            if (search_path.has_value()) {
-                full_uri.set_encoded_url(
-                    search_path.value()->search_uri.encoded_url());
-            } else {
-                throw std::runtime_error(
-                    (boost::format("%1% is not exist") % search).str());
-            }
+        std::shared_ptr<SearchPathCache> search_path{};
+        if (!this->_resource_mgr->exist(search)) {
+            search_path = this->search_storage(search).value_or(nullptr);
+        } else {
+            return this->_resource_mgr->load_from_cache<T>(search);
+        }
+
+        if (!search_path) {
+            throw std::runtime_error(
+                (boost::format("%1% is not exist") % search).str());
         }
 
         size_t offset{0};
@@ -74,31 +71,17 @@ class TJS2NativeStorages {
             }
             }
         }
+        search_path->locator->set_offset(offset);
 
-        const auto &params = full_uri.params();
-
-        // TODO: use search storage struct
-        my::uri fix_uri{};
-        if (params.find("path") != params.end()) {
-            fix_uri.set_encoded_url(
-                my::make_archive_search_uri(full_uri.encoded_path().to_string(),
-                                            params.at("path"), offset)
-                    .encoded_url());
-        } else {
-            fix_uri.set_encoded_url(
-                my::make_path_search_uri(full_uri.encoded_path().to_string(),
-                                         offset)
-                    .encoded_url());
-        }
-
-        return this->_resource_mgr->load<T>(fix_uri).get();
+        return this->_resource_mgr->load<T>(search_path->locator).get();
     }
 
-    bool is_exist_storage(const std::u16string &utf16_uri) {
-        return !this->get_placed_path(utf16_uri).empty();
+    bool is_exist_storage(const std::u16string &utf16_path) {
+        return this->get_placed_path(utf16_path).has_value();
     }
 
-    std::u16string get_placed_path(const std::u16string &utf16_uri);
+    std::optional<std::u16string>
+    get_placed_path(const std::u16string &utf16_path);
 
     void add_auto_path(const std::u16string &utf16_path) {
         this->_add_auto_path(codecvt::utf_to_utf<char>(utf16_path));
@@ -121,6 +104,7 @@ class TJS2NativeStorages {
   private:
     my::ResourceMgr *_resource_mgr;
     my::fs::path _app_path;
+    my::fs::path _exec_path;
     my::fs::path _default_storage_data_path;
     std::set<std::shared_ptr<AutoPath>> _auto_paths;
 
@@ -135,6 +119,21 @@ class TJS2NativeStorages {
     void _add_auto_path(const std::string &_path);
 
     void _remove_auto_path(const std::string &_path);
+
+    template <typename resource_locator, typename... Args>
+    std::optional<std::shared_ptr<SearchPathCache>> _add_cache_if_exist(
+        const my::fs::path &path, std::shared_ptr<AutoPath> archive_auto_path,
+        std::shared_ptr<AutoPath> dir_auto_path, Args &... args) {
+        auto locator = resource_locator::make(std::forward<Args>(args)...);
+        if (locator->exist()) {
+            auto search_path = std::make_shared<SearchPathCache>(
+                locator, archive_auto_path, dir_auto_path);
+            this->_search_path_cache.insert({path, search_path});
+            return search_path;
+        } else {
+            return std::nullopt;
+        }
+    }
 };
 
 } // namespace krkrz

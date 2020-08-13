@@ -435,10 +435,8 @@ class TJS2System : public tTJSNativeClass {
 
         TJS_BEGIN_NATIVE_PROP_DECL(appDataPath) {
             TJS_BEGIN_NATIVE_PROP_GETTER
-            *result =
-                codecvt::utf_to_utf<char16_t>(krkrz::Application::get()
-                                                  ->app_data_path.encoded_url()
-                                                  .to_string());
+            *result = codecvt::utf_to_utf<char16_t>(
+                krkrz::Application::get()->app_data_path.string());
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -449,7 +447,7 @@ class TJS2System : public tTJSNativeClass {
         TJS_BEGIN_NATIVE_PROP_DECL(dataPath) {
             TJS_BEGIN_NATIVE_PROP_GETTER
             *result = codecvt::utf_to_utf<char16_t>(
-                krkrz::Application::get()->data_path.encoded_url().to_string());
+                krkrz::Application::get()->data_path.string());
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -551,7 +549,7 @@ class TJS2System : public tTJSNativeClass {
         TJS_BEGIN_NATIVE_PROP_DECL(exeName) {
             TJS_BEGIN_NATIVE_PROP_GETTER
             *result = codecvt::utf_to_utf<char16_t>(
-                krkrz::Application::get()->exec_path.encoded_url().to_string());
+                krkrz::Application::get()->exec_path.string());
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -562,7 +560,7 @@ class TJS2System : public tTJSNativeClass {
         TJS_BEGIN_NATIVE_PROP_DECL(exePath) {
             TJS_BEGIN_NATIVE_PROP_GETTER
             *result = codecvt::utf_to_utf<char16_t>(
-                krkrz::Application::get()->app_path.encoded_url().to_string());
+                krkrz::Application::get()->app_path.string());
             return TJS_S_OK;
 
             TJS_END_NATIVE_PROP_GETTER
@@ -616,10 +614,8 @@ class TJS2System : public tTJSNativeClass {
         TJS_END_NATIVE_STATIC_PROP_DECL(osName)
         TJS_BEGIN_NATIVE_PROP_DECL(personalPath) {
             TJS_BEGIN_NATIVE_PROP_GETTER
-            *result =
-                codecvt::utf_to_utf<char16_t>(krkrz::Application::get()
-                                                  ->personal_path.encoded_url()
-                                                  .to_string());
+            *result = codecvt::utf_to_utf<char16_t>(
+                krkrz::Application::get()->personal_path.string());
             return TJS_S_OK;
             TJS_END_NATIVE_PROP_GETTER
 
@@ -638,10 +634,8 @@ class TJS2System : public tTJSNativeClass {
         TJS_END_NATIVE_STATIC_PROP_DECL(platformName)
         TJS_BEGIN_NATIVE_PROP_DECL(savedGamesPath) {
             TJS_BEGIN_NATIVE_PROP_GETTER
-            *result =
-                codecvt::utf_to_utf<char16_t>(krkrz::Application::get()
-                                                  ->save_game_path.encoded_url()
-                                                  .to_string());
+            *result = codecvt::utf_to_utf<char16_t>(
+                krkrz::Application::get()->save_game_path.string());
             return TJS_S_OK;
             TJS_END_NATIVE_PROP_GETTER
 

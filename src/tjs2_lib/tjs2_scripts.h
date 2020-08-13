@@ -151,16 +151,16 @@ template <> class my::ResourceProvider<krkrz::TJS2Script> {
      * @brief      load from fs
      */
     static std::shared_ptr<krkrz::TJS2Script>
-    load(const ResourcePathInfo &info) {
+    load(const ResourceFileProvideInfo &info) {
         return ResourceProvider<krkrz::TJS2Script>::load(
-            ResourceStreamInfo::make(info));
+            ResourceStreamProvideInfo::make(info));
     }
 
     /**
      * @brief      load from stream
      */
     static std::shared_ptr<krkrz::TJS2Script>
-    load(const ResourceStreamInfo &info) {
+    load(const ResourceStreamProvideInfo &info) {
         auto blob = my::Blob::make(info);
         static std::vector<std::string> encodes{"UTF-8", "SHIFT_JIS",
                                                 "GB18030"};

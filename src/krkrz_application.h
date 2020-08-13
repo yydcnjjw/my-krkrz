@@ -13,12 +13,12 @@ class Application {
 
     void run();
 
-    my::uri exec_path;
-    my::uri app_path;
-    my::uri data_path;
-    my::uri app_data_path;
-    my::uri personal_path;
-    my::uri save_game_path;
+    my::fs::path exec_path;
+    my::fs::path app_path;
+    my::fs::path data_path;
+    my::fs::path app_data_path;
+    my::fs::path personal_path;
+    my::fs::path save_game_path;
     
   private:
     std::shared_ptr<my::Application> _base_app;
