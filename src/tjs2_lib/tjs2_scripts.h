@@ -102,14 +102,24 @@ class TJS2Script : public my::Resource {
                              iTJSDispatch2 *context = nullptr,
                              tTJSVariant *result = nullptr,
                              const std::u16string modestr = u"") {
-        get_tjs2_script_from_storage(uri, modestr)->exec(result, context, uri);
+        try {
+            get_tjs2_script_from_storage(uri, modestr)
+                ->exec(result, context, uri);
+        } catch (std::exception &e) {
+            GLOG_D(e.what());
+        }
     }
 
     static void eval_storage(const std::u16string &uri,
                              iTJSDispatch2 *context = nullptr,
                              tTJSVariant *result = nullptr,
                              const std::u16string modestr = u"") {
-        get_tjs2_script_from_storage(uri, modestr)->eval(result, context, uri);
+        try {
+            get_tjs2_script_from_storage(uri, modestr)
+                ->eval(result, context, uri);
+        } catch (std::exception &e) {
+            GLOG_D(e.what());
+        }
     }
 
     void eval(tTJSVariant *result = nullptr, iTJSDispatch2 *context = nullptr,

@@ -76,7 +76,7 @@ class TJS2Storages : public tTJSNativeClass {
             if (result) {
                 *result = krkrz::TJS2NativeStorages::get()
                               ->get_placed_path(path.AsStdString())
-                              .value_or(path.AsStdString());
+                              .value_or(TJS_W(""));
             }
 
             return TJS_S_OK;
@@ -110,6 +110,17 @@ class TJS2Storages : public tTJSNativeClass {
             return TJS_S_OK;
         }
         TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ chopStorageExt)
+
+        TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ searchCD) {
+            if (numparams < 1)
+                return TJS_E_BADPARAMCOUNT;
+
+            if (result)
+                *result = TJS_W("media");
+
+            return TJS_S_OK;
+        }
+        TJS_END_NATIVE_STATIC_METHOD_DECL(/*func. name*/ searchCD)
 
         TJS_END_NATIVE_MEMBERS
     }

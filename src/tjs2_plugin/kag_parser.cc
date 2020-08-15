@@ -118,21 +118,14 @@ void tTVPScenarioCacheItem::LoadScenario(const ttstr &name, bool isstring) {
         Buffer = name.c_str();
     } else {
         // else load from file
-
-        iTJSTextReadStream *stream = NULL;
-
         try {
-            Buffer = krkrz::TJS2NativeStorages::get()
-                         ->get_storage<krkrz::TJS2Script>(name.AsStdString())
-                         ->script()
-                         .c_str();
+            auto tjs2_script =
+                krkrz::TJS2NativeStorages::get()
+                    ->get_storage<krkrz::TJS2Script>(name.AsStdString());
+            Buffer = tjs2_script->script().c_str();
         } catch (...) {
-            if (stream)
-                stream->Destruct();
             throw;
         }
-        if (stream)
-            stream->Destruct();
     }
 
     tjs_char *buffer_p = Buffer;

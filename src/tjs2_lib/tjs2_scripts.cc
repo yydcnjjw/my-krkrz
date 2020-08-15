@@ -339,7 +339,7 @@ void TJS2NativeScripts::boot_start() {
                 TJS2Script::exec_storage(u"startup.tjs");
 
             } catch (eTJSError &e) {
-                GLOG_E(utf16_codecvt()
+                GLOG_D(utf16_codecvt()
                            .to_bytes(e.GetMessage().AsStdString())
                            .c_str());
                 app->quit(true);

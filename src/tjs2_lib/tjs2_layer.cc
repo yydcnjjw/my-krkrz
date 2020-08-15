@@ -638,6 +638,7 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
            codecvt::utf_to_utf<char>(this->name).c_str(), path.c_str());
 
     if (path.has_extension()) {
+        // TODO: load _m _p
         this->_image = TJS2NativeStorages::get()->get_storage<my::Image>(path);
     } else {
         for (auto extension : {".png", ".jpg", ".bmp"}) {
@@ -645,7 +646,8 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
             try {
                 this->_image =
                     TJS2NativeStorages::get()->get_storage<my::Image>(path);
-            } catch (...) {
+            } catch (std::exception &e) {
+                GLOG_D(e.what());
                 this->_image = nullptr;
                 continue;
             }
