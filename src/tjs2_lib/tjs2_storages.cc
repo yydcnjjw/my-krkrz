@@ -271,6 +271,7 @@ TJS2NativeStorages::_check_auto_path_type(const std::string &path) {
 }
 
 void TJS2NativeStorages::_add_auto_path(const std::string &_path) {
+    GLOG_D("add auto path %s", _path.c_str());
     auto type = this->_check_auto_path_type(_path);
     auto path = _path.substr(0, _path.size() - 1);
 
@@ -284,6 +285,7 @@ void TJS2NativeStorages::_add_auto_path(const std::string &_path) {
 }
 
 void TJS2NativeStorages::_remove_auto_path(const std::string &_path) {
+    GLOG_D("remove auto path %s", _path.c_str());    
     auto type = this->_check_auto_path_type(_path);
     auto path = _path.substr(0, _path.size() - 1);
 

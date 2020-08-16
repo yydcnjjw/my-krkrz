@@ -655,7 +655,7 @@ void TJS2NativeLayer::load_image(const std::u16string &_path) {
         }
     }
 
-    if (!this->_image) {
+    if (!this->has_image()) {
         throw std::runtime_error(
             (boost::format("load image failure %1%") % path).str());
     }
@@ -1648,7 +1648,49 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ focus)
+    TJS_BEGIN_NATIVE_PROP_DECL(joinFocusChain) {
+        // TODO: joinFocusChain
+        TJS_BEGIN_NATIVE_PROP_GETTER
 
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = true; // _this->GetJoinFocusChain();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        // _this->SetJoinFocusChain(param->operator bool());
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(joinFocusChain)
+    TJS_BEGIN_NATIVE_PROP_DECL(order) // not orderIndex
+    {
+        // TODO: order
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = 1; // (tjs_int)_this->GetOrderIndex();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        // _this->SetOrderIndex(*param);
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(order)
     TJS_BEGIN_NATIVE_METHOD_DECL(/*func. name*/ getProvincePixel) {
         TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
                                 /*var. type*/ TJS2NativeLayer);
@@ -1711,6 +1753,26 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         return TJS_S_OK;
     }
     TJS_END_NATIVE_METHOD_DECL(/*func. name*/ assignImages)
+    TJS_BEGIN_NATIVE_PROP_DECL(hasImage) {
+        TJS_BEGIN_NATIVE_PROP_GETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        *result = (tjs_int)(bool)_this->has_image();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_GETTER
+
+        TJS_BEGIN_NATIVE_PROP_SETTER
+
+        TJS_GET_NATIVE_INSTANCE(/*var. name*/ _this,
+                                /*var. type*/ TJS2NativeLayer);
+        _this->remove_image();
+        return TJS_S_OK;
+
+        TJS_END_NATIVE_PROP_SETTER
+    }
+    TJS_END_NATIVE_PROP_DECL(hasImage)
     TJS_BEGIN_NATIVE_PROP_DECL(isPrimary) {
         TJS_BEGIN_NATIVE_PROP_GETTER
 
@@ -1787,7 +1849,7 @@ TJS2Layer::TJS2Layer() : inherited(TJS_W("Layer")) {
         // if(numparams >= 3 && param[2]->Type() != tvtVoid)
         // 	data.RCeil  = *param[2];
         // if(numparams >= 4 && param[3]->Type() != tvtVoid)
-        // 	data.GGamma = static_cast<float>((double)*param[3]);
+        // 	data.GGamma = static_cast<float>((double)*param[3]);//
         // if(numparams >= 5 && param[4]->Type() != tvtVoid)
         // 	data.GFloor = *param[4];
         // if(numparams >= 6 && param[5]->Type() != tvtVoid)

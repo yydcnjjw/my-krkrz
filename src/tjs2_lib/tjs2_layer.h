@@ -152,6 +152,18 @@ class TJS2NativeLayer : public tTJSNativeInstance {
 
     void load_image(const std::u16string &_path);
 
+    bool has_image() {
+        // TODO:
+        return this->_image != nullptr;
+    }
+
+    void remove_image() {
+        // TODO: remove image
+        GLOG_D("has image = false %s",
+               codecvt::utf_to_utf<char>(this->name).c_str());
+        this->_image = nullptr;
+    }
+
     void assign_images(TJS2NativeLayer *layer) {
         this->_main_surface = layer->_main_surface;
         this->_province_surface = layer->_province_surface;
